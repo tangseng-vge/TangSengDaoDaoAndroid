@@ -32,6 +32,8 @@ import com.chat.base.utils.WKToastUtils;
 import com.chat.base.utils.systembar.WKStatusBarUtils;
 import com.google.android.material.snackbar.Snackbar;
 import com.shuyu.gsyvideoplayer.builder.GSYVideoOptionBuilder;
+import com.shuyu.gsyvideoplayer.cache.CacheFactory;
+import com.shuyu.gsyvideoplayer.player.PlayerFactory;
 import com.xinbida.wukongim.WKIM;
 import com.xinbida.wukongim.entity.WKChannel;
 import com.xinbida.wukongim.entity.WKMsg;
@@ -41,7 +43,11 @@ import com.xinbida.wukongim.msgmodel.WKMessageContent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+
+import tv.danmaku.ijk.media.exo2.Exo2PlayerManager;
+import tv.danmaku.ijk.media.exo2.ExoPlayerCacheManager;
 
 /**
  * 2020-03-11 11:54
@@ -68,6 +74,9 @@ public class PlayVideoActivity extends GSYBaseActivityDetail<VideoPlayer> {
         initView();
         initVideoBuilderMode();
         detailPlayer.startPlayLogic();
+
+        PlayerFactory.setPlayManager(Exo2PlayerManager.class);
+        CacheFactory.setCacheManager(ExoPlayerCacheManager.class);
     }
 
     private void initView() {

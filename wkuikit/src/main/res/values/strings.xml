@@ -78,6 +78,7 @@
     <string name="head_portrait">头像</string>
     <string name="name">名字</string>
     <string name="identity">%s号</string>
+    <string name="phone_no">手机号</string>
     <string name="my_qr">我的二维码</string>
     <string name="sex">性别</string>
     <string name="male">男</string>

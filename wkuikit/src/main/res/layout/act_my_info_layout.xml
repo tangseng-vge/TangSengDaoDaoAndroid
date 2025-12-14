@@ -78,6 +78,30 @@
                     </LinearLayout>
 
                     <LinearLayout
+                        android:id="@+id/phoneLayout"
+                        style="@style/layoutBg">
+
+                        <TextView
+                            android:id="@+id/phoneLeftTv"
+                            style="@style/leftTextView"
+                            android:text="@string/phone_no" />
+
+                        <TextView
+                            android:id="@+id/phoneRightTV"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            android:layout_marginStart="10dp"
+                            android:layout_marginEnd="10dp"
+                            android:layout_weight="2"
+                            android:gravity="end"
+                            android:textColor="@color/color999"
+                            android:textSize="16sp" />
+
+
+                    </LinearLayout>
+
+                    <LinearLayout
                         android:id="@+id/identityLayout"
                         style="@style/layoutBg">
 

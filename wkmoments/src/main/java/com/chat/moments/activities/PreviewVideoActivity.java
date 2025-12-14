@@ -6,7 +6,6 @@ import android.text.TextUtils;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
-
 import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
 
@@ -17,6 +16,15 @@ import com.chat.base.utils.WKDialogUtils;
 import com.chat.base.utils.WKToastUtils;
 import com.chat.moments.R;
 import com.shuyu.gsyvideoplayer.builder.GSYVideoOptionBuilder;
+import com.shuyu.gsyvideoplayer.cache.CacheFactory;
+import com.shuyu.gsyvideoplayer.player.PlayerFactory;
+
+import java.io.File;
+import java.util.Map;
+
+import tv.danmaku.ijk.media.exo2.Exo2PlayerManager;
+import tv.danmaku.ijk.media.exo2.ExoPlayerCacheManager;
+
 
 /**
  * 2020-11-10 18:45
@@ -42,6 +50,7 @@ public class PreviewVideoActivity extends GSYBaseActivityDetail<VideoPlayer> {
         initVideo();
         initVideoBuilderMode();
         detailPlayer.startPlayLogic();
+
         ImageView imageView = findViewById(R.id.titleRightIv);
         imageView.setImageResource(R.mipmap.ic_ab_delete);
 
@@ -54,6 +63,9 @@ public class PreviewVideoActivity extends GSYBaseActivityDetail<VideoPlayer> {
             }
         }));
         findViewById(R.id.backIv).setOnClickListener(v -> finish());
+
+        PlayerFactory.setPlayManager(Exo2PlayerManager.class);
+        CacheFactory.setCacheManager(ExoPlayerCacheManager.class);
     }
 
 
@@ -78,6 +90,8 @@ public class PreviewVideoActivity extends GSYBaseActivityDetail<VideoPlayer> {
     public VideoPlayer getGSYVideoPlayer() {
         return detailPlayer;
     }
+
+
 
     @Override
     public GSYVideoOptionBuilder getGSYVideoOptionBuilder() {
