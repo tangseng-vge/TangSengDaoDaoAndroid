@@ -20,7 +20,9 @@ class WKDownloader private constructor() {
 
         }, object : OnComplete {
             override fun invoke(url: String, file: File) = if (iProgress != null) {
-                iProgress.run { onSuccess(url, file.absolutePath) }
+                iProgress.run {
+                    onSuccess(url, file.absolutePath)
+                }
             } else {
                 WKProgressManager.instance.onSuccess(url, file.absolutePath)
             }

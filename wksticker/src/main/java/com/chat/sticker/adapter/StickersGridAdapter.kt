@@ -62,24 +62,46 @@ class StickersGridAdapter : BaseMultiItemQuickAdapter<StickerUI, BaseViewHolder>
             val imageView = stickerView.imageView
             imageView.layoutParams.width = WKStickerApplication.instance.stickerGridSize
             imageView.layoutParams.height = WKStickerApplication.instance.stickerGridSize
+            //han
+            stickerView.showSticker(
+                item.sticker!!.path,
+                item.sticker!!.placeholder,
+                WKStickerApplication.instance.stickerGridSize,
+                true
+            )
+
+            var showURL: String
+//            AndroidUtilities.runOnUIThread {
+//                if (item.sticker!!.path.endsWith(".gif")) {
+//                    showURL = WKApiConfig.getShowUrl(item.sticker!!.path)
+//                    Glide.with(context)
+//                        .load(showURL)
+//                        .apply(GlideRequestOptions.getInstance().normalRequestOption())
+//                        .into(imageView)
+//                } else {
+//                    Glide.with(context)
+//                        .asGif()
+//                        .load(showURL)
+//                        .apply(GlideRequestOptions.getInstance().normalRequestOption())
+//                        .into(imageView)
+//                }
+//            }
 //            dispatchQueuePool.execute {
-            val showURL: String
             val file = File(StickerModel().getLocalPath(item.sticker!!.path))
-            if (file.exists()) showURL = file.absolutePath else {
-                showURL = WKApiConfig.getShowUrl(item.sticker!!.path)
-                StickerModel().download(showURL, file.absolutePath)
-            }
-            AndroidUtilities.runOnUIThread {
-                Glide.with(context).asGif().load(showURL)
-                    .apply(GlideRequestOptions.getInstance().normalRequestOption())
-                    .into(imageView)
-            }
+//            if (file.exists())
+//                showURL = file.absolutePath
+//            else {
+//                showURL = WKApiConfig.getShowUrl(item.sticker!!.path)
+//                StickerModel().download(showURL, file.absolutePath)
+//            }
+
             if (!file.exists()) {
                 val list: MutableList<Sticker> = ArrayList()
                 list.add(item.sticker!!)
                 StickerModel().downloadCustomerSticker(list)
             }
 //            }
+
 
         }
     }

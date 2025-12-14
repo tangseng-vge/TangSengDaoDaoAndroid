@@ -4,16 +4,23 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.Gravity;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.widget.AppCompatImageView;
 import androidx.core.content.ContextCompat;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
 import com.chat.base.config.WKApiConfig;
+import com.chat.base.glide.GlideRequestOptions;
 import com.chat.base.net.ud.WKDownloader;
 import com.chat.base.net.ud.WKProgressManager;
 import com.chat.base.utils.AndroidUtilities;
@@ -39,6 +46,8 @@ public class StickerView extends FrameLayout implements WKProgressManager.IProgr
     private boolean isPlay;
     private int size;
 
+    private Context context;
+
     public StickerView(@NonNull Context context) {
         super(context);
         initView(context);
@@ -50,12 +59,22 @@ public class StickerView extends FrameLayout implements WKProgressManager.IProgr
     }
 
     RLottieImageView aXrLottieImageView;
+    ImageView imageView;
 
     private void initView(Context context) {
+        this.context = context;
         aXrLottieImageView = new RLottieImageView(context);
         aXrLottieImageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        aXrLottieImageView.setVisibility(View.GONE);
         addView(aXrLottieImageView, LayoutHelper.createFrame(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER));
 
+        imageView = new AppCompatImageView(context);
+        imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        imageView.setVisibility(View.GONE);
+        addView(imageView, new LayoutParams(
+                LayoutParams.WRAP_CONTENT,
+                LayoutParams.WRAP_CONTENT
+        ));
     }
 
     public synchronized void showSticker(String url, String placeholder, int size, boolean isLoopPlay) {
@@ -63,42 +82,80 @@ public class StickerView extends FrameLayout implements WKProgressManager.IProgr
     }
 
     public synchronized void showSticker(String url, String placeholder, int size, boolean isLoopPlay, boolean isPlay) {
-        this.aXrLottieImageView.getLayoutParams().height = size;
-        this.aXrLottieImageView.getLayoutParams().width = size;
-        this.isLoopPlay = isLoopPlay;
-        this.isPlay = isPlay;
-        this.size = size;
-        if (!TextUtils.isEmpty(placeholder) && placeholder.startsWith("<")) {
-            String startStr = "<svg version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" viewBox=\"0 0 512 512\" xml:space=\"preserve\"><path fill-opacity=\"0.1\" d=\"";
-            String endStr = " /></svg>";
-            String path = placeholder.replaceAll(startStr, "").replaceAll(endStr, "");
-            Bitmap bitmap = SvgHelper.getBitmapByPathOnly(path, ContextCompat.getColor(getContext(), R.color.sticker_placeholder), 512, 512, 512, 512);
-            if (bitmap != null) {
-                aXrLottieImageView.setImageBitmap(bitmap);
-            }
-        }
-        if (TextUtils.isEmpty(url)) return;
 
-        aXrLottieImageView.setTag(url);
-        WKStickerApplication.Companion.getInstance().getDispatchQueuePool().execute(() -> {
-            String fileName = String.format("%s", url.replaceAll("/", "_"));
-            String fileDir = WKStickerApplication.Companion.getInstance().getStickerDirPath();
-            String filePath = fileDir + fileName;
-            File file = new File(filePath);
-            if (file.exists()) {
-                showSticker(aXrLottieImageView, isLoopPlay, file, size, isPlay);
-            } else {
-                String fileName1 = url.replaceAll("/", "_");
-                String filePath1 = fileDir + fileName1;
-                File file1 = new File(filePath1);
-                if (file1.exists()) {
-                    showSticker(aXrLottieImageView, isLoopPlay, file1, size, isPlay);
-                    return;
+        this.size = size;
+        StickerView.this.tag = WKApiConfig.getShowUrl(url);
+
+        if (url.endsWith(".png") || url.endsWith(".gif")) {
+            imageView.setTag(url);
+            loadAsGif(WKApiConfig.getShowUrl(url));
+        } else {
+            this.aXrLottieImageView.getLayoutParams().height = size;
+            this.aXrLottieImageView.getLayoutParams().width = size;
+            this.isLoopPlay = isLoopPlay;
+            this.isPlay = isPlay;
+//            this.size = size;
+
+            if (!TextUtils.isEmpty(placeholder) && placeholder.startsWith("<")) {
+                String startStr = "<svg version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" viewBox=\"0 0 512 512\" xml:space=\"preserve\"><path fill-opacity=\"0.1\" d=\"";
+                String endStr = " /></svg>";
+                String path = placeholder.replaceAll(startStr, "").replaceAll(endStr, "");
+                Bitmap bitmap = SvgHelper.getBitmapByPathOnly(path, ContextCompat.getColor(getContext(), R.color.sticker_placeholder), 512, 512, 512, 512);
+                if (bitmap != null) {
+                    aXrLottieImageView.setImageBitmap(bitmap);
+
+                    aXrLottieImageView.setVisibility(View.VISIBLE);
+                    imageView.setVisibility(View.GONE);
                 }
-                StickerView.this.tag = WKApiConfig.getShowUrl(url);
-                WKDownloader.Companion.getInstance().download(tag, file1.getAbsolutePath(), this);
             }
+            if (TextUtils.isEmpty(url)) return;
+
+            aXrLottieImageView.setTag(url);
+            WKStickerApplication.Companion.getInstance().getDispatchQueuePool().execute(() -> {
+                String fileName = String.format("%s", url.replaceAll("/", "_"));
+                String fileDir = WKStickerApplication.Companion.getInstance().getStickerDirPath();
+                String filePath = fileDir + fileName;
+                File file = new File(filePath);
+                if (file.exists()) {
+                    showSticker(aXrLottieImageView, isLoopPlay, file, size, isPlay);
+                } else {
+                    String fileName1 = url.replaceAll("/", "_");
+                    String filePath1 = fileDir + fileName1;
+                    File file1 = new File(filePath1);
+                    if (file1.exists()) {
+                        showSticker(aXrLottieImageView, isLoopPlay, file1, size, isPlay);
+                        return;
+                    }
+                    WKDownloader.Companion.getInstance().download(WKApiConfig.getShowUrl(url), file1.getAbsolutePath(), this);
+                }
+            });
+        }
+    }
+
+    private void loadAsGif(String url) {
+
+        AndroidUtilities.runOnUIThread(() -> {
+            ViewGroup.LayoutParams params = imageView.getLayoutParams();
+            params.width = this.size;
+            params.height = this.size;
+            imageView.setLayoutParams(params);
+
+            imageView.setVisibility(View.VISIBLE);
+            aXrLottieImageView.setVisibility(View.GONE);
+
+            if(url.endsWith(".png")){
+                Glide.with(context)
+                        .load(url)
+                        .into(imageView);
+            }else{
+                Glide.with(context)
+                        .asGif()
+                        .load(url)
+                        .into(imageView);
+            }
+
         });
+
     }
 
     @Override
@@ -108,29 +165,35 @@ public class StickerView extends FrameLayout implements WKProgressManager.IProgr
 
 
     public void showSticker(RLottieImageView aXrLottieImageView, boolean isLoopPlay, File file, int size, boolean isPlay) {
-        String fileName = file.getName().replace(".lim", "");
-        File jsonFile = new File(fileName);
-        if (!jsonFile.exists()) {
-            String path = WKFileUtils.getInstance().uncompressSticker(WKFileUtils.getInstance().file2byte(file), fileName);
-            if (!TextUtils.isEmpty(path)) {
-                jsonFile = new File(path);
-            }
-        }
-        if (aXrLottieImageView.getTag() instanceof String imageTag) {
-            if (!TextUtils.isEmpty(imageTag)) {
-                String newTag = imageTag.replace(".lim", "").replaceAll("/","_");
-                if (!jsonFile.getAbsolutePath().endsWith(newTag)) {
-                    return;
+
+            String fileName = file.getName().replace(".lim", "");
+            File jsonFile = new File(fileName);
+            if (!jsonFile.exists()) {
+                String path = WKFileUtils.getInstance().uncompressSticker(WKFileUtils.getInstance().file2byte(file), fileName);
+                if (!TextUtils.isEmpty(path)) {
+                    jsonFile = new File(path);
                 }
             }
-        }
-        RLottieDrawable drawable = new RLottieDrawable(jsonFile, size, size, false, false);
-        drawable.setAutoRepeat(isLoopPlay ? 1 : 0);
-        AndroidUtilities.runOnUIThread(() -> {
-            aXrLottieImageView.setAnimation(drawable);
-            if (isPlay)
-                aXrLottieImageView.playAnimation();
-        });
+            if (aXrLottieImageView.getTag() instanceof String imageTag) {
+                if (!TextUtils.isEmpty(imageTag)) {
+                    String newTag = imageTag.replace(".lim", "").replaceAll("/", "_");
+                    if (!jsonFile.getAbsolutePath().endsWith(newTag)) {
+                        return;
+                    }
+                }
+            }
+
+            RLottieDrawable drawable = new RLottieDrawable(jsonFile, size, size, false, false);
+            drawable.setAutoRepeat(isLoopPlay ? 1 : 0);
+
+            AndroidUtilities.runOnUIThread(() -> {
+                imageView.setVisibility(View.GONE);
+                aXrLottieImageView.setVisibility(View.VISIBLE);
+                aXrLottieImageView.setAnimation(drawable);
+                if (isPlay)
+                    aXrLottieImageView.playAnimation();
+            });
+
     }
 
     public void restart() {
@@ -155,11 +218,11 @@ public class StickerView extends FrameLayout implements WKProgressManager.IProgr
         if (!TextUtils.isEmpty(path)) {
             showSticker(aXrLottieImageView, isLoopPlay, new File(path), size, isPlay);
         }
-
     }
 
     @Override
     public void onFail(@Nullable Object tag, @Nullable String msg) {
 
     }
+
 }

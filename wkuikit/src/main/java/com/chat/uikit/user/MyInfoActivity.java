@@ -61,6 +61,7 @@ public class MyInfoActivity extends WKBaseActivity<ActMyInfoLayoutBinding> {
             wkVBinding.identityIv.setVisibility(View.GONE);
         }
 
+        wkVBinding.phoneRightTV.setText(userInfoEntity.phone);
     }
 
     @Override
