@@ -15,6 +15,7 @@ import com.chat.base.net.HttpResponseCode;
 import com.chat.base.net.ICommonListener;
 import com.chat.base.net.IRequestResultListener;
 import com.chat.base.net.entity.CommonResponse;
+import com.chat.base.ui.Theme;
 import com.chat.base.utils.WKToastUtils;
 import com.chat.uikit.R;
 import com.chat.uikit.databinding.ActUpdatePasswordLayoutBinding;
@@ -40,10 +41,23 @@ public class UpdatePwdActivity extends WKBaseActivity<ActUpdatePasswordLayoutBin
     }
 
     @Override
+    protected void initView() {
+        wkVBinding.updateBtn.getBackground().setTint(Theme.colorAccount);
+        if (Theme.getDarkModeStatus(this)) {
+            wkVBinding.bgIv.setVisibility(android.view.View.GONE);
+            Theme.setColorFilter(this, wkVBinding.backIv, R.color.white);
+        } else {
+            wkVBinding.bgIv.setVisibility(android.view.View.VISIBLE);
+            Theme.setColorFilter(this, wkVBinding.backIv, R.color.colorDark);
+        }
+        Theme.setPressedBackground(wkVBinding.backIv);
+    }
+
+    @Override
     protected void initListener() {
         super.initListener();
-
-        wkVBinding.updateBtn.setOnClickListener( v -> {
+        wkVBinding.backIv.setOnClickListener(v -> finish());
+        wkVBinding.updateBtn.setOnClickListener(v -> {
             if (checkEditInputIsEmpty(wkVBinding.updatePwdEt, R.string.placeholder_pwd)) return;
             if (checkEditInputIsEmpty(wkVBinding.newPwdEt, R.string.update_pwd)) return;
             if (checkEditInputIsEmpty(wkVBinding.pwdConfirmEt, R.string.update_confirm_password)) return;
