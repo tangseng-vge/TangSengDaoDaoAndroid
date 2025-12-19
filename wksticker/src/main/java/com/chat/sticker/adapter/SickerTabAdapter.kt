@@ -4,6 +4,7 @@ import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
 import android.text.TextUtils
 import android.view.View
+import androidx.core.content.ContextCompat
 import com.chad.library.adapter.base.BaseQuickAdapter
 import com.chad.library.adapter.base.viewholder.BaseViewHolder
 import com.chat.base.config.WKApiConfig
@@ -27,8 +28,8 @@ class SickerTabAdapter :
                 imageView.colorFilter =
                     PorterDuffColorFilter(Theme.colorAccount, PorterDuff.Mode.MULTIPLY)
             } else
-                imageView.colorFilter =
-                    PorterDuffColorFilter(-0x7d746c, PorterDuff.Mode.MULTIPLY)
+                imageView.colorFilter = PorterDuffColorFilter(-0x7d746c, PorterDuff.Mode.MULTIPLY)
+
         }
     }
 
@@ -43,7 +44,7 @@ class SickerTabAdapter :
                 Theme.setColorFilter(context, imageView, R.color.popupTextColor)
             imageView.setImageResource(item.iconResource)
         } else {
-            if (!TextUtils.isEmpty(item.coverTgs)) {
+            if (!TextUtils.isEmpty(item.coverTgs) && item.category != "favorite") {
                 stickerView.showSticker(
                     item.coverTgs,
                     "",

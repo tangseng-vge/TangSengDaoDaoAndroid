@@ -6,6 +6,8 @@ import android.view.View
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.chat.base.base.WKBaseActivity
 import com.chat.base.endpoint.EndpointManager
@@ -20,6 +22,7 @@ import com.chat.sticker.entity.Sticker
 import com.chat.sticker.msg.StickerFormat
 import com.chat.sticker.service.StickerModel
 import java.io.File
+import kotlin.math.max
 
 /**
  * 1/3/21 7:44 PM
@@ -83,6 +86,20 @@ class CustomStickerActivity : WKBaseActivity<ActCustomStickerLayoutBinding>() {
         wkVBinding.recyclerView.layoutManager =
             StaggeredGridLayoutManager(5, StaggeredGridLayoutManager.VERTICAL)
         wkVBinding.recyclerView.adapter = adapter
+
+        ViewCompat.setOnApplyWindowInsetsListener(wkVBinding.root) { v: View, insets: WindowInsetsCompat ->
+            val systemBars =
+                insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val ime =
+                insets.getInsets(WindowInsetsCompat.Type.ime())
+            v.setPadding(
+                systemBars.left,
+                0,
+                systemBars.right,
+                max(systemBars.bottom.toDouble(), ime.bottom.toDouble()).toInt()
+            )
+            insets
+        }
     }
 
     override fun initListener() {

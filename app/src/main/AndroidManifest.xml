@@ -116,6 +116,7 @@
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true"
         android:enableOnBackInvokedCallback="false"
+        android:largeHeap="true"
         tools:ignore="GoogleAppIndexingWarning">
 
         <activity

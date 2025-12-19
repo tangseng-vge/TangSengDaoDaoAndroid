@@ -1,5 +1,6 @@
 package com.chat.sticker.adapter
 
+import android.net.Uri
 import android.text.TextUtils
 import android.view.View
 import android.widget.FrameLayout
@@ -14,9 +15,11 @@ import com.chat.base.ui.Theme
 import com.chat.base.ui.components.CheckBox
 import com.chat.base.utils.AndroidUtilities
 import com.chat.sticker.R
+import com.chat.sticker.WKStickerApplication
 import com.chat.sticker.entity.Sticker
 import com.chat.sticker.msg.StickerFormat
 import com.chat.sticker.ui.components.StickerView
+import java.io.File
 
 /**
  * 1/3/21 9:21 PM
@@ -51,20 +54,24 @@ class AddCustomStickerAdapter(
             holder.setGone(R.id.addIV, true)
             holder.setGone(R.id.stickerView, false)
             holder.setGone(R.id.checkBox, false)
-            if (item.format == StickerFormat.lim) {
-                stickerView.showSticker(item.path, item.placeholder, item.width, true)
-            } else {
-                val showURL: String = if (!TextUtils.isEmpty(item.localPath)) {
-                    item.localPath
-                } else WKApiConfig.getShowUrl(item.path)
-                Glide.with(context).asGif().load(showURL)
-                    .apply(GlideRequestOptions.getInstance().normalRequestOption())
-                    .into(stickerView.imageView)
-                stickerView.imageView.layoutParams.width = width
-                stickerView.imageView.layoutParams.height = width
-            }
+//            if (item.format == StickerFormat.lim) {
+                stickerView.showSticker(item.path, item.placeholder, WKStickerApplication.instance.stickerGridSize, true)
+//            } else {
+//                val showURL: String = if (!TextUtils.isEmpty(item.localPath)) {
+//                    item.localPath
+//                } else WKApiConfig.getShowUrl(item.path)
+//
+//                Glide.with(context)
+//                    .asGif()
+//                    .load(showURL)
+//                    .apply(GlideRequestOptions.getInstance().normalRequestOption())
+//                    .into(stickerView.imageView)
+//                stickerView.imageView.layoutParams.width = width
+//                stickerView.imageView.layoutParams.height = width
+//
+//            }
         }
-        stickerView.imageView.scaleType = ImageView.ScaleType.CENTER
+//        stickerView.imageView.scaleType = ImageView.ScaleType.CENTER
         if (item.showManager) {
             checkBox.visibility = View.VISIBLE
         } else checkBox.visibility = View.GONE

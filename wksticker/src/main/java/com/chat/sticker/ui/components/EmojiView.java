@@ -133,6 +133,7 @@ public class EmojiView extends FrameLayout {
                 showBottomTab(dy < 0, true);
             }
         });
+        stickerTabList = new ArrayList<>();
 
         emojiGridView.setOnTouchListener((v, event) -> {
             if (colorPickerView != null) {
@@ -336,6 +337,7 @@ public class EmojiView extends FrameLayout {
         });
 
         stickersGridAdapter = new StickersGridAdapter();
+        sickerTabAdapter = new SickerTabAdapter();
         getStickers(context);
         stickersGridAdapter.addChildClickViewIds(R.id.stickerView);
         stickersGridAdapter.setOnItemChildClickListener((adapter12, view, position) -> {
@@ -522,7 +524,6 @@ public class EmojiView extends FrameLayout {
             typeTabs.setVisibility(VISIBLE);
         }
 
-        sickerTabAdapter = new SickerTabAdapter();
         sickerTabAdapter.addChildClickViewIds(R.id.stickerView);
         sickerTabAdapter.setOnItemChildClickListener((adapter13, view, position) -> {
             StickerTab stickerTab = sickerTabAdapter.getData().get(position);
@@ -542,7 +543,7 @@ public class EmojiView extends FrameLayout {
         RecyclerView stickerTabRecyclerView = new RecyclerView(context);
         stickerTabRecyclerView.setLayoutManager(new LinearLayoutManager(context, RecyclerView.HORIZONTAL, false));
         stickerTabRecyclerView.setAdapter(sickerTabAdapter);
-        sickerTabAdapter.setList(stickerTabList);
+//        sickerTabAdapter.setList(stickerTabList);
 
         FrameLayout tabLayout = new FrameLayout(context);
         tabLayout.addView(stickerTabRecyclerView, 0, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.START | Gravity.TOP));
@@ -556,12 +557,15 @@ public class EmojiView extends FrameLayout {
 
         EndpointManager.getInstance().setMethod("refresh_custom_sticker", object -> {
             getStickers(context);
+//            sickerTabAdapter.setList(stickerTabList);
+//            sickerTabAdapter.notifyDataSetChanged();
             return null;
         });
 
         EndpointManager.getInstance().setMethod("", EndpointCategory.wkRefreshStickerCategory, object -> {
             getStickers(context);
-            sickerTabAdapter.setList(stickerTabList);
+//            sickerTabAdapter.setList(stickerTabList);
+//            sickerTabAdapter.notifyDataSetChanged();
             return null;
         });
     }
@@ -757,7 +761,9 @@ public class EmojiView extends FrameLayout {
     private void getStickers(Context context) {
         ArrayList<StickerCategory> categories = StickerDBManager.Companion.getInstance().getUserStickerCategory();
         List<StickerUI> stickerUIList = new ArrayList<>();
-        stickerTabList = new ArrayList<>();
+        if(WKReader.isNotEmpty(stickerTabList)){
+            stickerTabList.clear();
+        }
         List<Sticker> customList = StickerDBManager.Companion.getInstance().getUserCustomSticker();
         if (WKReader.isNotEmpty(customList)) {
             stickerUIList.add(new StickerUI(0, context.getString(R.string.favorite), "favorite", null));
@@ -781,6 +787,9 @@ public class EmojiView extends FrameLayout {
             }
         }
         stickersGridAdapter.setList(stickerUIList);
+        sickerTabAdapter.setList(stickerTabList);
+        sickerTabAdapter.notifyDataSetChanged();
+
     }
 
     FrameLayout linearLayout;

@@ -4,7 +4,6 @@
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="@color/homeColor"
-    android:fitsSystemWindows="true"
     android:orientation="vertical">
 
     <LinearLayout
@@ -22,7 +21,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:background="@drawable/radian_normal_layout"
-            android:fitsSystemWindows="true">
+            >
 
             <androidx.appcompat.widget.AppCompatImageView
                 android:id="@+id/searchIv"

@@ -65,15 +65,15 @@ public class StickerView extends FrameLayout implements WKProgressManager.IProgr
         this.context = context;
         aXrLottieImageView = new RLottieImageView(context);
         aXrLottieImageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        aXrLottieImageView.setVisibility(View.GONE);
+//        aXrLottieImageView.setVisibility(View.GONE);
         addView(aXrLottieImageView, LayoutHelper.createFrame(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER));
 
         imageView = new AppCompatImageView(context);
-        imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+//        imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
         imageView.setVisibility(View.GONE);
         addView(imageView, new LayoutParams(
-                LayoutParams.WRAP_CONTENT,
-                LayoutParams.WRAP_CONTENT
+                LayoutParams.MATCH_PARENT,
+                LayoutParams.MATCH_PARENT
         ));
     }
 
@@ -146,11 +146,14 @@ public class StickerView extends FrameLayout implements WKProgressManager.IProgr
             if(url.endsWith(".png")){
                 Glide.with(context)
                         .load(url)
+                        .skipMemoryCache(true)
                         .into(imageView);
             }else{
                 Glide.with(context)
                         .asGif()
                         .load(url)
+                        .apply(GlideRequestOptions.getInstance().normalRequestOption())
+                        .skipMemoryCache(true)
                         .into(imageView);
             }
 

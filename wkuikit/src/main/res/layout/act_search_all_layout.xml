@@ -3,7 +3,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/homeColor"
-    android:fitsSystemWindows="true"
     android:orientation="vertical">
 
     <LinearLayout
@@ -20,7 +19,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:background="@drawable/radian_normal_layout"
-            android:fitsSystemWindows="true">
+            >
 
             <androidx.appcompat.widget.AppCompatImageView
                 android:id="@+id/searchIv"

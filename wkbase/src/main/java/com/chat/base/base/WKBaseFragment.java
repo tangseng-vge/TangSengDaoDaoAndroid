@@ -10,6 +10,9 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -53,7 +56,27 @@ public abstract class WKBaseFragment<WKVBinding extends ViewBinding> extends Fra
                 parent.removeView(mContentView);
             }
         }
+        applyInsets(mContentView);
         return mContentView;
+    }
+
+    private void applyInsets(View root) {
+        ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
+
+            Insets systemBars =
+                    insets.getInsets(WindowInsetsCompat.Type.systemBars());
+
+            Insets ime =
+                    insets.getInsets(WindowInsetsCompat.Type.ime());
+
+            v.setPadding(
+                    systemBars.left,
+                    0,
+                    systemBars.right,
+                    Math.max(systemBars.bottom, ime.bottom)
+            );
+            return insets;
+        });
     }
 
     protected abstract WKVBinding getViewBinding();
