@@ -3,9 +3,9 @@ package com.mvc.bage
 import android.content.Intent
 import android.os.Bundle
 import android.text.Spannable
-import android.util.Log
 import android.text.SpannableStringBuilder
 import android.text.TextUtils
+import android.util.Log
 import android.view.View
 import androidx.core.content.ContextCompat
 import com.chat.base.WKBaseApplication
@@ -13,9 +13,11 @@ import com.chat.base.base.WKBaseActivity
 import com.chat.base.config.WKApiConfig
 import com.chat.base.config.WKConfig
 import com.chat.base.config.WKSharedPreferencesUtil
+import com.chat.base.ui.Theme
 import com.chat.base.ui.components.NormalClickableContent
 import com.chat.base.ui.components.NormalClickableSpan
 import com.chat.base.utils.WKDialogUtils
+import com.chat.base.utils.systembar.WKStatusBarUtils
 import com.chat.login.ui.PerfectUserInfoActivity
 import com.chat.login.ui.WKLoginActivity
 import com.chat.uikit.TabActivity

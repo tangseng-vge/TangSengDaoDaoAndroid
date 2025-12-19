@@ -13,6 +13,7 @@ import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.Window;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
@@ -42,6 +43,7 @@ import com.chat.base.utils.WKReader;
 import com.chat.base.utils.WKTimeUtils;
 import com.chat.base.utils.language.WKMultiLanguageUtil;
 import com.chat.base.utils.rxpermissions.RxPermissions;
+import com.chat.base.utils.systembar.WKStatusBarUtils;
 import com.chat.uikit.contacts.service.FriendModel;
 import com.chat.uikit.databinding.ActTabMainBinding;
 import com.chat.uikit.fragment.ChatFragment;
@@ -107,6 +109,8 @@ public class TabActivity extends WKBaseActivity<ActTabMainBinding> {
                 EndpointManager.getInstance().invoke("show_open_notification_dialog", this);
             }
         }
+
+        statusBarMode();
 
         chatIV = new RLottieImageView(this);
         contactsIV = new RLottieImageView(this);
@@ -198,6 +202,15 @@ public class TabActivity extends WKBaseActivity<ActTabMainBinding> {
         playAnimation(0);
 
 
+    }
+
+    private void statusBarMode() {
+        Window window = getWindow();
+        if (window == null) return;
+        WKStatusBarUtils.transparentStatusBar(window);
+        if (!Theme.getDarkModeStatus(this))
+            WKStatusBarUtils.setDarkMode(window);
+        else WKStatusBarUtils.setLightMode(window);
     }
 
     @Override

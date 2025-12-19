@@ -3,6 +3,8 @@ package com.chat.base.base;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
+import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.os.Build;
@@ -19,6 +21,11 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewbinding.ViewBinding;
@@ -41,6 +48,7 @@ import com.chat.base.utils.systembar.WKStatusBarUtils;
 import com.chat.base.views.CommonAnim;
 import com.chat.base.views.swipeback.SwipeBackActivity;
 import com.chat.base.views.swipeback.SwipeBackLayout;
+import com.google.android.material.color.MaterialColors;
 import com.lxj.xpopup.XPopup;
 import com.lxj.xpopup.impl.LoadingPopupView;
 
@@ -69,9 +77,15 @@ public abstract class WKBaseActivity<WKVBinding extends ViewBinding> extends Swi
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
             // 设置窗口为不透明
             getWindow().setFormat(android.graphics.PixelFormat.OPAQUE);
+
         }
         
         super.onCreate(savedInstanceState);
+
+        //han
+
+        WindowCompat.setDecorFitsSystemWindows(getWindow(),true);
+
         //禁止横屏
         // setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         //这个特性是安卓5.0以后才支持的所以需要对系统版本号做判断
@@ -102,6 +116,32 @@ public abstract class WKBaseActivity<WKVBinding extends ViewBinding> extends Swi
         initData();
         ActManagerUtils.getInstance().addActivity(this);
     }
+
+    @Override
+    public void setContentView(View view) {
+        super.setContentView(view);
+        applyInsetsToRoot();
+    }
+
+    private void applyInsetsToRoot() {
+        View root = findViewById(android.R.id.content);
+        if (root == null) return;
+
+        ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
+            Insets systemBars =
+                    insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            Insets ime =
+                    insets.getInsets(WindowInsetsCompat.Type.ime());
+            v.setPadding(
+                    systemBars.left,
+                    systemBars.top,
+                    systemBars.right,
+                    0
+            );
+            return insets;
+        });
+    }
+
 
     /**
      * 初始化滑动返回。在 super.onCreate(savedInstanceState) 之前调用该方法

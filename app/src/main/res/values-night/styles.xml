@@ -13,7 +13,6 @@
         <item name="android:windowBackground">@color/transparent</item>
 <!--        <item name="android:windowIsTranslucent">true</item>-->
 <!--        <item name="android:windowAnimationStyle">@style/animation_translucent_translate</item>-->
-
     </style>
 
 </resources>
