@@ -43,6 +43,7 @@ public class SearchAllActivity extends WKBaseActivity<ActSearchAllLayoutBinding>
     protected ActSearchAllLayoutBinding getViewBinding() {
         return ActSearchAllLayoutBinding.inflate(getLayoutInflater());
     }
+    
 
     @Override
     protected void initPresenter() {
@@ -52,6 +53,14 @@ public class SearchAllActivity extends WKBaseActivity<ActSearchAllLayoutBinding>
 
     @Override
     protected void initView() {
+        // 设置状态栏占位高度
+        View statusBarView = findViewById(R.id.statusBarView);
+        if (statusBarView != null) {
+            android.view.ViewGroup.LayoutParams params = statusBarView.getLayoutParams();
+            params.height = com.chat.base.utils.systembar.WKStatusBarUtils.getStatusBarHeight(this);
+            statusBarView.setLayoutParams(params);
+        }
+        
         wkVBinding.searchKeyTv.setTextColor(Theme.colorAccount);
         Theme.setPressedBackground(wkVBinding.cancelTv);
         userAdapter = new SearchChannelAdapter();

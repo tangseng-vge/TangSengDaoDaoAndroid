@@ -164,6 +164,15 @@ public abstract class WKBaseFragment<WKVBinding extends ViewBinding> extends Fra
         if (mContentView == null) {
             return;
         }
+        
+        // 动态设置statusBarView的高度为实际状态栏高度
+        View statusBarView = mContentView.findViewById(R.id.statusBarView);
+        if (statusBarView != null && getContext() != null) {
+            ViewGroup.LayoutParams params = statusBarView.getLayoutParams();
+            params.height = com.chat.base.utils.systembar.WKStatusBarUtils.getStatusBarHeight(getContext());
+            statusBarView.setLayoutParams(params);
+        }
+        
         View titleBar = mContentView.findViewById(R.id.titleBarLayout);
         if (titleBar == null) return;
         //设置标题

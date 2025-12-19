@@ -11,6 +11,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -69,23 +70,11 @@ public abstract class WKBaseActivity<WKVBinding extends ViewBinding> extends Swi
     @SuppressLint("SourceLockedOrientationActivity")
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
-        // Android 15 (API 35) 滑动返回残影修复
-        if (Build.VERSION.SDK_INT >= 35) {
-            // 禁用窗口透明以避免残影
-            getWindow().setBackgroundDrawableResource(android.R.color.white);
-            // 确保窗口不透明
-            getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            // 设置窗口为不透明
-            getWindow().setFormat(android.graphics.PixelFormat.OPAQUE);
-
-        }
-        
         super.onCreate(savedInstanceState);
-
-        //han
-
-        WindowCompat.setDecorFitsSystemWindows(getWindow(),true);
-
+        
+        // 让 fitsSystemWindows 生效
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        
         //禁止横屏
         // setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         //这个特性是安卓5.0以后才支持的所以需要对系统版本号做判断
@@ -120,28 +109,29 @@ public abstract class WKBaseActivity<WKVBinding extends ViewBinding> extends Swi
     @Override
     public void setContentView(View view) {
         super.setContentView(view);
-        applyInsetsToRoot();
-    }
-
-    private void applyInsetsToRoot() {
-        View root = findViewById(android.R.id.content);
-        if (root == null) return;
-
-        ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
-            Insets systemBars =
-                    insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            Insets ime =
-                    insets.getInsets(WindowInsetsCompat.Type.ime());
-            v.setPadding(
-                    systemBars.left,
-                    systemBars.top,
-                    systemBars.right,
-                    0
-            );
-            return insets;
+        
+        // 立即处理 statusBarView 的高度
+        View statusBarView = findViewById(R.id.statusBarView);
+        if (statusBarView != null) {
+            ViewGroup.LayoutParams params = statusBarView.getLayoutParams();
+            params.height = WKStatusBarUtils.getStatusBarHeight(this);
+            statusBarView.setLayoutParams(params);
+        }
+        
+        // 对于有 fitsSystemWindows 的根布局，手动处理 insets
+        ViewCompat.setOnApplyWindowInsetsListener(view, (v, windowInsets) -> {
+            Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
+            
+            // 检查根布局是否设置了 fitsSystemWindows
+            if (v.getFitsSystemWindows()) {
+                v.setPadding(insets.left, insets.top, insets.right, insets.bottom);
+                return WindowInsetsCompat.CONSUMED;
+            }
+            
+            // 没有 fitsSystemWindows，继续传递 insets
+            return windowInsets;
         });
     }
-
 
     /**
      * 初始化滑动返回。在 super.onCreate(savedInstanceState) 之前调用该方法
@@ -382,17 +372,28 @@ public abstract class WKBaseActivity<WKVBinding extends ViewBinding> extends Swi
 
     //初始化标题栏
     private void initTitleBar() {
-        View titleBar = findViewById(R.id.titleBarLayout);
-
-        if (titleBar == null) return;
+        // 先处理 statusBarView（可能存在于没有标准标题栏的页面）
         View statusBarView = findViewById(R.id.statusBarView);
+        if (statusBarView != null) {
+            ViewGroup.LayoutParams params = statusBarView.getLayoutParams();
+            params.height = WKStatusBarUtils.getStatusBarHeight(this);
+            statusBarView.setLayoutParams(params);
+        }
+        
+        View titleBar = findViewById(R.id.titleBarLayout);
+        if (titleBar == null) return;
+        
         if (getTitleBg(titleBar) != -1) {
             int color = getTitleBg(titleBar);
             titleBar.setBackgroundColor(ContextCompat.getColor(this, color));
-            statusBarView.setBackgroundColor(ContextCompat.getColor(this, color));
+            if (statusBarView != null) {
+                statusBarView.setBackgroundColor(ContextCompat.getColor(this, color));
+            }
         }
         boolean hideStatusBar = hideStatusBar();
-        statusBarView.setVisibility(hideStatusBar ? View.GONE : View.VISIBLE);
+        if (statusBarView != null) {
+            statusBarView.setVisibility(hideStatusBar ? View.GONE : View.VISIBLE);
+        }
         ImageView backIv = findViewById(R.id.backIv);
         backIv.setColorFilter(new PorterDuffColorFilter(ContextCompat.getColor(this, R.color.titleBarIcon), PorterDuff.Mode.MULTIPLY));
 

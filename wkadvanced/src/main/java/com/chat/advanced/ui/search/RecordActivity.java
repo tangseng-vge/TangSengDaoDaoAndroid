@@ -45,10 +45,16 @@ public class RecordActivity extends WKBaseActivity<ActSearchRecordLayoutBinding>
     protected ActSearchRecordLayoutBinding getViewBinding() {
         return ActSearchRecordLayoutBinding.inflate(getLayoutInflater());
     }
+    
 
     @Override
     protected void setTitle(TextView titleTv) {
 
+    }
+    
+    @Override
+    protected boolean hideStatusBar() {
+        return false;
     }
 
     @Override
@@ -59,6 +65,14 @@ public class RecordActivity extends WKBaseActivity<ActSearchRecordLayoutBinding>
 
     @Override
     protected void initView() {
+        // 设置状态栏占位高度
+        View statusBarView = findViewById(R.id.statusBarView);
+        if (statusBarView != null) {
+            android.view.ViewGroup.LayoutParams params = statusBarView.getLayoutParams();
+            params.height = com.chat.base.utils.systembar.WKStatusBarUtils.getStatusBarHeight(this);
+            statusBarView.setLayoutParams(params);
+        }
+        
         wkVBinding.searchIv.setColorFilter(new PorterDuffColorFilter(ContextCompat.getColor(this, R.color.color999), PorterDuff.Mode.MULTIPLY));
         adapter = new ResultAdapter("", new ArrayList<>());
         initAdapter(wkVBinding.recyclerView, adapter);
