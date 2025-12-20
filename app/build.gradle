@@ -30,8 +30,8 @@ android {
         applicationId "com.mvc.bage"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 235
-        versionName "2.3.5"
+        versionCode 237
+        versionName "2.3.7"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
