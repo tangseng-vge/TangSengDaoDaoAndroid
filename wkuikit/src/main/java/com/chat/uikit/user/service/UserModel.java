@@ -370,7 +370,7 @@ public class UserModel extends WKBaseModel {
                     member.memberName = result.group_member.name;
                     member.channelID = result.group_member.group_no;
                     member.channelType = WKChannelType.GROUP;
-                    member.isDeleted = result.group_member.is_deleted;
+                    member.isDeleted = result.group_member.is_deleted; 
                     member.version = result.group_member.version;
                     member.role = result.group_member.role;
                     member.status = result.group_member.status;

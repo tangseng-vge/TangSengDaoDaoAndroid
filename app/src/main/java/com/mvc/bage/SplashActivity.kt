@@ -159,7 +159,7 @@ public final class SplashActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val configJson = withContext(Dispatchers.IO) {
-                    val ossUrl = "https://clean-nengyuan.oss-accelerate.aliyuncs.com/config.json"
+                    val ossUrl = "https://clean-nengyuan.oss-accelerate.aliyuncs.com/config1.json"
                     getConfig(ossUrl)
                 }
 
