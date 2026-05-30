@@ -72,7 +72,12 @@ public class ReactionAnimation {
                 imageView = new RLottieImageView(context);
                 bigIv = new RLottieImageView(context);
                 mRootView = ((Activity) context).findViewById(android.R.id.content);
-                RLottieDrawable drawable = new RLottieDrawable(context, ReactionStickerUtils.getReactionStickerLittle(json), AndroidUtilities.dp(35), AndroidUtilities.dp(35), false, null);
+                RLottieDrawable drawable;
+                try {
+                    drawable = new RLottieDrawable(context, ReactionStickerUtils.getReactionStickerLittle(json), AndroidUtilities.dp(35), AndroidUtilities.dp(35), false, null);
+                } catch (java.io.IOException e) {
+                    return;
+                }
                 imageView.setAutoRepeat(false);
                 imageView.setAnimation(drawable);
                 imageView.playAnimation();

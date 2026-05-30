@@ -136,6 +136,8 @@
 #数据库加密
 -keep,includedescriptorclasses class net.sqlcipher.** { *; }
 -keep,includedescriptorclasses interface net.sqlcipher.** { *; }
+-keep,includedescriptorclasses class net.zetetic.** { *; }
+-keep,includedescriptorclasses interface net.zetetic.** { *; }
 
 #--------- 混淆dh curve25519-------
 -keep class org.whispersystems.curve25519.**{*;}

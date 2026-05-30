@@ -101,13 +101,16 @@ dependencies {
     api 'org.jsoup:jsoup:1.15.2'
     api 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1'
 //    api 'com.github.CarGuo.GSYVideoPlayer:gsyvideoplayer:v10.0.0'
-    implementation 'com.github.CarGuo.GSYVideoPlayer:gsyvideoplayer:v11.0.0'
+    implementation('com.github.CarGuo.GSYVideoPlayer:gsyvideoplayer:v11.0.0') {
+        exclude group: 'io.antmedia', module: 'rtmp-client'
+    }
     api project(path: ':MyLibs:rlottie')
     // 远程仓库
-    api 'com.github.WuKongIM:WuKongIMAndroidSDK:1.4.5'
+    api 'com.github.WuKongIM:WuKongIMAndroidSDK:1.5.3'
     api 'com.tencent.bugly:crashreport:latest.release'
-    implementation "net.zetetic:android-database-sqlcipher:4.5.3"
-    implementation "androidx.sqlite:sqlite-ktx:2.5.0"
+    // 16KB 对齐：悟空 SDK 1.5.3 已传递依赖 16KB 对齐的 net.zetetic:sqlcipher-android，
+    // 不再手动引入已废弃且仅 4KB 对齐的 android-database-sqlcipher
+    implementation "androidx.sqlite:sqlite-ktx:2.6.2"
     implementation 'org.whispersystems:curve25519-android:0.5.0'
     implementation 'org.whispersystems:signal-protocol-android:2.8.1'
     testImplementation 'org.testng:testng:6.9.6'

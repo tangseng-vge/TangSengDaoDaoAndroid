@@ -42,6 +42,6 @@ android {
 }
 
 dependencies {
-    implementation 'com.facebook.fresco:fresco:2.6.0'
+    implementation 'com.facebook.fresco:fresco:3.6.0'
     api project(':wkbase')
 }

@@ -29,7 +29,7 @@ import com.chat.base.utils.WKDeviceUtils;
 import com.chat.base.utils.WKFileUtils;
 import com.chat.base.utils.WKReader;
 
-import org.telegram.ui.Components.RLottieApplication;
+import org.telegram.lottiejson.LottieUtils;
 
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
@@ -87,7 +87,7 @@ public class WKBaseApplication {
         initCacheDir();
         new Thread(() -> {
             EmojiManager.getInstance().init();
-            RLottieApplication.getInstance().init(context);
+            LottieUtils.init(context);
             CrashHandler.getInstance().init(context);
             //158638
 //            HttpsUtils.SSLParams sslParams1 = HttpsUtils.getSslSocketFactory();

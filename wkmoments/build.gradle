@@ -36,7 +36,9 @@ android {
 
 dependencies {
     api project(':wkbase')
-    implementation 'com.github.CarGuo.GSYVideoPlayer:gsyvideoplayer:v11.0.0'
+    implementation('com.github.CarGuo.GSYVideoPlayer:gsyvideoplayer:v11.0.0') {
+        exclude group: 'io.antmedia', module: 'rtmp-client'
+    }
 
     kapt "com.android.databinding:compiler:3.1.4"
 }
