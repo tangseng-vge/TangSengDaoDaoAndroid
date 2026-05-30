@@ -133,6 +133,14 @@
 -dontwarn com.xinbida.wukongim.**
 -keep class com.xinbida.wukongim.**{*;}
 
+# 消息 item provider 通过 itemProvider.getClass().newInstance() 反射创建，
+# 必须保留其无参构造，并禁止 R8 类合并/重命名，否则 release 启动崩溃：
+# InstantiationException: ... has no zero argument constructor
+-keep class * extends com.chat.base.msgitem.WKChatBaseProvider {
+    public <init>();
+}
+-keep class com.chat.base.msgitem.WKMsgItemViewManager { *; }
+
 #数据库加密
 -keep,includedescriptorclasses class net.sqlcipher.** { *; }
 -keep,includedescriptorclasses interface net.sqlcipher.** { *; }

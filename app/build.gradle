@@ -30,8 +30,8 @@ android {
         applicationId "com.mvc.bage"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 238
-        versionName "2.3.8"
+        versionCode 239
+        versionName "2.3.9"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -46,7 +46,7 @@ android {
             //根据需要 自行选择添加的对应cpu类型的.so库。
             //临时：仅打包 arm64-v8a 用于 16KB 验证（验证完可恢复下面被注释的多 ABI 配置）
 //            abiFilters 'arm64-v8a'
-            abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+            abiFilters 'arm64-v8a'
         }
 //        compileSdkPreview = "UpsideDownCake"
     }
