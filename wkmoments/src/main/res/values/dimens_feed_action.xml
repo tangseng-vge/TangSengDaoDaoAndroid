@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="feed_action_popup_corner_radius">10dp</dimen>
+    <dimen name="feed_action_popup_elevation">12dp</dimen>
+    <!-- 为 PopupWindow 预留阴影绘制区域，避免四角被裁切 -->
+    <dimen name="feed_action_popup_shadow_inset">14dp</dimen>
+    <!-- 相对 tvMore 的微调：向右、向上贴近锚点 -->
+    <dimen name="feed_action_popup_anchor_offset_x">6dp</dimen>
+    <dimen name="feed_action_popup_anchor_gap_y">2dp</dimen>
+</resources>

@@ -1,11 +1,17 @@
 package com.chat.uikit.chat.adapter;
 
+import android.annotation.SuppressLint;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.TransitionDrawable;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.Typeface;
 import android.text.TextUtils;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -13,6 +19,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.chad.library.adapter.base.viewholder.BaseViewHolder;
@@ -22,7 +29,6 @@ import com.chat.base.emoji.MoonUtil;
 import com.chat.base.endpoint.EndpointManager;
 import com.chat.base.endpoint.entity.AvatarOtherViewMenu;
 import com.chat.base.endpoint.entity.ShowCommunityAvatarMenu;
-import com.chat.base.entity.PopupMenuItem;
 import com.chat.base.entity.WKChannelState;
 import com.chat.base.msgitem.WKContentType;
 import com.chat.base.msgitem.WKMsgItemViewManager;
@@ -62,18 +68,79 @@ import java.util.Objects;
  * 会话记录适配器
  */
 public class ChatConversationAdapter extends BaseQuickAdapter<ChatConversationMsg, BaseViewHolder> {
+    /** 左滑后露出右侧 2/3 操作区，会话内容保留 1/3 宽度 */
+    private static final float SWIPE_OPEN_RATIO = 2f / 3f;
+    private static final int STICKY_TRANSITION_MS = 220;
+    private static final int SWIPE_CLOSE_DURATION_MS = 260;
+    private static final float SWIPE_CLOSE_THRESHOLD_RATIO = 0.35f;
+
     private IListener iListener;
+    private RecyclerView recyclerView;
+    private int openedPosition = RecyclerView.NO_POSITION;
+    private int touchSlop;
 
     public ChatConversationAdapter(@Nullable List<ChatConversationMsg> data) {
         super(R.layout.item_chat_conv_layout, data);
     }
 
+    public void setRecyclerView(RecyclerView recyclerView) {
+        this.recyclerView = recyclerView;
+        this.touchSlop = ViewConfiguration.get(recyclerView.getContext()).getScaledTouchSlop();
+    }
+
+    public void closeOpenedSwipeIfNeeded(RecyclerView rv, MotionEvent e) {
+        if (openedPosition == RecyclerView.NO_POSITION || e.getAction() != MotionEvent.ACTION_DOWN) {
+            return;
+        }
+        View child = rv.findChildViewUnder(e.getX(), e.getY());
+        int touchedPosition = child == null ? RecyclerView.NO_POSITION : rv.getChildAdapterPosition(child);
+        if (touchedPosition != openedPosition) {
+            closeOpenedSwipe();
+        }
+    }
+
+    public void closeOpenedSwipe() {
+        if (openedPosition == RecyclerView.NO_POSITION || recyclerView == null) {
+            return;
+        }
+        RecyclerView.ViewHolder holder = recyclerView.findViewHolderForAdapterPosition(openedPosition);
+        openedPosition = RecyclerView.NO_POSITION;
+        if (holder instanceof BaseViewHolder baseHolder) {
+            View contentLayout = baseHolder.getView(R.id.contentLayout);
+            if (contentLayout.getTranslationX() < 0f) {
+                animateSwipeClosed(baseHolder);
+                return;
+            }
+            resetSwipeViews(baseHolder);
+        }
+    }
+
+    public boolean isSwipeOpen(int position) {
+        return openedPosition == position;
+    }
+
+    /** 收起所有已左滑展开的会话项（离开页面、切换 Tab、打开搜索等场景） */
+    public void dismissAllSwipe() {
+        openedPosition = RecyclerView.NO_POSITION;
+        if (recyclerView == null) {
+            return;
+        }
+        for (int i = 0; i < recyclerView.getChildCount(); i++) {
+            View child = recyclerView.getChildAt(i);
+            RecyclerView.ViewHolder holder = recyclerView.getChildViewHolder(child);
+            if (holder instanceof BaseViewHolder) {
+                resetSwipeViews((BaseViewHolder) holder);
+            }
+        }
+    }
+
     @Override
     protected void convert(@NonNull final BaseViewHolder helper, ChatConversationMsg conversationMsg) {
         WKUIConversationMsg item = conversationMsg.uiConversationMsg;
+        restoreOrResetSwipe(helper);
         setUnreadCount(helper, conversationMsg, false);
         showTime(helper, item);
-        showChannel(helper, item);
+        showChannel(helper, conversationMsg);
         showContent(helper, item);
         showReminders(helper, conversationMsg);
         setStatus(helper, item, false);
@@ -104,7 +171,7 @@ public class ChatConversationAdapter extends BaseQuickAdapter<ChatConversationMs
                 chatConversationMsg.isResetTyping = false;
             }
             if (chatConversationMsg.isRefreshChannelInfo) {
-                showChannel(baseViewHolder, item);
+                showChannel(baseViewHolder, chatConversationMsg);
                 chatConversationMsg.isRefreshChannelInfo = false;
             }
             if (chatConversationMsg.isResetReminders) {
@@ -382,8 +449,9 @@ public class ChatConversationAdapter extends BaseQuickAdapter<ChatConversationMs
         }
     }
 
-    private void showChannel(@NotNull BaseViewHolder helper, WKUIConversationMsg item) {
-        addEvent(helper, item);
+    private void showChannel(@NotNull BaseViewHolder helper, @NotNull ChatConversationMsg conversationMsg) {
+        WKUIConversationMsg item = conversationMsg.uiConversationMsg;
+        addEvent(helper, item, conversationMsg);
         String showName = "";
         if (item.channelID.equals(WKSystemAccount.system_file_helper)) {
             showName = getContext().getString(R.string.wk_file_helper);
@@ -391,7 +459,6 @@ public class ChatConversationAdapter extends BaseQuickAdapter<ChatConversationMs
             showName = getContext().getString(R.string.wk_system_notice);
         }
         helper.setGone(R.id.groupIV, item.channelType != WKChannelType.GROUP);
-        boolean isTop;
         AvatarView avatarView = helper.getView(R.id.avatarView);
         avatarView.setSize(50);
         if (item.getWkChannel() != null) {
@@ -403,7 +470,6 @@ public class ChatConversationAdapter extends BaseQuickAdapter<ChatConversationMs
                 avatarView.showAvatar(item.getWkChannel(), true);
             }
             EndpointManager.getInstance().invoke("show_avatar_other_info", new AvatarOtherViewMenu(helper.getView(R.id.otherLayout), item.getWkChannel(), avatarView, false));
-            isTop = item.getWkChannel().top == 1;
             if (TextUtils.isEmpty(showName))
                 showName = TextUtils.isEmpty(item.getWkChannel().channelRemark) ? item.getWkChannel().channelName : item.getWkChannel().channelRemark;
             if (TextUtils.isEmpty(showName)) {
@@ -415,8 +481,6 @@ public class ChatConversationAdapter extends BaseQuickAdapter<ChatConversationMs
             categoryLayout.removeAllViews();
             ImageView forbiddenIv = helper.getView(R.id.forbiddenIv);
             forbiddenIv.setColorFilter(new PorterDuffColorFilter(ContextCompat.getColor(getContext(), R.color.color999), PorterDuff.Mode.MULTIPLY));
-            //设置是否置顶
-            helper.setBackgroundResource(R.id.contentLayout, isTop ? R.drawable.home_bg : R.drawable.layout_bg);
             if (item.getWkChannel().mute == 1) {
                 ImageView muteIV = new ImageView(getContext());
                 muteIV.setImageResource(R.mipmap.list_mute);
@@ -471,7 +535,86 @@ public class ChatConversationAdapter extends BaseQuickAdapter<ChatConversationMs
 //            if (!isScrolling)
             WKIM.getInstance().getChannelManager().fetchChannelInfo(item.channelID, item.channelType);
         }
+        applyStickyStyle(helper, conversationMsg);
         helper.setText(R.id.nameTv, showName);
+    }
+
+    private void applyStickyStyle(@NotNull BaseViewHolder helper, @NotNull ChatConversationMsg conversationMsg) {
+        WKUIConversationMsg item = conversationMsg.uiConversationMsg;
+        boolean isTop = item.getWkChannel() != null && item.getWkChannel().top == 1;
+        boolean animate = conversationMsg.stickyStateChanged;
+        conversationMsg.stickyStateChanged = false;
+        conversationMsg.isTop = isTop ? 1 : 0;
+
+        View contentLayout = helper.getView(R.id.contentLayout);
+        View indicator = helper.getView(R.id.topStickIndicator);
+        indicator.animate().cancel();
+        contentLayout.animate().cancel();
+
+        if (isTop) {
+            if (animate) {
+                animateStickyBackground(contentLayout, true);
+                animateStickyIndicator(indicator, true);
+            } else {
+                contentLayout.setBackgroundResource(R.drawable.bg_chat_conv_sticky);
+                indicator.setAlpha(1f);
+                indicator.setTranslationX(0f);
+                indicator.setVisibility(View.VISIBLE);
+            }
+        } else if (animate) {
+            animateStickyBackground(contentLayout, false);
+            animateStickyIndicator(indicator, false);
+        } else {
+            contentLayout.setBackgroundResource(R.drawable.layout_bg);
+            indicator.setVisibility(View.GONE);
+            indicator.setAlpha(1f);
+            indicator.setTranslationX(0f);
+        }
+    }
+
+    private void animateStickyBackground(View contentLayout, boolean toSticky) {
+        Drawable normal = ContextCompat.getDrawable(getContext(), R.drawable.layout_bg);
+        Drawable sticky = ContextCompat.getDrawable(getContext(), R.drawable.bg_chat_conv_sticky);
+        if (normal == null || sticky == null) {
+            contentLayout.setBackgroundResource(toSticky ? R.drawable.bg_chat_conv_sticky : R.drawable.layout_bg);
+            return;
+        }
+        Drawable[] layers = toSticky
+                ? new Drawable[]{normal.mutate(), sticky.mutate()}
+                : new Drawable[]{sticky.mutate(), normal.mutate()};
+        TransitionDrawable transition = new TransitionDrawable(layers);
+        contentLayout.setBackground(transition);
+        transition.startTransition(STICKY_TRANSITION_MS);
+    }
+
+    private void animateStickyIndicator(View indicator, boolean show) {
+        int width = indicator.getWidth();
+        if (width <= 0) {
+            width = getContext().getResources().getDimensionPixelSize(R.dimen.chat_sticky_indicator_width);
+        }
+        if (show) {
+            indicator.setVisibility(View.VISIBLE);
+            indicator.setAlpha(0f);
+            indicator.setTranslationX(-width);
+            indicator.animate()
+                    .alpha(1f)
+                    .translationX(0f)
+                    .setDuration(STICKY_TRANSITION_MS)
+                    .start();
+        } else if (indicator.getVisibility() == View.VISIBLE) {
+            indicator.animate()
+                    .alpha(0f)
+                    .translationX(-width)
+                    .setDuration(STICKY_TRANSITION_MS)
+                    .withEndAction(() -> {
+                        indicator.setVisibility(View.GONE);
+                        indicator.setAlpha(1f);
+                        indicator.setTranslationX(0f);
+                    })
+                    .start();
+        } else {
+            indicator.setVisibility(View.GONE);
+        }
     }
 
     private boolean isSetChatPwd(WKChannel channel) {
@@ -501,8 +644,7 @@ public class ChatConversationAdapter extends BaseQuickAdapter<ChatConversationMs
         }
     }
 
-    private void addEvent(@NotNull BaseViewHolder helper, WKUIConversationMsg item) {
-        //长按事件
+    private void addEvent(@NotNull BaseViewHolder helper, WKUIConversationMsg item, @NotNull ChatConversationMsg conversationMsg) {
         boolean top;
         boolean mute;
         if (item.getWkChannel() != null) {
@@ -512,14 +654,236 @@ public class ChatConversationAdapter extends BaseQuickAdapter<ChatConversationMs
             top = false;
             mute = false;
         }
-        List<PopupMenuItem> list = new ArrayList<>();
+
+        View muteAction = helper.getView(R.id.swipeActionMute);
+        View topAction = helper.getView(R.id.swipeActionTop);
+        View deleteAction = helper.getView(R.id.swipeActionDelete);
+
         if (item.getWkChannel() != null) {
-            list.add(new PopupMenuItem(getContext().getString(mute ? R.string.open_channel_notice : R.string.close_channel_notice), mute ? R.mipmap.msg_unmute : R.mipmap.msg_mute, () -> iListener.onClick(ItemMenu.mute, item)));
+            muteAction.setVisibility(View.VISIBLE);
+            helper.setImageResource(R.id.swipeMuteIcon, mute ? R.mipmap.msg_unmute : R.mipmap.msg_mute);
+            helper.setText(R.id.swipeMuteText, getContext().getString(mute ? R.string.open_channel_notice : R.string.close_channel_notice));
+            muteAction.setOnClickListener(v -> {
+                if (iListener != null) {
+                    closeOpenedSwipe();
+                    iListener.onClick(ItemMenu.mute, item);
+                }
+            });
+        } else {
+            muteAction.setVisibility(View.GONE);
+            muteAction.setOnClickListener(null);
         }
-        //list.add(new ChatLongClickEntity(2, item.unreadCount > 0 ? getContext().getString(R.string.sign_read_msg) : getContext().getString(R.string.sign_unread_msg)));
-        list.add(new PopupMenuItem(top ? getContext().getString(R.string.cancel_top) : getContext().getString(R.string.msg_top), top ? R.mipmap.msg_unpin : R.mipmap.msg_pin, () -> iListener.onClick(ItemMenu.top, item)));
-        list.add(new PopupMenuItem(getContext().getString(R.string.delete_msg), R.mipmap.msg_delete, () -> iListener.onClick(ItemMenu.delete, item)));
-        WKDialogUtils.getInstance().setViewLongClickPopup(helper.getView(R.id.contentLayout), list);
+
+        helper.setImageResource(R.id.swipeTopIcon, top ? R.mipmap.msg_unpin : R.mipmap.msg_pin);
+        helper.setText(R.id.swipeTopText, getContext().getString(top ? R.string.cancel_top : R.string.msg_top));
+        topAction.setOnClickListener(v -> {
+            if (iListener != null) {
+                conversationMsg.stickyStateChanged = true;
+                closeOpenedSwipe();
+                iListener.onClick(ItemMenu.top, item);
+            }
+        });
+
+        helper.setImageResource(R.id.swipeDeleteIcon, R.mipmap.msg_delete);
+        helper.setText(R.id.swipeDeleteText, getContext().getString(R.string.delete_msg));
+
+        int white = ContextCompat.getColor(getContext(), R.color.white);
+        Theme.setColorFilter(helper.getView(R.id.swipeMuteIcon), white);
+        Theme.setColorFilter(helper.getView(R.id.swipeTopIcon), white);
+        Theme.setColorFilter(helper.getView(R.id.swipeDeleteIcon), white);
+        deleteAction.setOnClickListener(v -> {
+            if (iListener != null) {
+                closeOpenedSwipe();
+                iListener.onClick(ItemMenu.delete, item);
+            }
+        });
+
+        bindSwipeTouch(helper);
+    }
+
+    private void restoreOrResetSwipe(@NotNull BaseViewHolder helper) {
+        int position = helper.getBindingAdapterPosition();
+        View contentLayout = helper.getView(R.id.contentLayout);
+        View swipeActionsContainer = helper.getView(R.id.swipeActionsContainer);
+        View swipeRootLayout = helper.getView(R.id.swipeRootLayout);
+        if (position == openedPosition) {
+            swipeRootLayout.post(() -> {
+                float maxSwipe = swipeRootLayout.getWidth() * SWIPE_OPEN_RATIO;
+                contentLayout.setTranslationX(-maxSwipe);
+                swipeActionsContainer.setVisibility(View.VISIBLE);
+                swipeActionsContainer.setAlpha(1f);
+            });
+        } else {
+            resetSwipeViews(helper);
+        }
+    }
+
+    private void resetSwipeViews(@NotNull BaseViewHolder helper) {
+        View contentLayout = helper.getView(R.id.contentLayout);
+        View swipeActionsContainer = helper.getView(R.id.swipeActionsContainer);
+        contentLayout.animate().cancel();
+        swipeActionsContainer.animate().cancel();
+        contentLayout.setTranslationX(0f);
+        contentLayout.setTag(R.id.contentLayout, null);
+        swipeActionsContainer.setAlpha(1f);
+        swipeActionsContainer.setVisibility(View.GONE);
+        if (helper.getBindingAdapterPosition() == openedPosition) {
+            openedPosition = RecyclerView.NO_POSITION;
+        }
+    }
+
+    private void updateSwipeActionsAlpha(@NotNull View swipeActionsContainer, float translationX, float maxSwipe) {
+        if (translationX >= 0f || maxSwipe <= 0f) {
+            swipeActionsContainer.setVisibility(View.GONE);
+            swipeActionsContainer.setAlpha(1f);
+            return;
+        }
+        swipeActionsContainer.setVisibility(View.VISIBLE);
+        swipeActionsContainer.setAlpha(Math.min(1f, -translationX / maxSwipe));
+    }
+
+    private void animateSwipeClosed(@NotNull BaseViewHolder helper) {
+        View contentLayout = helper.getView(R.id.contentLayout);
+        View swipeActionsContainer = helper.getView(R.id.swipeActionsContainer);
+        View swipeRootLayout = helper.getView(R.id.swipeRootLayout);
+        float maxSwipe = swipeRootLayout.getWidth() * SWIPE_OPEN_RATIO;
+        if (maxSwipe <= 0f || contentLayout.getTranslationX() >= 0f) {
+            resetSwipeViews(helper);
+            return;
+        }
+        contentLayout.animate().cancel();
+        swipeActionsContainer.animate().cancel();
+        swipeActionsContainer.setVisibility(View.VISIBLE);
+        contentLayout.animate()
+                .translationX(0f)
+                .setDuration(SWIPE_CLOSE_DURATION_MS)
+                .setInterpolator(new DecelerateInterpolator())
+                .setUpdateListener(animation ->
+                        updateSwipeActionsAlpha(swipeActionsContainer, contentLayout.getTranslationX(), maxSwipe))
+                .withEndAction(() -> resetSwipeViews(helper))
+                .start();
+    }
+
+    private void animateSwipeOpen(@NotNull BaseViewHolder helper, float maxSwipe, int position) {
+        View contentLayout = helper.getView(R.id.contentLayout);
+        View swipeActionsContainer = helper.getView(R.id.swipeActionsContainer);
+        contentLayout.animate().cancel();
+        swipeActionsContainer.setVisibility(View.VISIBLE);
+        contentLayout.animate()
+                .translationX(-maxSwipe)
+                .setDuration(SWIPE_CLOSE_DURATION_MS)
+                .setInterpolator(new DecelerateInterpolator())
+                .setUpdateListener(animation ->
+                        updateSwipeActionsAlpha(swipeActionsContainer, contentLayout.getTranslationX(), maxSwipe))
+                .withEndAction(() -> {
+                    swipeActionsContainer.setAlpha(1f);
+                    openedPosition = position;
+                })
+                .start();
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private void bindSwipeTouch(@NotNull BaseViewHolder helper) {
+        View contentLayout = helper.getView(R.id.contentLayout);
+        if (Boolean.TRUE.equals(contentLayout.getTag(R.id.swipeRootLayout))) {
+            return;
+        }
+        contentLayout.setTag(R.id.swipeRootLayout, Boolean.TRUE);
+
+        View swipeRootLayout = helper.getView(R.id.swipeRootLayout);
+        View swipeActionsContainer = helper.getView(R.id.swipeActionsContainer);
+        final float[] startX = {0f};
+        final float[] startY = {0f};
+        final float[] startTrans = {0f};
+        final boolean[] tracking = {false};
+        final boolean[] consumedSwipe = {false};
+
+        contentLayout.setOnTouchListener((v, event) -> {
+            if (recyclerView == null) {
+                return false;
+            }
+            int position = helper.getBindingAdapterPosition();
+            if (position == RecyclerView.NO_POSITION) {
+                return false;
+            }
+
+            switch (event.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    startX[0] = event.getX();
+                    startY[0] = event.getY();
+                    startTrans[0] = contentLayout.getTranslationX();
+                    tracking[0] = false;
+                    consumedSwipe[0] = false;
+                    contentLayout.setTag(R.id.contentLayout, null);
+                    return false;
+                case MotionEvent.ACTION_MOVE: {
+                    float dx = event.getX() - startX[0];
+                    float dy = event.getY() - startY[0];
+                    if (!tracking[0] && (Math.abs(dx) > touchSlop || Math.abs(dy) > touchSlop)) {
+                        tracking[0] = Math.abs(dx) > Math.abs(dy);
+                        if (tracking[0]) {
+                            if (openedPosition != RecyclerView.NO_POSITION && openedPosition != position) {
+                                closeOpenedSwipe();
+                            }
+                            recyclerView.requestDisallowInterceptTouchEvent(true);
+                        } else {
+                            return false;
+                        }
+                    }
+                    if (!tracking[0]) {
+                        return false;
+                    }
+                    float maxSwipe = swipeRootLayout.getWidth() * SWIPE_OPEN_RATIO;
+                    float newTrans = Math.max(-maxSwipe, Math.min(0f, startTrans[0] + dx));
+                    contentLayout.setTranslationX(newTrans);
+                    updateSwipeActionsAlpha(swipeActionsContainer, newTrans, maxSwipe);
+                    consumedSwipe[0] = true;
+                    return true;
+                }
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL:
+                    recyclerView.requestDisallowInterceptTouchEvent(false);
+                    float maxSwipe = swipeRootLayout.getWidth() * SWIPE_OPEN_RATIO;
+                    float currentTrans = contentLayout.getTranslationX();
+                    boolean wasOpened = startTrans[0] < -touchSlop || openedPosition == position;
+                    if (!tracking[0]) {
+                        if (wasOpened && currentTrans < -touchSlop) {
+                            animateSwipeClosed(helper);
+                            contentLayout.setTag(R.id.contentLayout, Boolean.TRUE);
+                            return true;
+                        }
+                        return false;
+                    }
+                    float totalDx = event.getX() - startX[0];
+                    if (wasOpened && (totalDx > touchSlop * 0.5f || currentTrans > -maxSwipe * SWIPE_CLOSE_THRESHOLD_RATIO)) {
+                        if (openedPosition == position) {
+                            openedPosition = RecyclerView.NO_POSITION;
+                        }
+                        animateSwipeClosed(helper);
+                    } else if (Math.abs(currentTrans) > maxSwipe * 0.25f) {
+                        if (openedPosition != position) {
+                            openedPosition = RecyclerView.NO_POSITION;
+                        }
+                        animateSwipeOpen(helper, maxSwipe, position);
+                    } else {
+                        if (openedPosition == position) {
+                            openedPosition = RecyclerView.NO_POSITION;
+                        }
+                        animateSwipeClosed(helper);
+                    }
+                    if (consumedSwipe[0]) {
+                        contentLayout.setTag(R.id.contentLayout, Boolean.TRUE);
+                    }
+                    return consumedSwipe[0];
+                default:
+                    return false;
+            }
+        });
+    }
+
+    public boolean wasSwipeConsumed(BaseViewHolder helper) {
+        View contentLayout = helper.getView(R.id.contentLayout);
+        return Boolean.TRUE.equals(contentLayout.getTag(R.id.contentLayout));
     }
 
     private void showCalling(final BaseViewHolder helper, ChatConversationMsg conversationMsg) {

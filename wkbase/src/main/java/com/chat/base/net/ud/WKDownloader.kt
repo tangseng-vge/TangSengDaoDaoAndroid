@@ -10,6 +10,10 @@ class WKDownloader private constructor() {
         }
     }
 
+    fun pauseDownload(url: String) {
+        Downloader.instance.pauseDownload(url)
+    }
+
     fun download(url: String, savePath: String, iProgress: WKProgressManager.IProgress?) {
         Downloader.instance.download(url, savePath, object : OnDownload {
             override fun invoke(url: String, progress: Int) = if (iProgress != null) {

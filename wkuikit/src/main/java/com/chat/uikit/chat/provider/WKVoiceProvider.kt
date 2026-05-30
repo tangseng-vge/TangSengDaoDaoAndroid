@@ -60,7 +60,7 @@ class WKVoiceProvider : WKChatBaseProvider() {
         resetCellBackground(parentView, uiChatMsgItemEntity, from)
         if (from == WKChatIteMsgFromType.SEND) {
             contentLayout.gravity = Gravity.END
-            voiceTimeTv.setTextColor(ContextCompat.getColor(context, R.color.color999))
+            voiceTimeTv.setTextColor(ContextCompat.getColor(context, R.color.white))
             playBtn.setShadowColor(ContextCompat.getColor(context, R.color.white))
         } else {
             contentLayout.gravity = Gravity.START
@@ -69,10 +69,19 @@ class WKVoiceProvider : WKChatBaseProvider() {
         }
 
         playBtn.setBindId(uiChatMsgItemEntity.wkMsg.clientMsgNO)
+        voiceWaveform.setBind(uiChatMsgItemEntity.wkMsg.clientMsgNO)
+        val isSender = from == WKChatIteMsgFromType.SEND
+        voiceWaveform.setSenderWaveStyle(isSender)
         if (WKPlayVoiceUtils.getInstance().playKey != uiChatMsgItemEntity.wkMsg.clientMsgNO) {
-            if (from == WKChatIteMsgFromType.SEND) {
+            if (isSender) {
                 voiceWaveform.isFresh = false
             } else voiceWaveform.isFresh = uiChatMsgItemEntity.wkMsg.voiceStatus == 0
+        }
+        val isCurrentPlaying = uiChatMsgItemEntity.isPlaying
+                || (WKPlayVoiceUtils.getInstance().playKey == uiChatMsgItemEntity.wkMsg.clientMsgNO
+                && WKPlayVoiceUtils.getInstance().isPlaying)
+        if (isSender) {
+            voiceWaveform.applySenderPlayingState(isCurrentPlaying)
         }
         val voiceContent = uiChatMsgItemEntity.wkMsg.baseContentMsgModel as WKVoiceContent
         voiceWaveform.layoutParams.width =
@@ -215,6 +224,7 @@ class WKVoiceProvider : WKChatBaseProvider() {
                     playBtn.setPlay()
                     uiChatMsgItemEntity.isPlaying = false
                     voiceWaveform.isFresh = false
+                    if (isSender) voiceWaveform.applySenderPlayingState(false)
                     playNext(key)
                 }
             }
@@ -224,6 +234,7 @@ class WKVoiceProvider : WKChatBaseProvider() {
                     voiceWaveform.setProgress(pg)
                     playBtn.setPause()
                     uiChatMsgItemEntity.isPlaying = true
+                    if (isSender) voiceWaveform.applySenderPlayingState(true)
                 }
             }
 
@@ -233,6 +244,7 @@ class WKVoiceProvider : WKChatBaseProvider() {
                     playBtn.setPlay()
                     uiChatMsgItemEntity.isPlaying = false
                     voiceWaveform.isFresh = false
+                    if (isSender) voiceWaveform.applySenderPlayingState(false)
                 }
             }
         })
@@ -256,6 +268,7 @@ class WKVoiceProvider : WKChatBaseProvider() {
                 val tempPlayBtn =
                     getAdapter()!!.getViewByPosition(i, R.id.playBtn) as CircleProgress?
                 waveformView?.setProgress(0f)
+                waveformView?.applySenderPlayingState(false)
                 tempPlayBtn?.setPlay()
                 break
             }

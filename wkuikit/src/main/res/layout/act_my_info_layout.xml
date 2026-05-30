@@ -20,43 +20,51 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="@color/homeColor"
+                android:layout_marginHorizontal="5dp"
                 android:orientation="vertical">
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="15dp"
+                    android:background="@color/homeColor" />
+
+                <LinearLayout
+                    android:id="@+id/headLayout"
+                    style="@style/layoutBg">
+
+                    <TextView
+                        style="@style/leftTextView"
+                        android:layout_weight="1"
+                        android:text="@string/head_portrait" />
+
+                    <com.chat.base.ui.components.AvatarView
+                        android:id="@+id/avatarView"
+                        android:layout_gravity="center"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+
+                    <androidx.appcompat.widget.AppCompatImageView
+                        style="@style/arrow_right_iv"
+                        android:layout_marginStart="10dp" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="10dp"
+                    android:background="@color/homeColor" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@color/white"
-                    android:orientation="vertical">
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="15dp"
-                        android:background="@color/homeColor" />
-
-                    <LinearLayout
-                        android:id="@+id/headLayout"
-                        style="@style/layoutBg">
-
-                        <TextView
-                            style="@style/leftTextView"
-                            android:layout_weight="1"
-                            android:text="@string/head_portrait" />
-
-                        <com.chat.base.ui.components.AvatarView
-                            android:id="@+id/avatarView"
-                            android:layout_gravity="center"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"/>
-
-                        <androidx.appcompat.widget.AppCompatImageView
-                            style="@style/arrow_right_iv"
-                            android:layout_marginStart="10dp" />
-                    </LinearLayout>
+                    android:orientation="vertical"
+                    style="@style/layoutBg"
+                    >
 
                     <LinearLayout
                         android:id="@+id/nameLayout"
-                        style="@style/layoutBg">
+                        android:layout_width="match_parent"
+                        android:layout_height="45dp"
+                        >
 
                         <TextView
                             style="@style/leftTextView"
@@ -77,9 +85,16 @@
                         <androidx.appcompat.widget.AppCompatImageView style="@style/arrow_right_iv" />
                     </LinearLayout>
 
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/homeColor" />
+
                     <LinearLayout
                         android:id="@+id/phoneLayout"
-                        style="@style/layoutBg">
+                        android:layout_width="match_parent"
+                        android:layout_height="45dp"
+                        >
 
                         <TextView
                             android:id="@+id/phoneLeftTv"
@@ -101,9 +116,16 @@
 
                     </LinearLayout>
 
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/homeColor" />
+
                     <LinearLayout
                         android:id="@+id/identityLayout"
-                        style="@style/layoutBg">
+                        android:layout_width="match_parent"
+                        android:layout_height="45dp"
+                        >
 
                         <TextView
                             android:id="@+id/idLeftTv"
@@ -127,9 +149,16 @@
                             style="@style/arrow_right_iv" />
                     </LinearLayout>
 
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/homeColor" />
+
                     <LinearLayout
                         android:id="@+id/qrLayout"
-                        style="@style/layoutBg">
+                        android:layout_width="match_parent"
+                        android:layout_height="45dp"
+                        >
 
                         <TextView
                             style="@style/leftTextView"
@@ -144,35 +173,38 @@
                             android:src="@mipmap/msg_qrcode" />
                     </LinearLayout>
 
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="15dp"
-                        android:background="@color/homeColor" />
+                </LinearLayout>
 
-                    <LinearLayout
-                        android:id="@+id/sexLayout"
-                        style="@style/layoutBg">
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="10dp"
+                    android:background="@color/homeColor" />
 
-                        <TextView
-                            style="@style/leftTextView"
-                            android:text="@string/sex" />
+                <LinearLayout
+                    android:id="@+id/sexLayout"
+                    style="@style/layoutBg"
+                    android:layout_height="50dp">
 
-                        <TextView
-                            android:id="@+id/sexTv"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="center_vertical"
-                            android:layout_marginStart="10dp"
-                            android:layout_marginEnd="10dp"
-                            android:layout_weight="1"
-                            android:gravity="end"
-                            android:textColor="@color/color999"
-                            android:textSize="16sp" />
+                    <TextView
+                        style="@style/leftTextView"
+                        android:text="@string/sex" />
 
-                        <androidx.appcompat.widget.AppCompatImageView style="@style/arrow_right_iv" />
-                    </LinearLayout>
+                    <TextView
+                        android:id="@+id/sexTv"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginStart="10dp"
+                        android:layout_marginEnd="10dp"
+                        android:layout_weight="1"
+                        android:gravity="end"
+                        android:textColor="@color/color999"
+                        android:textSize="16sp" />
+
+                    <androidx.appcompat.widget.AppCompatImageView style="@style/arrow_right_iv" />
                 </LinearLayout>
             </LinearLayout>
+
         </androidx.core.widget.NestedScrollView>
     </com.scwang.smart.refresh.layout.SmartRefreshLayout>
 </LinearLayout>

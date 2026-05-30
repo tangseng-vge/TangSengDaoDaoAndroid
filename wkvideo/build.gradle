@@ -62,4 +62,5 @@ dependencies {
 //    implementation 'com.github.a365344743s:MediaCompressTelegram:1.0.0'
     //视频播放
     api project(':wkbase')
+    api project(':wkuikit')
 }

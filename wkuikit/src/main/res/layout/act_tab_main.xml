@@ -16,6 +16,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/tab_bg"
-        app:itemIconTint="@color/transparent"
+        app:itemIconSize="@dimen/tab_nav_icon_size"
+        app:itemTextAppearanceActive="@style/TextAppearance.TabNav.Active"
+        app:itemTextAppearanceInactive="@style/TextAppearance.TabNav.Inactive"
+        app:itemTextColor="@color/tab_nav_item_text_color"
+        app:labelVisibilityMode="labeled"
         app:menu="@menu/menu_navigation" />
 </LinearLayout>

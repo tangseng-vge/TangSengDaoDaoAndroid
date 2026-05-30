@@ -10,7 +10,8 @@
 
     <LinearLayout
         android:id="@+id/forbiddenLayout"
-        style="@style/layoutBg">
+        style="@style/layoutBg"
+        android:layout_height="50dp">
 
         <TextView
             android:id="@+id/timeTv"
@@ -29,7 +30,8 @@
             android:textSize="@dimen/font_size_14"
             android:visibility="gone" />
 
-        <androidx.appcompat.widget.AppCompatImageView style="@style/arrow_right_iv" />
+        <androidx.appcompat.widget.AppCompatImageView
+            style="@style/arrow_right_iv" />
 
     </LinearLayout>
 

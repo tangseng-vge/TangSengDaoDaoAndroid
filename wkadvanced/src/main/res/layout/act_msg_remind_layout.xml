@@ -23,10 +23,12 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                android:background="@color/white"
                 android:orientation="vertical">
 
-                <LinearLayout style="@style/layoutBgPaddingSmall">
+                <LinearLayout
+                    style="@style/layoutBg"
+                    android:layout_height="50dp"
+                    >
 
                     <TextView
                         style="@style/leftTextView"
@@ -56,11 +58,13 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                android:background="@color/white"
                 android:orientation="vertical"
                 android:visibility="visible">
 
-                <LinearLayout style="@style/layoutBgPaddingSmall">
+                <LinearLayout
+                    style="@style/layoutBg"
+                    android:layout_height="50dp"
+                    >
 
                     <TextView
                         style="@style/leftTextView"

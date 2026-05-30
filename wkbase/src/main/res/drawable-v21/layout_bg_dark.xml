@@ -4,6 +4,7 @@
     <item>
         <shape android:shape="rectangle">
             <solid android:color="@color/homeColor" />
+            <corners android:radius="@dimen/layout_bg_corner_radius" />
         </shape>
     </item>
 </ripple>

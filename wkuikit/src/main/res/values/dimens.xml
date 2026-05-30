@@ -1,4 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <attr name="text_primary" format="color|reference" />
+    <dimen name="personal_grid_spacing">1dp</dimen>
+    <dimen name="contacts_header_grid_spacing">5dp</dimen>
+    <dimen name="contacts_search_corner_radius">22dp</dimen>
+    <dimen name="tab_nav_icon_size">20dp</dimen>
+    <dimen name="tab_nav_text_size">10sp</dimen>
+    <dimen name="chat_swipe_action_corner_radius">10dp</dimen>
+    <dimen name="chat_swipe_action_margin">5dp</dimen>
+    <dimen name="chat_swipe_actions_padding_h">6dp</dimen>
+    <dimen name="chat_swipe_actions_padding_v">6dp</dimen>
+    <dimen name="chat_sticky_indicator_width">5dp</dimen>
+    <dimen name="chat_sticky_indicator_margin_v">10dp</dimen>
+    <dimen name="chat_swipe_action_icon_size">18dp</dimen>
+    <dimen name="chat_swipe_action_text_size">9sp</dimen>
 </resources>

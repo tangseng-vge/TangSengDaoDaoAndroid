@@ -3,6 +3,7 @@ package com.chat.base.net.ud
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import com.chat.base.net.OkHttpUtils
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.OkHttpClient
@@ -24,12 +25,8 @@ internal class Downloader private constructor() {
     private val mCalls: ConcurrentHashMap<String, Call> by lazy {
         ConcurrentHashMap<String, Call>()
     }
-    private val mOkHttpClient: OkHttpClient by lazy {
-        OkHttpClient.Builder()
-            .callTimeout(TIME_OUT, TimeUnit.SECONDS)
-
-            .build()
-    }
+    private val mOkHttpClient: OkHttpClient
+        get() = OkHttpUtils.getInstance().okHttpClient
 
 //    private val mHandler: Handler = Handler(Looper.myLooper()!!)
 
@@ -43,8 +40,11 @@ internal class Downloader private constructor() {
     }
 
     fun pauseDownload(url: String) {
-        mDownloadTasks[url]?.status = DownloadStatus.PAUSED
-        mDownloadTasks[url]?.call!!.cancel()
+        val task = mDownloadTasks[url] ?: return
+        task.status = DownloadStatus.PAUSED
+        task.call?.cancel()
+        mDownloadTasks.remove(url)
+        mOnDownloadHashMap.remove(url)
     }
 
     fun resumeDownload(taskUrl: String) {
@@ -162,6 +162,7 @@ internal class Downloader private constructor() {
 //        }
 //        val dir = Environment.getExternalStoragePublicDirectory(type)
         val mFile = File(savePath)
+        mFile.parentFile?.mkdirs()
         val task = Task(url = taskUrl, request = request, file = mFile)
         mDownloadTasks[taskUrl] = task
         realDownload(task)
@@ -174,18 +175,15 @@ internal class Downloader private constructor() {
                 mTask.call = this
             }.enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
-                    mTask.errorMsg = if (e.message == null) {
-                        "unKnow error"
-                    } else {
-                        e.message
-                    }
+                    val msg = e.message ?: "unknown error"
+                    notifyFail(mTask, msg)
                 }
 
                 override fun onResponse(call: Call, response: Response) {
                     if (response.isSuccessful && response.code == 200) {
                         val body = response.body
                         if (body == null) {
-                            mTask.errorMsg = response.message
+                            notifyFail(mTask, response.message)
                             return
                         }
                         mTask.contentSize = body.contentLength()
@@ -195,12 +193,22 @@ internal class Downloader private constructor() {
                         }
                         calculate(mTask)
                     } else {
-                        Log.e(TAG, response.message)
+                        notifyFail(mTask, response.message)
                     }
 
                 }
 
             })
+    }
+
+    private fun notifyFail(mTask: Task, msg: String?) {
+        val reason = msg ?: "download failed"
+        Log.e(TAG, reason)
+        Handler(Looper.getMainLooper()).post {
+            val callback = mOnDownloadHashMap[mTask.url]
+            callback?.third?.invoke(mTask.url, reason)
+            mDownloadTasks.remove(mTask.url)
+        }
     }
 
     private fun calculate(mTask: Task) {
@@ -266,9 +274,16 @@ internal class Downloader private constructor() {
                 }
             }
         } catch (e: Exception) {
-            e.localizedMessage?.let { Log.e(TAG, it) }
-            mTask.inputStream!!.close()
-
+            val msg = e.localizedMessage ?: e.message ?: "download failed"
+            notifyFail(mTask, msg)
+            try {
+                mTask.inputStream?.close()
+            } catch (ignored: Exception) {
+            }
+            try {
+                mTask.fileOutputStream?.close()
+            } catch (ignored: Exception) {
+            }
         }
 
 

@@ -11,25 +11,23 @@
         android:id="@+id/refreshLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/homeColor">
+        android:background="@color/homeColor"
+        >
 
         <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@color/homeColor"
             android:fillViewport="true">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="@color/homeColor"
                 android:orientation="vertical">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="30dp"
-                    android:background="@color/white"
                     android:orientation="vertical">
 
 
@@ -51,117 +49,136 @@
                         android:text="@string/show_all_members" />
 
                     <LinearLayout
-                        android:id="@+id/groupNameLayout"
-                        style="@style/layoutBg">
-
-                        <TextView
-                            style="@style/leftTextView"
-                            android:text="@string/group_name" />
-
-                        <TextView
-                            android:id="@+id/nameTv"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="center_vertical"
-                            android:layout_marginStart="10dp"
-                            android:layout_marginEnd="10dp"
-                            android:layout_weight="2"
-                            android:gravity="end"
-                            android:text=""
-                            android:textColor="@color/colorDark"
-                            android:textSize="16sp" />
-
-                        <androidx.appcompat.widget.AppCompatImageView style="@style/arrow_right_iv" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/groupAvatarLayout"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical" />
-
-                    <LinearLayout
-                        android:id="@+id/groupQrLayout"
-                        style="@style/layoutBg">
-
-                        <TextView
-                            style="@style/leftTextView"
-                            android:layout_weight="1"
-                            android:text="@string/group_qr" />
-
-                        <androidx.appcompat.widget.AppCompatImageView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="5dp"
-                            android:src="@mipmap/msg_qrcode"
-                            android:tint="@color/color999" />
-
-                        <androidx.appcompat.widget.AppCompatImageView style="@style/arrow_right_iv" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/noticeLayout"
                         style="@style/layoutBg"
-                        android:orientation="vertical">
+                        android:orientation="vertical"
+                        >
 
                         <LinearLayout
+                            android:id="@+id/groupNameLayout"
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content">
+                            android:layout_height="45dp">
+
+                            <TextView
+                                style="@style/leftTextView"
+                                android:text="@string/group_name" />
+
+                            <TextView
+                                android:id="@+id/nameTv"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_vertical"
+                                android:layout_marginStart="10dp"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="2"
+                                android:gravity="end"
+                                android:text=""
+                                android:textColor="@color/colorDark"
+                                android:textSize="16sp" />
+
+                            <androidx.appcompat.widget.AppCompatImageView style="@style/arrow_right_iv" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/groupAvatarLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical" />
+
+                        <LinearLayout
+                            android:id="@+id/groupQrLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="45dp"
+                            >
 
                             <TextView
                                 style="@style/leftTextView"
                                 android:layout_weight="1"
-                                android:text="@string/group_announcement" />
+                                android:text="@string/group_qr" />
 
-                            <LinearLayout
-                                android:id="@+id/unsetNoticeLayout"
+                            <androidx.appcompat.widget.AppCompatImageView
                                 android:layout_width="wrap_content"
-                                android:layout_height="wrap_content">
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="5dp"
+                                android:src="@mipmap/msg_qrcode"
+                                android:tint="@color/color999"
+                                android:layout_gravity="center_vertical"/>
 
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_gravity="center_vertical"
-                                    android:layout_marginEnd="10dp"
-                                    android:text="@string/unsetting" />
-
-                                <androidx.appcompat.widget.AppCompatImageView style="@style/arrow_right_iv" />
-                            </LinearLayout>
+                            <androidx.appcompat.widget.AppCompatImageView style="@style/arrow_right_iv" />
                         </LinearLayout>
 
-                        <TextView
-                            android:id="@+id/groupNoticeTv"
+
+                        <LinearLayout
+                            android:id="@+id/noticeLayout"
+                            android:layout_height="wrap_content"
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="center_vertical"
-                            android:layout_marginTop="5dp"
-                            android:ellipsize="end"
-                            android:lineSpacingExtra="4dp"
-                            android:maxLines="3"
-                            android:textSize="16sp" />
-                    </LinearLayout>
+                            android:orientation="vertical">
 
-                    <LinearLayout
-                        android:id="@+id/remarkLayout"
-                        style="@style/layoutBg">
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="45dp">
 
-                        <TextView
-                            style="@style/leftTextView"
-                            android:text="@string/remark" />
+                                <TextView
+                                    style="@style/leftTextView"
+                                    android:layout_weight="1"
+                                    android:text="@string/group_announcement" />
 
-                        <TextView
-                            android:id="@+id/remarkTv"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="center_vertical"
-                            android:layout_marginStart="20dp"
-                            android:layout_marginEnd="10dp"
-                            android:layout_weight="4"
-                            android:ellipsize="end"
-                            android:gravity="end"
-                            android:lines="1" />
+                                <LinearLayout
+                                    android:id="@+id/unsetNoticeLayout"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="center_vertical">
 
-                        <androidx.appcompat.widget.AppCompatImageView style="@style/arrow_right_iv" />
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_gravity="center_vertical"
+                                        android:layout_marginEnd="10dp"
+                                        android:text="@string/unsetting" />
+
+                                    <androidx.appcompat.widget.AppCompatImageView style="@style/arrow_right_iv" />
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <TextView
+                                android:id="@+id/groupNoticeTv"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_vertical"
+                                android:layout_marginTop="5dp"
+                                android:ellipsize="end"
+                                android:lineSpacingExtra="4dp"
+                                android:maxLines="3"
+                                android:textSize="16sp" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/remarkLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="45dp"
+                            >
+
+                            <TextView
+                                style="@style/leftTextView"
+                                android:text="@string/remark" />
+
+                            <TextView
+                                android:id="@+id/remarkTv"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_vertical"
+                                android:layout_marginStart="20dp"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="4"
+                                android:ellipsize="end"
+                                android:gravity="end"
+                                android:lines="1" />
+
+                            <androidx.appcompat.widget.AppCompatImageView style="@style/arrow_right_iv" />
+                        </LinearLayout>
+
+
                     </LinearLayout>
 
                     <View
@@ -172,6 +189,7 @@
                     <LinearLayout
                         android:id="@+id/findContentLayout"
                         style="@style/layoutBg"
+                        android:layout_height="50dp"
                         android:orientation="horizontal">
 
                         <TextView
@@ -192,49 +210,63 @@
                         android:layout_height="wrap_content"
                         android:orientation="vertical" />
 
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        style="@style/layoutBg">
 
-                    <LinearLayout style="@style/layoutBgPaddingSmall">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="45dp"
+                            >
 
-                        <TextView
-                            style="@style/leftTextView"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:text="@string/msg_remind" />
+                            <TextView
+                                style="@style/leftTextView"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:text="@string/msg_remind" />
 
-                        <com.chat.base.ui.components.SwitchView
-                            android:id="@+id/muteSwitchView"
-                            android:layout_width="45dp"
-                            android:layout_height="40dp" />
+                            <com.chat.base.ui.components.SwitchView
+                                android:id="@+id/muteSwitchView"
+                                android:layout_width="45dp"
+                                android:layout_height="40dp" />
 
-                    </LinearLayout>
+                        </LinearLayout>
 
-                    <LinearLayout style="@style/layoutBgPaddingSmall">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="45dp">
 
-                        <TextView
-                            style="@style/leftTextView"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:text="@string/msg_top" />
+                            <TextView
+                                style="@style/leftTextView"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:text="@string/msg_top" />
 
-                        <com.chat.base.ui.components.SwitchView
-                            android:id="@+id/stickSwitchView"
-                            android:layout_width="45dp"
-                            android:layout_height="40dp" />
+                            <com.chat.base.ui.components.SwitchView
+                                android:id="@+id/stickSwitchView"
+                                android:layout_width="45dp"
+                                android:layout_height="40dp" />
 
-                    </LinearLayout>
+                        </LinearLayout>
 
-                    <LinearLayout style="@style/layoutBgPaddingSmall">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="45dp">
 
-                        <TextView
-                            style="@style/leftTextView"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:text="@string/save_to_maillist" />
+                            <TextView
+                                style="@style/leftTextView"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:text="@string/save_to_maillist" />
 
-                        <com.chat.base.ui.components.SwitchView
-                            android:id="@+id/saveSwitchView"
-                            android:layout_width="45dp"
-                            android:layout_height="40dp" />
+                            <com.chat.base.ui.components.SwitchView
+                                android:id="@+id/saveSwitchView"
+                                android:layout_width="45dp"
+                                android:layout_height="40dp" />
+
+                        </LinearLayout>
 
                     </LinearLayout>
 
@@ -252,7 +284,8 @@
 
                     <LinearLayout
                         android:id="@+id/inGroupNameLayout"
-                        style="@style/layoutBg">
+                        style="@style/layoutBg"
+                        android:layout_height="50dp">
 
                         <TextView
                             style="@style/leftTextView"
@@ -276,7 +309,8 @@
 
                     <LinearLayout
                         style="@style/layoutBgPaddingSmall"
-                        android:visibility="gone">
+                        android:visibility="gone"
+                        android:layout_height="50dp">
 
                         <TextView
                             style="@style/leftTextView"
@@ -301,7 +335,8 @@
 
                     <LinearLayout
                         android:id="@+id/reportLayout"
-                        style="@style/layoutBg">
+                        style="@style/layoutBg"
+                        android:layout_height="50dp">
 
                         <TextView
                             style="@style/leftTextView"
@@ -319,7 +354,8 @@
 
                     <LinearLayout
                         android:id="@+id/clearChatMsgLayout"
-                        style="@style/layoutBg">
+                        style="@style/layoutBg"
+                        android:layout_height="50dp">
 
                         <TextView
                             style="@style/leftTextView"
@@ -338,6 +374,7 @@
                     <TextView
                         android:id="@+id/exitBtn"
                         style="@style/layoutBg"
+                        android:layout_height="50dp"
                         android:gravity="center"
                         android:text="@string/delete_group"
                         android:textColor="@color/red"

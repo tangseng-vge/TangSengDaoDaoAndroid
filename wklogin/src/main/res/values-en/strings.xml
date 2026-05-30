@@ -1,6 +1,9 @@
 <resources>
-    <string name="hint_pwd">Enter password</string>
-    <string name="hint_name">Account</string>
+    <string name="hint_pwd">Please enter password</string>
+    <string name="hint_name">Please enter account</string>
+    <string name="login_label_account">Account</string>
+    <string name="login_label_password">Password</string>
+    <string name="login_label_verification_code">Verification Code</string>
     <string name="hint_verfi">Enter verification code</string>
     <string name="name_not_null">Enter name</string>
     <string name="nickname_not_null">Nickname should be filled</string>
@@ -14,8 +17,9 @@
     <string name="register">Register</string>
     <string name="register_app">Welcome Register %s</string>
     <string name="get_verf_code">Get verify code</string>
-    <string name="update_pwd">Edit password</string>
-    <string name="has_account">Already have an account？</string>
+    <string name="update_pwd">Change password</string>
+    <string name="has_account">Already have an account? </string>
+    <string name="no_account">Don\'t have an account?</string>
     <string name="login">Login</string>
     <string name="wk_login_search">Search</string>
     <string name="choose_country">Select country or region</string>
@@ -48,11 +52,13 @@
     <string name="pc_login">Logged into %s for Web.</string>
     <string name="sign_in_agree">I have read and agree</string>
     <string name="privacy_policy"> Privacy Policy </string>
+    <string name="and">and</string>
     <string name="user_agreement"> User Agreement </string>
     <string name="update_api">Update api address</string>
     <string name="web_url">Web url</string>
     <string name="qr_scan_login">QR code scanning login</string>
-    <string name="web_side">%s Web side</string>
+    <string name="web_side">%s Website</string>
+    <string name="web_login">Web Login</string>
     <string name="web_scan_login_desc">Please use your browser to %s, and then scan the QR code to sign in. For your better experience, it is recommended to use Google browser.</string>
     <string name="copied">Copied</string>
     <string name="phone_error">Illegal mobile phone number</string>

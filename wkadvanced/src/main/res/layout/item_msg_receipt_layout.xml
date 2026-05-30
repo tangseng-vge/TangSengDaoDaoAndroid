@@ -4,11 +4,14 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/layoutColor"
     android:orientation="vertical"
     tools:ignore="MissingDefaultResource">
 
-    <LinearLayout style="@style/layoutBgPaddingSmall">
+    <LinearLayout
+        style="@style/layoutBg"
+        android:layout_height="50dp"
+        android:layout_marginTop="10dp"
+        >
 
         <TextView
             style="@style/leftTextView"
@@ -20,6 +23,7 @@
             android:id="@+id/receiptSwitchView"
             android:layout_width="45dp"
             android:layout_height="40dp"
+            android:layout_gravity="center_vertical"
             android:checked="true" />
     </LinearLayout>
 

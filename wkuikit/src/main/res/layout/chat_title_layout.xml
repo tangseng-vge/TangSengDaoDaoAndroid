@@ -6,8 +6,8 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:animateLayoutChanges="true"
-    android:background="@drawable/title_bg"
     android:orientation="vertical"
+    android:background="@color/transparent"
     tools:ignore="MissingDefaultResource">
 
     <View
@@ -115,7 +115,7 @@
                     android:id="@+id/subtitleTv"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textColor="@color/color999"
+                    android:textColor="@color/colorDark"
                     android:textSize="12sp"
                     android:visibility="visible" />
 
@@ -124,7 +124,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="5dp"
-                    android:textColor="@color/color999"
+                    android:textColor="@color/colorDark"
                     android:textSize="12sp"
                     android:visibility="visible" />
             </LinearLayout>
@@ -138,6 +138,15 @@
             android:layout_gravity="center_vertical"
             android:layout_marginStart="10dp"
             android:visibility="visible" />
+
+        <ImageView
+            android:id="@+id/ivMoreChat"
+            android:layout_width="20dp"
+            android:layout_height="15dp"
+            android:src="@mipmap/ic_more_chat"
+            android:layout_marginHorizontal="10dp"
+            android:layout_gravity="center_vertical"
+            />
 
     </LinearLayout>
 </LinearLayout>

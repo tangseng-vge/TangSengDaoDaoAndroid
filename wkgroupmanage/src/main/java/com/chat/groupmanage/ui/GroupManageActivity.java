@@ -15,6 +15,7 @@ import com.chat.base.endpoint.EndpointCategory;
 import com.chat.base.endpoint.EndpointManager;
 import com.chat.base.msgitem.WKChannelMemberRole;
 import com.chat.base.net.HttpResponseCode;
+import com.chat.base.ui.Theme;
 import com.chat.base.utils.WKDialogUtils;
 import com.chat.base.utils.singleclick.SingleClickUtil;
 import com.chat.groupmanage.Const;
@@ -61,6 +62,11 @@ public class GroupManageActivity extends WKBaseActivity<ActGroupManageLayoutBind
 
     @Override
     protected void initView() {
+        Theme.applyAccentSwitchStyle(this, wkVBinding.invitConfirmationSwitch);
+        Theme.applyAccentSwitchStyle(this, wkVBinding.fullStaffBanSwitch);
+        Theme.applyAccentSwitchStyle(this, wkVBinding.forbiddenAddFriendSwitch);
+        Theme.applyAccentSwitchStyle(this, wkVBinding.allowNewMembersViewHistoryMsgSwitch);
+        Theme.applyAccentSwitchStyle(this, wkVBinding.allowMemberPinnedMessageSwitch);
         wkVBinding.refreshLayout.setEnableOverScrollDrag(true);
         wkVBinding.refreshLayout.setEnableLoadMore(false);
         wkVBinding.refreshLayout.setEnableRefresh(false);

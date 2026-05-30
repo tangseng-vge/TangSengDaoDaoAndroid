@@ -8,15 +8,14 @@
     <include layout="@layout/wk_title_bar_layout" />
 
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
         android:layout_marginTop="20dp"
-        android:background="@color/homeColor"
+        style="@style/layoutBg"
         android:orientation="vertical">
 
         <LinearLayout
             android:id="@+id/autoLayout"
-            style="@style/layoutBg">
+            style="@style/layoutBg"
+            android:visibility="gone">
 
             <TextView
                 style="@style/leftTextView"
@@ -33,7 +32,9 @@
 
         <LinearLayout
             android:id="@+id/simplifiedChineseLayout"
-            style="@style/layoutBg">
+            android:layout_width="match_parent"
+            android:layout_height="45dp"
+            >
 
             <TextView
                 style="@style/leftTextView"
@@ -49,9 +50,17 @@
                 android:visibility="invisible" />
         </LinearLayout>
 
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/homeColor"
+            />
+
         <LinearLayout
             android:id="@+id/englishLayout"
-            style="@style/layoutBg">
+            android:layout_width="match_parent"
+            android:layout_height="45dp"
+            >
 
             <TextView
                 style="@style/leftTextView"

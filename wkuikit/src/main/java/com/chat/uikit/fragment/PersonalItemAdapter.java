@@ -11,9 +11,10 @@ import java.util.List;
 
 /**
  * 2020-08-12 14:40
- * 个人中心
+ * 个人中心（「我的」页网格入口，每行 3 列由 GridLayoutManager 控制）
  */
 public class PersonalItemAdapter extends BaseQuickAdapter<PersonalInfoMenu, BaseViewHolder> {
+
     PersonalItemAdapter(List<PersonalInfoMenu> list) {
         super(R.layout.item_frag_me_layout, list);
     }
@@ -22,7 +23,6 @@ public class PersonalItemAdapter extends BaseQuickAdapter<PersonalInfoMenu, Base
     protected void convert(@NotNull BaseViewHolder baseViewHolder, PersonalInfoMenu menu) {
         baseViewHolder.setText(R.id.nameTv, menu.text);
         baseViewHolder.setImageResource(R.id.imageView, menu.imgResourceID);
-        baseViewHolder.setGone(R.id.bottomView,!menu.text.equals(getContext().getString(R.string.web_login)));
         if (menu.isNewVersionIv) {
             baseViewHolder.setVisible(R.id.newVersionIv, true);
         } else {

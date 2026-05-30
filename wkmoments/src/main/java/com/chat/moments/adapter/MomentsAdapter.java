@@ -97,8 +97,9 @@ public class MomentsAdapter extends BaseMultiItemQuickAdapter<Moments, BaseViewH
             LinearLayout replyLayout = baseViewHolder.getView(R.id.replyLayout);
             baseViewHolder.setGone(R.id.contentStatusTv, !moments.showAllText);
             baseViewHolder.setText(R.id.timeTv, isDetail ? moments.created_at : moments.showDate);
-            baseViewHolder.setGone(R.id.deleteTv, !moments.publisher.equals(WKConfig.getInstance().getUid()));
+            baseViewHolder.setGone(R.id.lldelete, !moments.publisher.equals(WKConfig.getInstance().getUid()));
             baseViewHolder.setText(R.id.publisherNameTv, moments.publisher_name);
+            baseViewHolder.setText(R.id.publishDateTv,moments.created_at);
             //动态地点
             baseViewHolder.setText(R.id.addressTv, moments.address);
             baseViewHolder.setGone(R.id.addressTv, TextUtils.isEmpty(moments.address));
@@ -143,6 +144,7 @@ public class MomentsAdapter extends BaseMultiItemQuickAdapter<Moments, BaseViewH
                 getContext().startActivity(intent);
             });
             AvatarView avatarView = baseViewHolder.getView(R.id.avatarView);
+            avatarView.setSize(50);
             avatarView.showAvatar(moments.publisher, WKChannelType.PERSONAL, moments.publisherAvatarCacheKey);
             avatarView.setOnClickListener(view1 -> WKMomentsApplication.getInstance().gotoUserDetail(getContext(), moments.publisher));
             baseViewHolder.getView(R.id.publisherNameTv).setOnClickListener(view1 -> WKMomentsApplication.getInstance().gotoUserDetail(getContext(), moments.publisher));

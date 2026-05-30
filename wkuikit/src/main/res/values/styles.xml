@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="TextAppearance.TabNav.Active" parent="TextAppearance.MaterialComponents.Caption">
+        <item name="android:textSize">@dimen/tab_nav_text_size</item>
+    </style>
+
+    <style name="TextAppearance.TabNav.Inactive" parent="TextAppearance.MaterialComponents.Caption">
+        <item name="android:textSize">@dimen/tab_nav_text_size</item>
+    </style>
+
+</resources>

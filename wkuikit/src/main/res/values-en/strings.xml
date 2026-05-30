@@ -3,10 +3,11 @@
     <string name="connecting">Connecting</string>
     <string name="not_connected">Not Connected</string>
     <string name="news_line">The following is new news</string>
-    <string name="contacts_num">%d contacts</string>
+    <string name="contacts_num">%d friends</string>
     <string name="login_out">Sign out</string>
     <string name="login_out_dialog">Are you sure to log out ?</string>
     <string name="tab_msg">Chats</string>
+    <string name="str_search">Search...</string>
     <string name="tab_contacts">Contacts</string>
     <string name="tab_me">Me</string>
     <string name="new_friends">New Friends</string>
@@ -25,7 +26,7 @@
     <string name="hold_to_record">Release to cancel</string>
     <string name="forward">Forward</string>
     <string name="delete">Delete</string>
-    <string name="cancel_top">Remove from Top</string>
+    <string name="cancel_top">Unpin</string>
     <string name="at_all">Choose All</string>
     <string name="all">All</string>
     <string name="edit_group_notice">Only the owner and manager can edit</string>
@@ -40,7 +41,7 @@
     <string name="delete_group">Delete and Leave</string>
     <string name="clear_chat_msg">Clear Chat History</string>
     <string name="msg_remind">Mute Notifications</string>
-    <string name="msg_top">Sticky on Top</string>
+    <string name="msg_top">Pin</string>
     <string name="save_to_maillist">Save to Contacts</string>
     <string name="show_remark_name">On-screen Names</string>
     <string name="my_remark_name_in_group">My Alias in Group</string>
@@ -71,7 +72,7 @@
     <string name="apply_join_group">[Group entry application]</string>
     <string name="ar_feed_sound_cancel">Let go</string>
     <string name="new_msg_notice">Notifications</string>
-    <string name="web_login">Computer login</string>
+    <string name="web_login">Web Login</string>
     <string name="currency">General</string>
     <string name="saved_groups">Group Chats</string>
     <string name="head_portrait">Profile Photo</string>
@@ -91,14 +92,14 @@
     <string name="clear_all_msg_tips">Make sure to clear all chat history ?</string>
     <string name="close_new_msg_notice_tips">After closing, the phone will no longer receive new message notifications</string>
     <string name="show_notice_detail">Notification Center</string>
-    <string name="voice">Voice</string>
-    <string name="shock">Shock</string>
+    <string name="voice">Sound</string>
+    <string name="shock">vibrate</string>
     <string name="voice_shock_desc">When %s is running, you can set whether to require sound or vibration</string>
     <string name="chat_pwd">Chat Password</string>
     <string name="app_idnum">%s ID：</string>
     <string name="set_remark">Remark</string>
-    <string name="delete_friends">Delete contact</string>
-    <string name="push_black_list">Add Block</string>
+    <string name="delete_friends">Unfriend</string>
+    <string name="push_black_list">Block</string>
     <string name="pull_out_black_list">Remove Block</string>
     <string name="black_list_desc">Has been added to the blacklist, you will no longer receive messages from the other party</string>
     <string name="report">Report</string>
@@ -129,6 +130,7 @@
     <string name="is_forward">Forwarded</string>
     <string name="input_remark">Input Remark</string>
     <string name="send_to">Send to：</string>
+    <string name="chat_send_to_hint">Send to \"%1$s\"</string>
     <string name="create_new_chat">New Chat</string>
     <string name="lately_chat">Recent chat</string>
     <string name="request_add_frined">Request to add friends</string>
@@ -157,7 +159,7 @@
     <string name="user_detail_info">Profile settings</string>
     <string name="delete_conver_msg_tips">After deleting, the chat message record will be cleared</string>
     <string name="remove_conver_msg_tips">Sure not to show this chat?</string>
-    <string name="language">Languages/多语言</string>
+    <string name="language">Languages</string>
     <string name="disabled">Disabled</string>
     <string name="enabled">Enabled</string>
     <string name="scan_user_qr">Scan QR code business card</string>
@@ -255,7 +257,9 @@
     <string name="backup_message_desc">1.To migrate local chat records,you need to upload your chat records to the server to support new device downloads;\n2.Chat records are stored on the server anonymously encrypted;\n3.To prevent information leakage,the server will delete the chat records uploaded by users at 0:00 everyday.\n4.In order to prevent information leakage,the server will delete chat records uploaded by users at 0:00 everyday;\n5.Users are advised to confirm that chat records are migrated before deleting chat records on the original device;\n6.Any undesirable consequences caused by this function shall be borne by the users themselves;
 </string>
     <string name="recovery_msg_fail">Recovery messages fail</string>
-    <string name="choose_module">Edit password</string>
+    <string name="choose_module">Change password</string>
+    <string name="black_list">Black List</string>
+    <string name="no_black_list">No blocked users</string>
     <string name="third_party_sharing_list">Third party sharing list</string>
     <string name="error_data">Development logs</string>
     <string name="call_blacklist_group">You have been pulled into the group blacklist and cannot chat with audio and video</string>
@@ -281,6 +285,8 @@
     <string name="open_new_rtc_notice_desc">In the category classification of the system notification permission page, open the \'Audio and Video Invitation Notification\' page, enable \'Allow Notification\' and \'Vibration\', and select the \'Sound\' option</string>
     <string name="tab_text_chat">Chat</string>
     <string name="tab_text_contacts">Contacts</string>
+    <string name="tab_text_discover">Discover</string>
+    <string name="tab_discover_placeholder">Discover content coming soon</string>
     <string name="tab_text_me">Me</string>
     <string name="invitation_sent">Invitation sent</string>
     <string name="find_chat_content">Search Chat History</string>
@@ -302,9 +308,12 @@
     <string name="update_new_password">New password</string>
     <string name="update_confirm_password">Confirm password</string>
     <string name="update_pwd_error">Confirm password error</string>
-    <string name="update_pwd">Edit password</string>
+    <string name="update_pwd">Change Password</string>
     <string name="placeholder_pwd">Password</string>
     <string name="update_loading">Loading</string>
     <string name="update_sure">Confirm</string>
+    <string name="update_label_old_password">Old Password</string>
+    <string name="update_label_new_password">New Password</string>
+    <string name="update_label_confirm_password">Confirm password</string>
 </resources>
 

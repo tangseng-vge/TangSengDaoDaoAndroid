@@ -7,6 +7,7 @@ import com.chat.advanced.databinding.ActMsgRemindLayoutBinding;
 import com.chat.advanced.service.AdvancedModel;
 import com.chat.base.base.WKBaseActivity;
 import com.chat.base.net.HttpResponseCode;
+import com.chat.base.ui.Theme;
 import com.xinbida.wukongim.WKIM;
 import com.xinbida.wukongim.entity.WKChannel;
 import com.xinbida.wukongim.entity.WKChannelExtras;
@@ -40,6 +41,9 @@ public class MsgRemindActivity extends WKBaseActivity<ActMsgRemindLayoutBinding>
 
     @Override
     protected void initView() {
+        Theme.applyAccentSwitchStyle(this, wkVBinding.screenshotSwitchView);
+        Theme.applyAccentSwitchStyle(this, wkVBinding.revokeSwitchView);
+        Theme.applyAccentSwitchStyle(this, wkVBinding.joinGroupSwitchView);
         resetData();
     }
 

@@ -1,37 +1,68 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/layoutColor"
     android:orientation="horizontal"
-    android:paddingStart="15dp"
-    android:paddingTop="10dp"
-    android:paddingEnd="15dp">
+    android:paddingTop="5dp"
+    android:paddingHorizontal="5dp">
 
 
     <com.chat.base.ui.components.AvatarView
         android:id="@+id/avatarView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
         android:layout_gravity="top" />
 
 
     <LinearLayout
-        android:layout_width="match_parent"
+        android:id="@+id/layoutName"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="10dp"
-        android:layout_marginTop="3dp"
-        android:layout_marginBottom="5dp"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:layout_marginTop="10dp"
+        android:paddingHorizontal="10dp"
+        android:layout_toEndOf="@+id/avatarView"
+        android:layout_toStartOf="@+id/tvMore"
+        >
 
         <TextView
             android:id="@+id/publisherNameTv"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="@color/color697A9F"
             android:textSize="16sp"
+            android:text="SAI"
             android:textStyle="bold" />
 
+        <TextView
+            android:id="@+id/publishDateTv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:paddingTop="5dp"
+            android:text="2026-5-5"
+            />
+
+    </LinearLayout>
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/tvMore"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="20dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:src="@mipmap/icon_more" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_below="@+id/avatarView"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="5dp"
+        >
 
         <TextView
             android:id="@+id/contentTv"
@@ -44,6 +75,7 @@
             android:longClickable="false"
             android:textColor="@color/colorDark"
             android:textSize="16sp"
+            android:text="what r u doing"
             android:visibility="visible" />
 
         <TextView
@@ -56,5 +88,8 @@
             android:textColor="@color/color697A9F"
             android:textSize="16sp"
             android:visibility="gone" />
+
     </LinearLayout>
-</LinearLayout>
+
+
+</RelativeLayout>

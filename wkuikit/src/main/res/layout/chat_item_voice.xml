@@ -56,7 +56,7 @@
                         android:layout_gravity="center_vertical"
                         android:layout_weight="1"
                         android:text="00:22"
-                        android:textColor="@color/color999"
+                        android:textColor="@color/white"
                         android:textSize="12sp" />
 
                     <include layout="@layout/wk_msg_status_layout" />

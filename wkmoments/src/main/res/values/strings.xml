@@ -1,6 +1,8 @@
 <resources>
     <string name="str_moments">朋友圈</string>
-    <string name="str_praise"> 赞 </string>
+    <string name="str_moment_title">Moment</string>
+    <string name="str_moment_chat">发消息</string>
+    <string name="str_praise"> 点赞 </string>
     <string name="str_reply">评论</string>
     <string name="str_update_moments_bg">轻触设置相册封面</string>
     <string name="str_moments_new_msg_count">%d条新消息</string>

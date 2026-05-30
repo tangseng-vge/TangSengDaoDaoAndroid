@@ -6,16 +6,10 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
-import android.graphics.Typeface;
 import android.os.Build;
 import android.text.TextUtils;
-import android.util.TypedValue;
-import android.view.Gravity;
 import android.view.KeyEvent;
-import android.view.View;
 import android.view.Window;
-import android.widget.FrameLayout;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationManagerCompat;
@@ -34,9 +28,7 @@ import com.chat.base.endpoint.EndpointManager;
 import com.chat.base.endpoint.entity.MailListDot;
 import com.chat.base.net.HttpResponseCode;
 import com.chat.base.ui.Theme;
-import com.chat.base.ui.components.CounterView;
 import com.chat.base.utils.ActManagerUtils;
-import com.chat.base.utils.LayoutHelper;
 import com.chat.base.utils.WKDeviceUtils;
 import com.chat.base.utils.WKDialogUtils;
 import com.chat.base.utils.WKReader;
@@ -48,10 +40,11 @@ import com.chat.uikit.contacts.service.FriendModel;
 import com.chat.uikit.databinding.ActTabMainBinding;
 import com.chat.uikit.fragment.ChatFragment;
 import com.chat.uikit.fragment.ContactsFragment;
+import com.chat.uikit.fragment.DiscoverFragment;
 import com.chat.uikit.fragment.MyFragment;
 import com.chat.uikit.user.service.UserModel;
-
-import org.telegram.ui.Components.RLottieImageView;
+import com.google.android.material.badge.BadgeDrawable;
+import com.google.android.material.navigation.NavigationBarView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,12 +55,12 @@ import java.util.List;
  * tab导航栏
  */
 public class TabActivity extends WKBaseActivity<ActTabMainBinding> {
-    CounterView msgCounterView;
-    CounterView contactsCounterView;
-    //    CounterView workplaceCounterView;
-    View contactsSpotView;
-    RLottieImageView chatIV, contactsIV, meIV;
-    private TextView chatTV, contactsTV, meTV;
+    /** ViewPager / 底部导航默认选中：聊天（第 3 个 Tab） */
+    private static final int DEFAULT_TAB_INDEX = 2;
+    private static final int CHAT_TAB_INDEX = 2;
+
+    private ChatFragment chatFragment;
+
     private long lastClickChatTabTime = 0L;
     private final boolean isShowTabText = true;
 
@@ -112,32 +105,11 @@ public class TabActivity extends WKBaseActivity<ActTabMainBinding> {
 
         statusBarMode();
 
-        chatIV = new RLottieImageView(this);
-        contactsIV = new RLottieImageView(this);
-//        workplaceIV = new RLottieImageView(this);
-        meIV = new RLottieImageView(this);
-        chatTV = new TextView(this);
-        contactsTV = new TextView(this);
-        meTV = new TextView(this);
-        Typeface face = Typeface.createFromAsset(getResources().getAssets(),
-                "fonts/mw_bold.ttf");
-        chatTV.setTypeface(face);
-        contactsTV.setTypeface(face);
-        meTV.setTypeface(face);
-        chatTV.setText(R.string.tab_text_chat);
-        chatTV.setTextColor(ContextCompat.getColor(this, R.color.tab_text_normal));
-        chatTV.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 12);
-        contactsTV.setText(R.string.tab_text_contacts);
-        contactsTV.setTextColor(ContextCompat.getColor(this, R.color.tab_text_normal));
-        contactsTV.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 12);
-        meTV.setText(R.string.tab_text_me);
-        meTV.setTextColor(ContextCompat.getColor(this, R.color.tab_text_normal));
-        meTV.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 12);
-        List<Fragment> fragments = new ArrayList<>(3);
-        fragments.add(new ChatFragment());
+        List<Fragment> fragments = new ArrayList<>(4);
         fragments.add(new ContactsFragment());
-//        Fragment workplaceFra = (Fragment) EndpointManager.getInstance().invoke("get_workplace_fragment", null);
-//        fragments.add(workplaceFra);
+        fragments.add(new DiscoverFragment());
+        chatFragment = new ChatFragment();
+        fragments.add(chatFragment);
         fragments.add(new MyFragment());
 
         wkVBinding.vp.setAdapter(new WKFragmentStateAdapter(this, fragments));
@@ -150,58 +122,31 @@ public class TabActivity extends WKBaseActivity<ActTabMainBinding> {
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.cancelAll();
         WKCommonModel.getInstance().getAppConfig(null);
-        wkVBinding.bottomNavigation.getOrCreateBadge(R.id.i_chat).setVisible(false);
-        wkVBinding.bottomNavigation.getOrCreateBadge(R.id.i_my).setVisible(false);
-//        wkVBinding.bottomNavigation.getOrCreateBadge(R.id.i_workplace).setVisible(false);
-        wkVBinding.bottomNavigation.getOrCreateBadge(R.id.i_chat).setVisible(false);
-        FrameLayout view = wkVBinding.bottomNavigation.findViewById(R.id.i_chat);
-        msgCounterView = new CounterView(this);
-        msgCounterView.setColors(R.color.white, R.color.reminderColor);
-        if (isShowTabText) {
-            view.addView(chatIV, LayoutHelper.createFrame(35, 35, Gravity.CENTER | Gravity.TOP, 0, 5, 0, 0));
-            view.addView(msgCounterView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 20, 5, 0, 15));
-            view.addView(chatTV, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 0, 15, 0, 0));
-        } else {
-            view.addView(chatIV, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER));
-            view.addView(msgCounterView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 20, 5, 0, 15));
+
+        wkVBinding.bottomNavigation.setLabelVisibilityMode(isShowTabText
+                ? NavigationBarView.LABEL_VISIBILITY_LABELED
+                : NavigationBarView.LABEL_VISIBILITY_UNLABELED);
+        wkVBinding.bottomNavigation.setItemIconTintList(null);
+        wkVBinding.bottomNavigation.setItemTextColor(ContextCompat.getColorStateList(this, R.color.tab_nav_item_text_color));
+
+        initTabBadges();
+
+        wkVBinding.vp.setCurrentItem(DEFAULT_TAB_INDEX, false);
+        wkVBinding.bottomNavigation.setSelectedItemId(R.id.i_chat);
+    }
+
+    private void initTabBadges() {
+        int[] ids = new int[]{R.id.i_contacts, R.id.i_discover, R.id.i_chat, R.id.i_my};
+        for (int id : ids) {
+            BadgeDrawable badge = wkVBinding.bottomNavigation.getOrCreateBadge(id);
+            styleUnreadBadge(badge);
+            badge.setVisible(false);
         }
-        FrameLayout contactsView = wkVBinding.bottomNavigation.findViewById(R.id.i_contacts);
-        contactsCounterView = new CounterView(this);
-        contactsCounterView.setColors(R.color.white, R.color.reminderColor);
-        if (isShowTabText) {
-            contactsView.addView(contactsIV, LayoutHelper.createFrame(35, 35, Gravity.CENTER | Gravity.TOP, 0, 5, 0, 0));
-            contactsView.addView(contactsCounterView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 20, 5, 0, 15));
-            contactsView.addView(contactsTV, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 0, 15, 0, 0));
-        } else {
-            contactsView.addView(contactsIV, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER));
-            contactsView.addView(contactsCounterView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 20, 5, 0, 15));
-        }
-        contactsSpotView = new View(this);
-        contactsSpotView.setBackgroundResource(R.drawable.msg_bg);
-        contactsView.addView(contactsSpotView, LayoutHelper.createFrame(10, 10, Gravity.CENTER_HORIZONTAL, 10, 10, 0, 0));
+    }
 
-
-//        FrameLayout workplaceView = wkVBinding.bottomNavigation.findViewById(R.id.i_workplace);
-//        workplaceCounterView = new CounterView(this);
-//        workplaceCounterView.setColors(R.color.white, R.color.reminderColor);
-//        workplaceView.addView(workplaceIV, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER));
-//        workplaceView.addView(workplaceCounterView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 20, 5, 0, 15));
-
-
-        FrameLayout meView = wkVBinding.bottomNavigation.findViewById(R.id.i_my);
-        if (isShowTabText) {
-            meView.addView(meIV, LayoutHelper.createFrame(35, 35, Gravity.CENTER | Gravity.TOP, 0, 5, 0, 0));
-            meView.addView(meTV, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 0, 15, 0, 0));
-        } else {
-            meView.addView(meIV, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER));
-        }
-        contactsSpotView.setVisibility(View.GONE);
-        contactsCounterView.setVisibility(View.GONE);
-//        workplaceCounterView.setVisibility(View.GONE);
-        msgCounterView.setVisibility(View.GONE);
-        playAnimation(0);
-
-
+    private void styleUnreadBadge(BadgeDrawable badge) {
+        badge.setBackgroundColor(ContextCompat.getColor(this, R.color.reminderColor));
+        badge.setBadgeTextColor(ContextCompat.getColor(this, R.color.white));
     }
 
     private void statusBarMode() {
@@ -219,49 +164,45 @@ public class TabActivity extends WKBaseActivity<ActTabMainBinding> {
             @Override
             public void onPageSelected(int position) {
                 super.onPageSelected(position);
-                if (position == 0) {
-                    playAnimation(0);
-                    wkVBinding.bottomNavigation.setSelectedItemId(R.id.i_chat);
-                } else if (position == 1) {
-                    playAnimation(1);
-                    wkVBinding.bottomNavigation.setSelectedItemId(R.id.i_contacts);
+                lastClickChatTabTime = 0;
+                if (position != CHAT_TAB_INDEX && chatFragment != null) {
+                    chatFragment.dismissOpenedSwipeImmediate();
                 }
-//                else if (position == 2) {
-//                    playAnimation(2);
-//                    wkVBinding.bottomNavigation.setSelectedItemId(R.id.i_workplace);
-//                }
-                else {
-                    playAnimation(3);
+                if (position == 0) {
+                    wkVBinding.bottomNavigation.setSelectedItemId(R.id.i_contacts);
+                } else if (position == 1) {
+                    wkVBinding.bottomNavigation.setSelectedItemId(R.id.i_discover);
+                } else if (position == 2) {
+                    wkVBinding.bottomNavigation.setSelectedItemId(R.id.i_chat);
+                } else {
                     wkVBinding.bottomNavigation.setSelectedItemId(R.id.i_my);
                 }
             }
         });
         wkVBinding.bottomNavigation.setItemIconTintList(null);
         wkVBinding.bottomNavigation.setOnItemSelectedListener(item -> {
-            if (item.getItemId() == R.id.i_chat) {
+            if (item.getItemId() == R.id.i_contacts) {
+                wkVBinding.vp.setCurrentItem(0);
+                return true;
+            } else if (item.getItemId() == R.id.i_discover) {
+                wkVBinding.vp.setCurrentItem(1);
+                return true;
+            } else if (item.getItemId() == R.id.i_chat) {
                 long nowTime = WKTimeUtils.getInstance().getCurrentMills();
-                if (wkVBinding.vp.getCurrentItem() == 0) {
+                if (wkVBinding.vp.getCurrentItem() == 2) {
                     if (nowTime - lastClickChatTabTime <= 300) {
                         EndpointManager.getInstance().invoke("scroll_to_unread_channel", null);
                     }
                     lastClickChatTabTime = nowTime;
                     return true;
                 }
-                wkVBinding.vp.setCurrentItem(0);
-                playAnimation(0);
-            } else if (item.getItemId() == R.id.i_contacts) {
-                wkVBinding.vp.setCurrentItem(1);
-                playAnimation(1);
-            }
-//            else if (item.getItemId() == R.id.i_workplace) {
-//                wkVBinding.vp.setCurrentItem(2);
-//                playAnimation(2);
-//            }
-            else {
+                lastClickChatTabTime = 0;
+                wkVBinding.vp.setCurrentItem(2);
+                return true;
+            } else {
                 wkVBinding.vp.setCurrentItem(3);
-                playAnimation(3);
+                return true;
             }
-            return true;
         });
         EndpointManager.getInstance().setMethod("tab_activity", EndpointCategory.wkRefreshMailList, object -> {
             getAllRedDot();
@@ -288,47 +229,63 @@ public class TabActivity extends WKBaseActivity<ActTabMainBinding> {
 
     public void setMsgCount(int number) {
         WKUIKitApplication.getInstance().totalMsgCount = number;
+        BadgeDrawable badge = wkVBinding.bottomNavigation.getOrCreateBadge(R.id.i_chat);
+        styleUnreadBadge(badge);
         if (number > 0) {
-            msgCounterView.setCount(number, true);
-            msgCounterView.setVisibility(View.VISIBLE);
+            badge.setNumber(Math.min(number, 999));
+            badge.setVisible(true);
         } else {
-            msgCounterView.setCount(0, true);
-            msgCounterView.setVisibility(View.GONE);
+            badge.clearNumber();
+            badge.setVisible(false);
         }
     }
 
     public void setContactCount(int number, boolean showDot) {
-        if (number > 0 || showDot) {
-            if (number > 0) {
-                contactsCounterView.setCount(number, true);
-                contactsCounterView.setVisibility(View.VISIBLE);
-                contactsSpotView.setVisibility(View.GONE);
-            } else {
-                contactsCounterView.setVisibility(View.GONE);
-                contactsSpotView.setVisibility(View.VISIBLE);
-                contactsCounterView.setCount(0, true);
-            }
+        BadgeDrawable badge = wkVBinding.bottomNavigation.getOrCreateBadge(R.id.i_contacts);
+        styleUnreadBadge(badge);
+        if (number > 0) {
+            badge.setNumber(Math.min(number, 999));
+            badge.setVisible(true);
+        } else if (showDot) {
+            badge.clearNumber();
+            badge.setVisible(true);
         } else {
-            contactsCounterView.setVisibility(View.GONE);
-            contactsSpotView.setVisibility(View.GONE);
+            badge.clearNumber();
+            badge.setVisible(false);
+        }
+    }
+
+    public void setDiscoverCount(int number, boolean showDot) {
+        BadgeDrawable badge = wkVBinding.bottomNavigation.getOrCreateBadge(R.id.i_discover);
+        styleUnreadBadge(badge);
+        if (number > 0) {
+            badge.setNumber(Math.min(number, 999));
+            badge.setVisible(true);
+        } else if (showDot) {
+            badge.clearNumber();
+            badge.setVisible(true);
+        } else {
+            badge.clearNumber();
+            badge.setVisible(false);
         }
     }
 
     private void getAllRedDot() {
-        boolean showDot = false;
-        int totalCount = 0;
         int newFriendCount = WKSharedPreferencesUtil.getInstance().getInt(WKConfig.getInstance().getUid() + "_new_friend_count");
-        totalCount = totalCount + newFriendCount;
+        setContactCount(newFriendCount, false);
+
+        boolean showDot = false;
+        int momentCount = 0;
         List<MailListDot> list = EndpointManager.getInstance().invokes(EndpointCategory.wkGetMailListRedDot, null);
         if (WKReader.isNotEmpty(list)) {
-            for (MailListDot MailListDot : list) {
-                if (MailListDot != null) {
-                    totalCount += MailListDot.numCount;
-                    if (!showDot) showDot = MailListDot.showDot;
+            for (MailListDot mailListDot : list) {
+                if (mailListDot != null) {
+                    momentCount += mailListDot.numCount;
+                    if (!showDot) showDot = mailListDot.showDot;
                 }
             }
         }
-        setContactCount(totalCount, showDot);
+        setDiscoverCount(momentCount, showDot);
     }
 
     @Override
@@ -350,56 +307,12 @@ public class TabActivity extends WKBaseActivity<ActTabMainBinding> {
             return super.onKeyDown(keyCode, event);
     }
 
-    private void playAnimation(int index) {
-        if (index == 0) {
-            lastClickChatTabTime = 0;
-            meIV.setImageResource(R.mipmap.ic_mine_n);
-            contactsIV.setImageResource(R.mipmap.ic_contacts_n);
-            chatIV.setImageResource(R.mipmap.ic_chat_s);
-//            workplaceIV.setImageResource(R.mipmap.ic_contacts_n);
-            if (isShowTabText) {
-                chatTV.setTextColor(ContextCompat.getColor(this, R.color.tab_text_selected));
-                contactsTV.setTextColor(ContextCompat.getColor(this, R.color.tab_text_normal));
-                meTV.setTextColor(ContextCompat.getColor(this, R.color.tab_text_normal));
-            }
-        } else if (index == 1) {
-            meIV.setImageResource(R.mipmap.ic_mine_n);
-            chatIV.setImageResource(R.mipmap.ic_chat_n);
-            contactsIV.setImageResource(R.mipmap.ic_contacts_s);
-//            workplaceIV.setImageResource(R.mipmap.ic_contacts_n);
-            if (isShowTabText) {
-                chatTV.setTextColor(ContextCompat.getColor(this, R.color.tab_text_normal));
-                contactsTV.setTextColor(ContextCompat.getColor(this, R.color.tab_text_selected));
-                meTV.setTextColor(ContextCompat.getColor(this, R.color.tab_text_normal));
-            }
-        } else if (index == 2) {
-            meIV.setImageResource(R.mipmap.ic_mine_n);
-            chatIV.setImageResource(R.mipmap.ic_chat_n);
-            contactsIV.setImageResource(R.mipmap.ic_contacts_n);
-//            workplaceIV.setImageResource(R.mipmap.ic_contacts_s);
-            if (isShowTabText) {
-                chatTV.setTextColor(ContextCompat.getColor(this, R.color.tab_text_normal));
-                contactsTV.setTextColor(ContextCompat.getColor(this, R.color.tab_text_normal));
-                meTV.setTextColor(ContextCompat.getColor(this, R.color.tab_text_normal));
-            }
-        } else {
-            chatIV.setImageResource(R.mipmap.ic_chat_n);
-            contactsIV.setImageResource(R.mipmap.ic_contacts_n);
-            meIV.setImageResource(R.mipmap.ic_mine_s);
-//            workplaceIV.setImageResource(R.mipmap.ic_contacts_n);
-            if (isShowTabText) {
-                chatTV.setTextColor(ContextCompat.getColor(this, R.color.tab_text_normal));
-                contactsTV.setTextColor(ContextCompat.getColor(this, R.color.tab_text_normal));
-                meTV.setTextColor(ContextCompat.getColor(this, R.color.tab_text_selected));
-            }
-        }
-    }
-
     @Override
     public void onConfigurationChanged(@NonNull Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         WKMultiLanguageUtil.getInstance().setConfiguration();
         Theme.applyTheme();
+        EndpointManager.getInstance().invokes(EndpointCategory.wkRefreshChatConversation, null);
     }
 
     @Override

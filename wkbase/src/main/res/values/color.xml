@@ -8,7 +8,8 @@
     <color name="redDisable">#F7A5A5</color>
     <color name="transparent">#00000000</color>
     <color name="colorF5F5F5">#f5f5f5</color>
-    <color name="colorAccent">#f65835</color>
+    <color name="colorAccent">#3f80db</color>
+<!-- colorAccent   #f65835-->
     <color name="colorAccentUn">#95F65835</color>
     <color name="colorAccentDisabled">#7E7E7E</color>
     <color name="color_text_select_cursor">#95F65835</color>
@@ -19,8 +20,8 @@
     <color name="borderColor">#ccc</color>
     <color name="chat_received_bg_normal">#ffffff</color>
     <color name="chat_received_bg_selected">#cccccc</color>
-    <color name="chat_send_bg_normal">#FDDED6</color>
-    <color name="chat_send_bg_select">#F8937B</color>
+    <color name="chat_send_bg_normal">#3f80db</color>
+    <color name="chat_send_bg_select">#B33F80DB</color>
     <color name="default_shadow_color">#2a000000</color>
     <color name="default_shadowback_color">#fff</color>
     <color name="color999">#999999</color>
@@ -28,8 +29,8 @@
     <color name="colorB6B5B5">#B6B5B5</color>
     <color name="colord8d5d5">#d8d5d5</color>
     <color name="colorE8E7E7">#E8E7E7</color>
-    <color name="send_text_color">#313131</color>
-    <color name="receive_text_color">#313131</color>
+    <color name="send_text_color">#FFFFFF</color>
+    <color name="receive_text_color">#040404</color>
     <!--适配颜色-->
     <color name="screen_bg">#ffffff</color>
     <color name="screen_bg_selected">#F3F3F3</color>

@@ -29,6 +29,7 @@ import com.chat.base.net.HttpResponseCode;
 import com.chat.base.utils.AndroidUtilities;
 import com.chat.base.utils.LayoutHelper;
 import com.chat.base.utils.WKReader;
+import com.chat.base.utils.language.EndpointLocaleHelper;
 import com.chat.base.utils.singleclick.SingleClickUtil;
 import com.chat.moments.activities.MomentSettingActivity;
 import com.chat.moments.activities.MomentsActivity;
@@ -77,7 +78,7 @@ public class WKMomentsApplication {
             return;
         this.context = new WeakReference<>(context);
         EndpointManager.getInstance().setMethod(EndpointCategory.mailList + "_moments", EndpointCategory.mailList, 200, object -> {
-            ContactsMenu contactsMenu = new ContactsMenu("moments", R.mipmap.icon_moments, context.getString(R.string.str_moments), () -> {
+            ContactsMenu contactsMenu = new ContactsMenu("moments", R.mipmap.icon_moments, EndpointLocaleHelper.getString(object, R.string.str_moments), () -> {
                 Intent intent = new Intent(context, MomentsActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 context.startActivity(intent);

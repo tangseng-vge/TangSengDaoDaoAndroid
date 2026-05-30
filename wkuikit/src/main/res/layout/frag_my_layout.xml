@@ -2,6 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
     android:background="@color/homeColor"
     android:orientation="vertical">
 
@@ -31,9 +32,11 @@
                         android:src="@mipmap/icon_my_bg" />
 
                     <LinearLayout
+                        android:id="@+id/topLayout"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="100dp"
+                        android:paddingBottom="20dp"
                         android:background="@color/transparent"
                         android:orientation="vertical">
 
@@ -53,6 +56,38 @@
                             android:textSize="20sp"
                             android:textStyle="bold" />
 
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:layout_marginTop="10dp"
+                            >
+
+                            <TextView
+                                android:id="@+id/idLeftTv"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/identity"
+                                android:textSize="@dimen/font_size_14"/>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text=":"
+                                android:layout_marginStart="3dp"
+                                android:textSize="@dimen/font_size_16"
+                                />
+
+                            <TextView
+                                android:id="@+id/tvID"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginHorizontal="10dp"
+                                android:textSize="16sp"
+                                android:text="12345"/>
+
+                        </LinearLayout>
+
 
                     </LinearLayout>
 
@@ -66,12 +101,17 @@
                         android:src="@mipmap/msg_qrcode"
                         android:tint="@color/popupTextColor" />
 
-                </RelativeLayout>
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recyclerView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:clipToPadding="false"
+                        android:overScrollMode="never"
+                        tools:itemCount="3"
+                        tools:listitem="@layout/item_frag_me_layout"
+                        android:layout_below="@id/topLayout"/>
 
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/recyclerView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
+                </RelativeLayout>
 
                 <Space
                     android:layout_width="match_parent"

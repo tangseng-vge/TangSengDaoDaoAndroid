@@ -74,7 +74,7 @@ public class WKRegisterActivity extends WKBaseActivity<ActRegisterLayoutBinding>
         wkVBinding.authCheckBox.setBorderColor(ContextCompat.getColor(getContext(), R.color.color999));
         wkVBinding.authCheckBox.setSize(18);
         wkVBinding.authCheckBox.setColor(Theme.colorAccount, ContextCompat.getColor(getContext(), R.color.white));
-        wkVBinding.authCheckBox.setVisibility(View.VISIBLE);
+//        wkVBinding.authCheckBox.setVisibility(View.VISIBLE);
         wkVBinding.authCheckBox.setEnabled(true);
         wkVBinding.authCheckBox.setChecked(false, true);
 
@@ -142,25 +142,25 @@ public class WKRegisterActivity extends WKBaseActivity<ActRegisterLayoutBinding>
             intentActivityResultLauncher.launch(intent);
         });
         wkVBinding.registerBtn.setOnClickListener(v -> {
-            if (!wkVBinding.authCheckBox.isChecked()) {
-                showToast(R.string.agree_auth_tips);
-                return;
-            }
+//            if (!wkVBinding.authCheckBox.isChecked()) {
+//                showToast(R.string.agree_auth_tips);
+//                return;
+//            }
 
             String phone = Objects.requireNonNull(wkVBinding.nameEt.getText()).toString();
             String smsCode = Objects.requireNonNull(wkVBinding.verfiEt.getText()).toString();
             String pwd = Objects.requireNonNull(wkVBinding.pwdEt.getText()).toString();
             String inviteCode = Objects.requireNonNull(wkVBinding.inviteCodeTv.getText()).toString();
-            if (!TextUtils.isEmpty(phone) && !TextUtils.isEmpty(smsCode) && !TextUtils.isEmpty(pwd)) {
+            if (!TextUtils.isEmpty(phone) && !TextUtils.isEmpty(pwd)) {
                 if (pwd.length() < 6 || pwd.length() > 16) {
                     showSingleBtnDialog(getString(R.string.pwd_length_error));
                 } else {
-                    if (appConfig != null && appConfig.register_invite_on == 1 && TextUtils.isEmpty(inviteCode)) {
-                        showSingleBtnDialog(getString(R.string.invite_code_not_null));
-                        return;
-                    }
+//                    if (appConfig != null && appConfig.register_invite_on == 1 && TextUtils.isEmpty(inviteCode)) {
+//                        showSingleBtnDialog(getString(R.string.invite_code_not_null));
+//                        return;
+//                    }
                     loadingPopup.show();
-                    presenter.registerApp(smsCode, code, "", phone, pwd, inviteCode);
+                    presenter.registerApp("123456", code, "", phone, pwd, "");
                 }
             }
         });
@@ -211,11 +211,12 @@ public class WKRegisterActivity extends WKBaseActivity<ActRegisterLayoutBinding>
         String phone = Objects.requireNonNull(wkVBinding.nameEt.getText()).toString();
         String smsCode = Objects.requireNonNull(wkVBinding.verfiEt.getText()).toString();
         String pwd = Objects.requireNonNull(wkVBinding.pwdEt.getText()).toString();
-        if (!TextUtils.isEmpty(phone) && !TextUtils.isEmpty(smsCode) && !TextUtils.isEmpty(pwd)) {
-            wkVBinding.registerBtn.setAlpha(1f);
+//        if (!TextUtils.isEmpty(phone) && !TextUtils.isEmpty(smsCode) && !TextUtils.isEmpty(pwd)) {
+        if (!TextUtils.isEmpty(phone) && !TextUtils.isEmpty(pwd)) {
+//            wkVBinding.registerBtn.setAlpha(1f);
             wkVBinding.registerBtn.setEnabled(true);
         } else {
-            wkVBinding.registerBtn.setAlpha(0.2f);
+//            wkVBinding.registerBtn.setAlpha(0.2f);
             wkVBinding.registerBtn.setEnabled(false);
         }
     }

@@ -29,7 +29,8 @@
             android:layout_height="40dp" />
     </LinearLayout>
 
-    <LinearLayout style="@style/layoutBgPaddingSmall">
+    <LinearLayout style="@style/layoutBgPaddingSmall"
+        android:layout_marginTop="10dp">
 
         <TextView
             style="@style/leftTextView"

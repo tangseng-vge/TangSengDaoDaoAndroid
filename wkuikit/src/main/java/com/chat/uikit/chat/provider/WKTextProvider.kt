@@ -54,6 +54,7 @@ import com.chat.base.ui.components.AlignImageSpan
 import com.chat.base.ui.components.AvatarView
 import com.chat.base.ui.components.NormalClickableContent
 import com.chat.base.ui.components.NormalClickableSpan
+import com.chat.base.utils.AndroidUtilities
 import com.chat.base.utils.LayoutHelper
 import com.chat.base.utils.SoftKeyboardUtils
 import com.chat.base.utils.StringUtils
@@ -106,16 +107,14 @@ open class WKTextProvider : WKChatBaseProvider() {
 //        val bgType = getMsgBgType(
 //            uiChatMsgItemEntity.previousMsg, uiChatMsgItemEntity.wkMsg, uiChatMsgItemEntity.nextMsg
 //        )
+        applyTextContentWidth(parentView, from, uiChatMsgItemEntity)
         resetCellBackground(parentView, uiChatMsgItemEntity, from)
-//        if (textContentLayout.layoutParams.width < msgTimeView.layoutParams.width) {
-//            textContentLayout.layoutParams.width = msgTimeView.layoutParams.width
-//        }
         val textColor: Int
         if (from == WKChatIteMsgFromType.SEND) {
             contentTv.setBackgroundResource(R.drawable.send_chat_text_bg)
             contentLayout.gravity = Gravity.END
             receivedTextNameTv.visibility = View.GONE
-            textColor = ContextCompat.getColor(context, R.color.colorDark)
+            textColor = ContextCompat.getColor(context, R.color.ps_color_white)
         } else {
             contentTv.setBackgroundResource(R.drawable.received_chat_text_bg)
             setFromName(uiChatMsgItemEntity, from, receivedTextNameTv)
@@ -737,20 +736,27 @@ open class WKTextProvider : WKChatBaseProvider() {
     ) {
         super.resetCellBackground(parentView, uiChatMsgItemEntity, from)
         val contentTvLayout = parentView.findViewById<BubbleLayout>(R.id.contentTvLayout)
-        val textContentLayout = parentView.findViewById<View>(R.id.textContentLayout)
-        val msgTimeView = parentView.findViewById<View>(R.id.msgTimeView)
-        // 这里要指定文本宽度 - padding的距离
-        if (textContentLayout == null || msgTimeView == null) {
-            return
-        }
-        textContentLayout.layoutParams.width = getViewWidth(from, uiChatMsgItemEntity)
         val bgType = getMsgBgType(
             uiChatMsgItemEntity.previousMsg,
             uiChatMsgItemEntity.wkMsg,
             uiChatMsgItemEntity.nextMsg
         )
         contentTvLayout.setAll(bgType, from, WKContentType.WK_TEXT)
-        if (textContentLayout.layoutParams.width < msgTimeView.layoutParams.width) {
+        applyTextContentWidth(parentView, from, uiChatMsgItemEntity)
+    }
+
+    private fun applyTextContentWidth(
+        parentView: View,
+        from: WKChatIteMsgFromType,
+        uiChatMsgItemEntity: WKUIChatMsgItemEntity
+    ) {
+        val textContentLayout = parentView.findViewById<View>(R.id.textContentLayout) ?: return
+        val contentTv = parentView.findViewById<EmojiTextView>(R.id.contentTv) ?: return
+        val maxWidth = getViewWidth(from, uiChatMsgItemEntity)
+        textContentLayout.layoutParams.width = maxWidth
+        contentTv.maxWidth = maxWidth
+        val msgTimeView = parentView.findViewById<View>(R.id.msgTimeView)
+        if (msgTimeView != null && textContentLayout.layoutParams.width < msgTimeView.layoutParams.width) {
             textContentLayout.layoutParams.width = msgTimeView.layoutParams.width
         }
     }
@@ -903,7 +909,7 @@ open class WKTextProvider : WKChatBaseProvider() {
         )
         replyTV.setTextSize(TypedValue.COMPLEX_UNIT_PX, pSize)
         val textColor: Int = if (from == WKChatIteMsgFromType.SEND) {
-            ContextCompat.getColor(context, R.color.colorDark)
+            ContextCompat.getColor(context, R.color.white)
         } else {
             ContextCompat.getColor(context, R.color.receive_text_color)
         }

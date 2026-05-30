@@ -18,6 +18,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.core.content.ContextCompat;
 
+import com.chat.base.act.WKWebViewActivity;
 import com.chat.base.base.WKBaseActivity;
 import com.chat.base.config.WKApiConfig;
 import com.chat.base.config.WKConfig;
@@ -201,6 +202,15 @@ public class UserDetailActivity extends WKBaseActivity<ActUserDetailLayoutBindin
                 }
             });
         }
+
+        SingleClickUtil.onSingleClick(wkVBinding.complaintLayout,v->{
+            Intent intent = new Intent(this, WKWebViewActivity.class);
+            intent.putExtra("channelType", WKChannelType.PERSONAL);
+            intent.putExtra("channelID", userChannel.channelID);
+            intent.putExtra("url", WKApiConfig.baseWebUrl + "report.html");
+            startActivity(intent);
+        });
+
 
         wkVBinding.pushBlackLayout.setOnClickListener(v -> {
 

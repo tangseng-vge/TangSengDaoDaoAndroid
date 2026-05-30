@@ -21,6 +21,7 @@ import com.chat.base.utils.WKDeviceUtils;
 import com.chat.base.utils.WKReader;
 import com.chat.base.utils.WKTimeUtils;
 import com.chat.uikit.R;
+import com.chat.uikit.enity.BlackListEntity;
 import com.chat.uikit.enity.Device;
 import com.chat.uikit.enity.MailListEntity;
 import com.chat.uikit.enity.OnlineUser;
@@ -160,6 +161,24 @@ public class UserModel extends WKBaseModel {
                 iCommonListener.onResult(code, msg);
             }
         });
+    }
+
+    public void getBlackLists(final IGetBlackLists iGetBlackLists) {
+        request(createService(UserService.class).getBlackLists(), new IRequestResultListener<List<BlackListEntity>>() {
+            @Override
+            public void onSuccess(List<BlackListEntity> result) {
+                iGetBlackLists.onResult(HttpResponseCode.success, "", result);
+            }
+
+            @Override
+            public void onFail(int code, String msg) {
+                iGetBlackLists.onResult(code, msg, null);
+            }
+        });
+    }
+
+    public interface IGetBlackLists {
+        void onResult(int code, String msg, List<BlackListEntity> list);
     }
 
 

@@ -25,6 +25,8 @@ public class ChatConversationMsg {
     public long typingStartTime = 0;
     public String typingUserName;
     public int isTop;
+    /** 置顶状态变化时为 true，用于会话项置顶样式过渡动画 */
+    public boolean stickyStateChanged;
     public List<ChatConversationMsg> childList;
     private final String loginUID;
     public int isCalling = 0;

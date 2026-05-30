@@ -6,7 +6,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/homeColor"
-    android:fitsSystemWindows="true"
     android:orientation="vertical">
 
     <androidx.appcompat.widget.AppCompatImageView
@@ -15,32 +14,60 @@
         android:scaleType="centerCrop"
         android:src="@mipmap/icon_login_bg" />
 
-    <TextView
-        android:id="@+id/loginTitleTv"
+    <LinearLayout
+        android:id="@+id/llLogin"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="30dp"
+        android:orientation="vertical"
+        android:layout_marginStart="20dp"
         android:layout_marginTop="70dp"
-        android:layout_marginEnd="30dp"
-        android:gravity="center"
-        android:text="@string/login_title"
-        android:textColor="@color/colorDark"
-        android:textSize="32sp"
-        android:textStyle="bold" />
+        android:layout_marginEnd="30dp">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/ivLogin"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:src="@mipmap/main_logo"
+            app:shapeAppearanceOverlay="@style/RoundedCorners15" />
+
+        <TextView
+            android:id="@+id/loginTitleTv"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/login_title"
+            android:textColor="@color/colorDark"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:layout_marginTop="10dp"/>
+
+    </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
+        android:layout_below="@+id/llLogin"
+        android:layout_marginTop="30dp"
         android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
+            android:text="@string/login_label_account"
+            android:textColor="@color/colorDark"
+            android:textSize="14sp" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
             android:layout_marginLeft="20dp"
-            android:layout_marginTop="20dp"
-            android:layout_marginRight="20dp">
+            android:layout_marginTop="8dp"
+            android:layout_marginRight="20dp"
+            android:background="@drawable/bg_login_input"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp">
 
 
             <LinearLayout
@@ -76,7 +103,7 @@
             <androidx.appcompat.widget.AppCompatEditText
                 android:id="@+id/nameEt"
                 android:layout_width="match_parent"
-                android:layout_height="40dp"
+                android:layout_height="50dp"
                 android:background="@color/transparent"
                 android:gravity="center_vertical"
                 android:hint="@string/hint_name"
@@ -91,29 +118,40 @@
 
         </LinearLayout>
 
-        <View
-            style="@style/view_line"
-            android:layout_marginLeft="20dp"
-            android:layout_marginRight="20dp" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="20dp"
+            android:text="@string/login_label_password"
+            android:textColor="@color/colorDark"
+            android:textSize="14sp" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginLeft="20dp"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="8dp"
             android:layout_marginRight="20dp"
-            android:orientation="horizontal">
+            android:background="@drawable/bg_login_input"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp">
 
             <androidx.appcompat.widget.AppCompatEditText
                 android:id="@+id/pwdEt"
                 android:layout_width="0dp"
-                android:layout_height="40dp"
+                android:layout_height="50dp"
                 android:layout_weight="1"
                 android:background="@color/transparent"
                 android:gravity="center_vertical"
                 android:hint="@string/hint_pwd"
                 android:inputType="textPassword"
                 android:maxLength="20"
+                android:paddingStart="0dp"
+                android:paddingEnd="0dp"
                 android:textColor="@color/colorDark"
                 android:textColorHint="@color/color999"
                 android:textSize="14sp"
@@ -121,18 +159,19 @@
 
             <CheckBox
                 android:id="@+id/checkBox"
-                android:layout_width="30dp"
-                android:layout_height="30dp"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center_vertical"
+                android:background="@null"
                 android:button="@drawable/selector_account_relate_see_password"
+                android:buttonTint="@null"
                 android:checked="false"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:padding="0dp"
                 tools:ignore="TouchTargetSizeCheck" />
 
         </LinearLayout>
-
-        <View
-            style="@style/view_line"
-            android:layout_marginStart="20dp"
-            android:layout_marginEnd="20dp" />
 
 
         <LinearLayout
@@ -141,7 +180,7 @@
             android:layout_marginStart="20dp"
             android:layout_marginTop="10dp"
             android:layout_marginEnd="20dp"
-            android:visibility="visible">
+            android:visibility="gone">
 
             <com.chat.base.ui.components.CheckBox
                 android:id="@+id/checkbox"
@@ -181,9 +220,8 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/loginBtn"
             style="@style/buttonNormal"
-            android:layout_marginLeft="30dp"
-            android:layout_marginTop="50dp"
-            android:layout_marginRight="30dp"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginTop="40dp"
             android:text="@string/login"
             app:cornerRadius="@dimen/button_radian" />
 
@@ -191,18 +229,27 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:layout_marginTop="15dp"
+            android:layout_marginVertical="30dp"
             android:gravity="center"
             android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/no_account"
+                android:textSize="@dimen/font_size_14"
+                />
 
             <TextView
                 android:id="@+id/registerTv"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
+                android:layout_marginStart="10dp"
                 android:text="@string/register"
-                android:textColor="@color/color999"
-                android:textSize="@dimen/font_size_13" />
+                android:textColor="@color/colorAccent"
+                android:textSize="@dimen/font_size_14"
+                android:textStyle="bold"/>
 
 <!--            <View-->
 <!--                android:layout_width="1dp"-->

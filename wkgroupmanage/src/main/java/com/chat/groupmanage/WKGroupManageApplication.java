@@ -20,6 +20,7 @@ import com.chat.base.msgitem.WKContentType;
 import com.chat.base.msgitem.WKMsgItemViewManager;
 import com.chat.base.net.HttpResponseCode;
 import com.chat.base.ui.Theme;
+import com.chat.base.utils.AndroidUtilities;
 import com.chat.base.utils.WKDialogUtils;
 import com.chat.base.utils.WKReader;
 import com.chat.base.utils.WKTimeUtils;
@@ -105,6 +106,22 @@ public class WKGroupManageApplication {
         });
     }
 
+    /** 嵌入群资料卡片内时去掉 layoutBg 的左右边距/内边距，与群名称等行对齐 */
+    private void applyInlineGroupDetailRowStyle(View row) {
+        ViewGroup.LayoutParams lp = row.getLayoutParams();
+        if (lp instanceof ViewGroup.MarginLayoutParams marginLp) {
+            marginLp.setMarginStart(0);
+            marginLp.setMarginEnd(0);
+            row.setLayoutParams(marginLp);
+        }
+        row.setPaddingRelative(0, 0, 0, 0);
+        row.setBackground(null);
+        if (lp != null) {
+            lp.height = AndroidUtilities.dp(45);
+            row.setLayoutParams(lp);
+        }
+    }
+
     private View getGroupAvatarView(Context context, String groupNo, ViewGroup parentView) {
         View view = LayoutInflater.from(context).inflate(R.layout.group_in_user_detail_layout, parentView, false);
         TextView timeTv = view.findViewById(R.id.timeTv);
@@ -112,6 +129,7 @@ public class WKGroupManageApplication {
         View bottomView = view.findViewById(R.id.bottomView);
         bottomView.setVisibility(View.GONE);
         view.findViewById(R.id.topView).setVisibility(View.GONE);
+        applyInlineGroupDetailRowStyle(view.findViewById(R.id.forbiddenLayout));
         SingleClickUtil.onSingleClick(view.findViewById(R.id.forbiddenLayout), view1 -> {
             Intent intent = new Intent(context, GroupHeaderActivity.class);
             intent.putExtra("groupNo", groupNo);

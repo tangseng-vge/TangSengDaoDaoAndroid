@@ -152,9 +152,12 @@ class TSApplication : MultiDexApplication() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
+        WKMultiLanguageUtil.getInstance().setConfiguration()
+        Theme.applyTheme()
+        if (Theme.isForceLightTheme()) {
+            return
+        }
         if (applicationContext != null && applicationContext.resources != null && applicationContext.resources.configuration != null && applicationContext.resources.configuration.uiMode != newConfig.uiMode) {
-            WKMultiLanguageUtil.getInstance().setConfiguration()
-            Theme.applyTheme()
             killAppProcess()
         }
     }

@@ -41,6 +41,7 @@ import androidx.core.math.MathUtils;
 
 import com.chat.base.WKBaseApplication;
 import com.chat.base.R;
+import com.chat.base.ui.components.SwitchView;
 import com.chat.base.config.WKSharedPreferencesUtil;
 import com.chat.base.ui.components.RoundTextView;
 import com.chat.base.utils.AndroidUtilities;
@@ -51,7 +52,7 @@ import org.telegram.ui.Components.RLottieDrawable;
 import java.lang.reflect.Method;
 
 public class Theme {
-    public static int colorAccount = 0xFFf65835;
+    public static int colorAccount = 0xFF3f80db;
     public static int colorAccountDisable = 0x95F65835;
     public static int color999 = 0xFF999999;
     public static int colorCCC = 0xFFCCCCCC;
@@ -62,6 +63,13 @@ public class Theme {
     public static final String DARK_MODE = "dark";
     public static final String DEFAULT_MODE = "default";
     public static final String wk_theme_pref = "wk_theme_pref";
+
+    /** Always use light theme; ignore system dark mode and in-app dark setting. */
+    private static final boolean FORCE_LIGHT_THEME = true;
+
+    public static boolean isForceLightTheme() {
+        return FORCE_LIGHT_THEME;
+    }
 
     //    public static final int[][] defaultColorsLight = new int[][]{
 //            new int[]{0xa6B0CDEB, 0xa69FB0EA, 0xa6BBEAD5, 0xa6B2E3DD},
@@ -137,13 +145,13 @@ public class Theme {
     }
 
     private static void applyTheme(@NonNull String themePref) {
+        if (FORCE_LIGHT_THEME) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+            return;
+        }
         switch (themePref) {
-            case LIGHT_MODE -> {
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-            }
-            case DARK_MODE -> {
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-            }
+            case LIGHT_MODE -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+            case DARK_MODE -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
             default -> {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
@@ -155,49 +163,81 @@ public class Theme {
     }
 
     public static void applyTheme() {
+        if (FORCE_LIGHT_THEME) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+            return;
+        }
         String themePref =
                 WKSharedPreferencesUtil.getInstance().getSP(Theme.wk_theme_pref, Theme.DEFAULT_MODE);
         Theme.applyTheme(themePref);
     }
 
     public static String getTheme() {
+        if (FORCE_LIGHT_THEME) {
+            return LIGHT_MODE;
+        }
         return WKSharedPreferencesUtil.getInstance().getSP(Theme.wk_theme_pref, Theme.DEFAULT_MODE);
     }
 
     public static void setTheme(String s) {
+        if (FORCE_LIGHT_THEME) {
+            WKSharedPreferencesUtil.getInstance().putSP(Theme.wk_theme_pref, LIGHT_MODE);
+            applyTheme(LIGHT_MODE);
+            return;
+        }
         WKSharedPreferencesUtil.getInstance().putSP(Theme.wk_theme_pref, s);
         Theme.applyTheme(s);
     }
 
     public static boolean isSystemDarkMode(Context context) {
+        if (FORCE_LIGHT_THEME) {
+            return false;
+        }
         UiModeManager uiModeManager = (UiModeManager) context.getSystemService(Context.UI_MODE_SERVICE);
         return uiModeManager.getNightMode() == UiModeManager.MODE_NIGHT_YES;
     }
 
     public static boolean getDarkModeStatus(Context context) {
+        if (FORCE_LIGHT_THEME) {
+            return false;
+        }
         int mode = context.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
         return mode == Configuration.UI_MODE_NIGHT_YES;
     }
 
     public static int getSwitchViewTrackColor() {
-        String wk_theme_pref = WKSharedPreferencesUtil.getInstance().getSP(Theme.wk_theme_pref, Theme.DEFAULT_MODE);
-        if (wk_theme_pref.equals(DARK_MODE)) {
-            return 0xFF585858;
-        } else
+        if (FORCE_LIGHT_THEME || !isDarkThemePref()) {
             return Theme.colorCCC;
+        }
+        return 0xFF585858;
     }
 
     public static int getSwitchViewThumbColor() {
-        String wk_theme_pref = WKSharedPreferencesUtil.getInstance().getSP(Theme.wk_theme_pref, Theme.DEFAULT_MODE);
-        if (wk_theme_pref.equals(DARK_MODE)) {
-            return 0xFF212223;
-        } else
+        if (FORCE_LIGHT_THEME || !isDarkThemePref()) {
             return 0xFFFFFFFF;
+        }
+        return 0xFF212223;
+    }
+
+    private static boolean isDarkThemePref() {
+        String wk_theme_pref = WKSharedPreferencesUtil.getInstance().getSP(Theme.wk_theme_pref, Theme.DEFAULT_MODE);
+        return DARK_MODE.equals(wk_theme_pref);
+    }
+
+    /** 开启态轨道 colorAccent，拇指白色 */
+    public static void applyAccentSwitchStyle(Context context, SwitchView switchView) {
+        switchView.setColors(
+                getSwitchViewTrackColor(),
+                ContextCompat.getColor(context, R.color.colorAccent),
+                getSwitchViewThumbColor(),
+                ContextCompat.getColor(context, R.color.white));
     }
 
     public static boolean isDark() {
-        String wk_theme_pref = WKSharedPreferencesUtil.getInstance().getSP(Theme.wk_theme_pref, Theme.DEFAULT_MODE);
-        return wk_theme_pref.equals(DARK_MODE);
+        if (FORCE_LIGHT_THEME) {
+            return false;
+        }
+        return isDarkThemePref();
     }
 
     private static Drawable ticksSingleDrawable;
