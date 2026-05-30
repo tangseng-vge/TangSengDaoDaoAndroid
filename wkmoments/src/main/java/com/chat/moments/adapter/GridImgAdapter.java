@@ -3,10 +3,12 @@ package com.chat.moments.adapter;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.bumptech.glide.Glide;
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.chad.library.adapter.base.module.BaseDraggableModule;
 import com.chad.library.adapter.base.module.DraggableModule;
@@ -41,9 +43,13 @@ public class GridImgAdapter extends BaseQuickAdapter<ImgEntity, BaseViewHolder> 
         CircularProgressView progressView = helper.getView(R.id.progressView);
         progressView.setProgColor(Theme.colorAccount);
         if (item.fileType == 0) {
+            // 添加按钮图标需完整显示；centerCrop + ShapeableImageView 会裁切右侧边缘
+            Glide.with(getContext()).clear(roundedImageView);
+            roundedImageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
             roundedImageView.setImageResource(R.mipmap.icon_add_photo);
             helper.setGone(R.id.statusIv, true);
         } else {
+            roundedImageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
             GlideUtils.getInstance().showImg(getContext(), item.path, roundedImageView);
             if (item.fileType == 2) {
                 //视频
@@ -105,7 +111,7 @@ public class GridImgAdapter extends BaseQuickAdapter<ImgEntity, BaseViewHolder> 
 
         int showWidth = (AndroidUtilities.getScreenWidth() - AndroidUtilities.dp(45)) / 3;
         FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(showWidth, showWidth);
-        layoutParams.setMargins(AndroidUtilities.dp(2.5f), AndroidUtilities.dp(2.5f), AndroidUtilities.dp(2.5f), AndroidUtilities.dp(2.5f));
+//        layoutParams.setMargins(AndroidUtilities.dp(2.5f), AndroidUtilities.dp(2.5f), AndroidUtilities.dp(2.5f), AndroidUtilities.dp(2.5f));
 //        roundedImageView.setLayoutParams(layoutParams);
         frameLayout.setLayoutParams(layoutParams);
 

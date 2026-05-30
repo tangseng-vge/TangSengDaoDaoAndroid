@@ -3,6 +3,7 @@ package com.chat.uikit.utils;
 
 import com.chat.uikit.contacts.FriendUIEntity;
 import com.chat.uikit.enity.MailListEntity;
+import com.chat.uikit.enity.BlackListEntity;
 import com.chat.uikit.group.GroupMemberEntity;
 
 import java.util.List;
@@ -122,6 +123,34 @@ public class PyingUtils {
 
     public void sortListBasic(List<FriendUIEntity> list) {
         transferListBasic(list);
+    }
+
+    public void sortBlackList(List<BlackListEntity> list) {
+        for (int i = 0; i < list.size() - 1; i++) {
+            for (int j = 0; j < list.size() - 1 - i; j++) {
+                exchangeBlackListOrder(j, list);
+            }
+        }
+    }
+
+    private void exchangeBlackListOrder(int j, List<BlackListEntity> list) {
+        String namePinYin1 = list.get(j).pying;
+        String namePinYin2 = list.get(j + 1).pying;
+
+        int size = Math.min(namePinYin1.length(), namePinYin2.length());
+        for (int i = 0; i < size; i++) {
+            char jc = namePinYin1.charAt(i);
+            char jcNext = namePinYin2.charAt(i);
+            if (jc < jcNext) {
+                break;
+            }
+            if (jc > jcNext) {
+                BlackListEntity entity = list.get(j);
+                list.set(j, list.get(j + 1));
+                list.set(j + 1, entity);
+                break;
+            }
+        }
     }
 
     /**

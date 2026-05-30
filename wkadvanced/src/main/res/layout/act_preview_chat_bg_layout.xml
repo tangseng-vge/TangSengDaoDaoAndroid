@@ -142,7 +142,7 @@
                                 android:layout_toStartOf="@+id/avatarIv"
                                 android:gravity="center_vertical"
                                 android:text="@string/preview_chat_bg1"
-                                android:textColor="@color/black"
+                                android:textColor="@color/white"
                                 android:textSize="@dimen/font_size_16" />
 
 
@@ -153,7 +153,7 @@
                                 android:layout_gravity="bottom"
                                 android:layout_marginStart="5dp"
                                 android:text="10:10AM"
-                                android:textColor="@color/color999"
+                                android:textColor="@color/white"
                                 android:textSize="12sp"
                                 tools:ignore="SmallSp" />
 
@@ -249,6 +249,8 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="bottom"
                     android:background="@drawable/layout_bg"
+                    android:layout_marginHorizontal="10dp"
+                    android:layout_marginBottom="15dp"
                     android:gravity="center"
                     android:padding="15dp"
                     android:text="@string/set_chat_bg"

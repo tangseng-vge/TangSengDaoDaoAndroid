@@ -3,65 +3,109 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:clipChildren="false"
+    android:clipToPadding="false">
 
-    <com.scwang.smart.refresh.layout.SmartRefreshLayout
-        android:id="@+id/refreshLayout"
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/layoutColor"
-        app:srlEnableFooterFollowWhenLoadFinished="true"
-        app:srlEnableScrollContentWhenLoaded="true">
+        android:background="@android:color/transparent"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:paddingBottom="5dp"
+        >
 
-
-        <com.chat.moments.views.FriendRefreshView
-            android:id="@+id/wrapview"
+        <com.scwang.smart.refresh.layout.SmartRefreshLayout
+            android:id="@+id/refreshLayout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@color/layoutColor" />
+            android:background="@android:color/transparent"
+            app:srlEnableFooterFollowWhenLoadFinished="true"
+            app:srlEnableScrollContentWhenLoaded="true"
+            >
 
-        <com.scwang.smart.refresh.footer.ClassicsFooter
+
+            <com.chat.moments.views.FriendRefreshView
+                android:id="@+id/wrapview"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@android:color/transparent"
+                />
+
+            <com.scwang.smart.refresh.footer.ClassicsFooter
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:srlTextNothing="@string/refresh_footer" />
+        </com.scwang.smart.refresh.layout.SmartRefreshLayout>
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/titleBgIv"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@color/layoutColor"
-            app:srlTextNothing="@string/refresh_footer" />
-    </com.scwang.smart.refresh.layout.SmartRefreshLayout>
+            android:layout_height="70dp"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:scaleType="centerCrop"
+            android:src="@mipmap/ic_moment_top_bg"
+            android:visibility="visible" />
 
+        <RelativeLayout
+            android:id="@+id/titleView"
+            android:layout_width="match_parent"
+            android:layout_height="70dp"
+            android:layout_marginTop="10dp"
+            android:layout_alignParentTop="true"
+            >
 
-    <LinearLayout
-        android:id="@+id/titleView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/layoutColor"
-        android:paddingTop="40dp"
-        android:paddingBottom="10dp">
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/backIv"
+                android:layout_width="35dp"
+                android:layout_height="35dp"
+                android:paddingVertical="8dp"
+                android:paddingStart="15dp"
+                android:paddingEnd="10dp"
+                android:src="@mipmap/ic_ab_back"
+                android:layout_centerVertical="true"
+                />
 
-        <androidx.appcompat.widget.AppCompatImageView
-            android:id="@+id/backIv"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="15dp"
-            android:src="@mipmap/ic_ab_back" />
+            <TextView
+                android:id="@+id/titleCenterTv"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginStart="10dp"
+                android:layout_centerVertical="true"
+                android:gravity="center"
+                android:text="@string/str_moments"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_toEndOf="@+id/backIv"
+                android:layout_toStartOf="@+id/cameraIv" />
 
-        <TextView
-            android:id="@+id/titleCenterTv"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:layout_marginStart="10dp"
-            android:layout_weight="1"
-            android:text="@string/str_moments"
-            android:textColor="@color/colorDark"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:visibility="invisible" />
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/cameraIv"
+                android:layout_width="35dp"
+                android:layout_height="35dp"
+                android:padding="2dp"
+                android:layout_alignParentEnd="true"
+                android:layout_marginEnd="15dp"
+                android:layout_centerVertical="true"
+                android:src="@mipmap/floating_camera"
+                android:visibility="gone" />
 
-        <androidx.appcompat.widget.AppCompatImageView
-            android:id="@+id/cameraIv"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="15dp"
-            android:src="@mipmap/floating_camera" />
-    </LinearLayout>
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/msgIv"
+                android:layout_width="35dp"
+                android:layout_height="35dp"
+                android:padding="2dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:layout_marginEnd="15dp"
+                android:contentDescription="@string/str_moment_chat"
+                android:src="@mipmap/floating_message"
+                android:visibility="visible" />
+        </RelativeLayout>
+
+    </RelativeLayout>
 
 </FrameLayout>

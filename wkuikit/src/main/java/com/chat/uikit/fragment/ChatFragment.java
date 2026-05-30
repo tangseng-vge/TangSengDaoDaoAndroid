@@ -6,12 +6,15 @@ import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.text.TextUtils;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.TextView;
 
 import androidx.core.app.ActivityOptionsCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.util.Pair;
+import androidx.core.view.ViewCompat;
+import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -69,7 +72,6 @@ import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.annotations.NonNull;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.Observer;
 import io.reactivex.rxjava3.disposables.Disposable;
@@ -118,31 +120,43 @@ public class ChatFragment extends WKBaseFragment<FragChatConversationLayoutBindi
         wkVBinding.refreshLayout.setEnableOverScrollDrag(true);
         wkVBinding.refreshLayout.setEnableLoadMore(false);
         wkVBinding.refreshLayout.setEnableRefresh(false);
-
         Theme.setPressedBackground(wkVBinding.deviceIv);
-        Theme.setPressedBackground(wkVBinding.searchIv);
         Theme.setPressedBackground(wkVBinding.rightIv);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            ViewCompat.setTransitionName(wkVBinding.ivSearch, "searchView");
+        }
     }
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void initListener() {
         wkVBinding.rightIv.setOnClickListener(view -> {
+            dismissOpenedSwipe();
             List<PopupMenuItem> list = EndpointManager.getInstance().invokes(EndpointCategory.tabMenus, null);
-            WKDialogUtils.getInstance().showScreenPopup(view, list);
+            WKDialogUtils.getInstance().showScreenPopupBelow(view, list, 0);
         });
 
         wkVBinding.deviceIv.setOnClickListener(v -> EndpointManager.getInstance().invoke("show_pc_login_view", getActivity()));
-        wkVBinding.searchIv.setOnClickListener(view1 -> {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                @SuppressWarnings("unchecked") ActivityOptionsCompat activityOptions = ActivityOptionsCompat.makeSceneTransitionAnimation(requireActivity(), new Pair<>(wkVBinding.searchIv, "searchView"));
-                startActivity(new Intent(getActivity(), GlobalActivity.class), activityOptions.toBundle());
-            } else {
-                startActivity(new Intent(getActivity(), GlobalActivity.class));
+        wkVBinding.rlSearch.setOnClickListener(v -> openGlobalSearch());
+        chatConversationAdapter.setRecyclerView(wkVBinding.recyclerView);
+        wkVBinding.recyclerView.addOnItemTouchListener(new RecyclerView.SimpleOnItemTouchListener() {
+            @Override
+            public boolean onInterceptTouchEvent(@NonNull RecyclerView rv, @NonNull MotionEvent e) {
+                chatConversationAdapter.closeOpenedSwipeIfNeeded(rv, e);
+                return false;
             }
         });
         chatConversationAdapter.addChildClickViewIds(R.id.contentLayout);
         chatConversationAdapter.setOnItemChildClickListener((adapter, view, position) -> SingleClickUtil.determineTriggerSingleClick(view, v -> {
+            if (view.getId() == R.id.contentLayout && chatConversationAdapter.isSwipeOpen(position)) {
+                dismissOpenedSwipe();
+                return;
+            }
+            RecyclerView.ViewHolder holder = wkVBinding.recyclerView.findViewHolderForAdapterPosition(position);
+            if (holder instanceof com.chad.library.adapter.base.viewholder.BaseViewHolder baseViewHolder
+                    && chatConversationAdapter.wasSwipeConsumed(baseViewHolder)) {
+                return;
+            }
             ChatConversationMsg uiConversationMsg = (ChatConversationMsg) adapter.getItem(position);
             if (uiConversationMsg != null && uiConversationMsg.uiConversationMsg != null) {
                 if (view.getId() == R.id.contentLayout) {
@@ -217,6 +231,7 @@ public class ChatFragment extends WKBaseFragment<FragChatConversationLayoutBindi
                         chatConversationAdapter.getData().get(i).uiConversationMsg.setWkChannel(channel);
                         // fixme 不能强制刷新整个列表，导致重新获取channel 频繁刷新UI卡顿
                         if (chatConversationAdapter.getData().get(i).isTop != channel.top) {
+                            chatConversationAdapter.getData().get(i).stickyStateChanged = true;
                             chatConversationAdapter.getData().get(i).isTop = channel.top;
                             sortMsg(chatConversationAdapter.getData());
                         } else {
@@ -500,6 +515,11 @@ public class ChatFragment extends WKBaseFragment<FragChatConversationLayoutBindi
                 }
 
             }
+            return null;
+        });
+
+        EndpointManager.getInstance().setMethod("chat_fragment", EndpointCategory.wkRefreshChatConversation, object -> {
+            refreshConversationTimeLabels();
             return null;
         });
 
@@ -814,8 +834,39 @@ public class ChatFragment extends WKBaseFragment<FragChatConversationLayoutBindi
     }
 
     @Override
+    public void onPause() {
+        if (chatConversationAdapter != null) {
+            chatConversationAdapter.dismissAllSwipe();
+        }
+        super.onPause();
+    }
+
+    public void dismissOpenedSwipe() {
+        if (chatConversationAdapter != null) {
+            chatConversationAdapter.closeOpenedSwipe();
+        }
+    }
+
+    public void dismissOpenedSwipeImmediate() {
+        if (chatConversationAdapter != null) {
+            chatConversationAdapter.dismissAllSwipe();
+        }
+    }
+
+    private void openGlobalSearch() {
+        dismissOpenedSwipe();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            @SuppressWarnings("unchecked") ActivityOptionsCompat activityOptions = ActivityOptionsCompat.makeSceneTransitionAnimation(requireActivity(), new Pair<>(wkVBinding.ivSearch, "searchView"));
+            startActivity(new Intent(getActivity(), GlobalActivity.class), activityOptions.toBundle());
+        } else {
+            startActivity(new Intent(getActivity(), GlobalActivity.class));
+        }
+    }
+
+    @Override
     public void onResume() {
         super.onResume();
+        dismissOpenedSwipe();
         int pcOnline = WKSharedPreferencesUtil.getInstance().getInt(WKConfig.getInstance().getUid() + "_pc_online");
         wkVBinding.deviceIv.setVisibility(pcOnline == 1 ? View.VISIBLE : View.GONE);
 //        String appLoginType = String.format(getString(R.string.pc_login), getString(R.string.app_name));
@@ -865,6 +916,22 @@ public class ChatFragment extends WKBaseFragment<FragChatConversationLayoutBindi
     private void notifyRecycler(int index, ChatConversationMsg msg) {
         if (wkVBinding.recyclerView.getScrollState() == RecyclerView.SCROLL_STATE_IDLE || (!wkVBinding.recyclerView.isComputingLayout())) {
             chatConversationAdapter.notifyItemChanged(index, msg);
+        }
+    }
+
+    /** 语言切换后重绑会话项时间文案（上午/下午、昨天等）。 */
+    private void refreshConversationTimeLabels() {
+        if (!isAdded() || chatConversationAdapter == null) {
+            return;
+        }
+        List<ChatConversationMsg> data = chatConversationAdapter.getData();
+        if (WKReader.isEmpty(data)) {
+            return;
+        }
+        for (int i = 0, size = data.size(); i < size; i++) {
+            ChatConversationMsg item = data.get(i);
+            item.isResetTime = true;
+            notifyRecycler(i, item);
         }
     }
 

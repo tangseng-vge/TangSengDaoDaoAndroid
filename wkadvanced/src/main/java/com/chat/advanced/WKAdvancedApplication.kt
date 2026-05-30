@@ -22,6 +22,7 @@ import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.target.Target
 import com.bumptech.glide.request.transition.Transition
 import com.chat.advanced.entity.ChatBgKeys
+import com.chat.advanced.utils.ChatBgBlurHelper
 import com.chat.advanced.msg.ScreenshotContent
 import com.chat.advanced.msg.ScreenshotProvider
 import com.chat.advanced.service.AdvancedModel
@@ -38,6 +39,8 @@ import com.chat.base.config.WKApiConfig
 import com.chat.base.config.WKConfig
 import com.chat.base.config.WKConstants
 import com.chat.base.config.WKSharedPreferencesUtil
+import com.chat.base.net.ud.WKDownloader
+import com.chat.base.net.ud.WKProgressManager
 import com.chat.base.endpoint.EndpointCategory
 import com.chat.base.endpoint.EndpointHandler
 import com.chat.base.endpoint.EndpointManager
@@ -459,11 +462,13 @@ class WKAdvancedApplication private constructor() {
     private fun setChatBG(menu: SetChatBgMenu) {
         val channel =
             WKIM.getInstance().channelManager.getChannel(menu.channelID, menu.channelType)
-        if (channel?.localExtra == null) return
-        val urlObject = channel.localExtra[ChatBgKeys.chatBgUrl]
+                ?: return
         var url = ""
-        if (urlObject != null && urlObject is String) {
-            url = urlObject
+        channel.localExtra?.let { localExtra ->
+            val urlObject = localExtra[ChatBgKeys.chatBgUrl]
+            if (urlObject is String) {
+                url = urlObject
+            }
         }
         val themePref = Theme.getTheme()
         val isDark = if (themePref != Theme.DARK_MODE && themePref != Theme.LIGHT_MODE) {
@@ -515,7 +520,7 @@ class WKAdvancedApplication private constructor() {
                 val showPattern = WKSharedPreferencesUtil.getInstance()
                     .getIntWithUID(ChatBgKeys.chatBgShowPattern)
                 //userInfoEntity.chat_bg_show_pattern
-                val path = WKConstants.chatBgCacheDir + overallURL.replace("/", "_")
+                val path = ChatBgKeys.cacheFilePath(overallURL)
                 val file = File(path)
                 if (file.exists()) {
                     if (isSvg == 1)
@@ -526,15 +531,12 @@ class WKAdvancedApplication private constructor() {
                             gradientAngle,
                             menu.rootLayout,
                             menu.backGroundIV,
+                            menu.blurView,
                             isDark
                         )
                     else {
-                        val isBlurred = WKSharedPreferencesUtil.getInstance()
-                            .getIntWithUID(ChatBgKeys.chatBgIsBlurred)
-                        menu.blurView.visibility =
-                            if (isBlurred == 1) View.VISIBLE else View.GONE
-                        GlideUtils.getInstance()
-                            .showImg(menu.backGroundIV.context, path, menu.backGroundIV)
+                        applyImageChatBG(menu, path, isBlurred = WKSharedPreferencesUtil.getInstance()
+                            .getIntWithUID(ChatBgKeys.chatBgIsBlurred))
                     }
                 } else {
                     // 下载文件
@@ -547,15 +549,12 @@ class WKAdvancedApplication private constructor() {
                                 gradientAngle,
                                 menu.rootLayout,
                                 menu.backGroundIV,
+                                menu.blurView,
                                 isDark
                             )
                         else {
-                            val isBlurred = WKSharedPreferencesUtil.getInstance()
-                                .getIntWithUID(ChatBgKeys.chatBgIsBlurred)
-                            menu.blurView.visibility =
-                                if (isBlurred == 1) View.VISIBLE else View.GONE
-                            GlideUtils.getInstance()
-                                .showImg(menu.backGroundIV.context, path, menu.backGroundIV)
+                            applyImageChatBG(menu, path, isBlurred = WKSharedPreferencesUtil.getInstance()
+                                .getIntWithUID(ChatBgKeys.chatBgIsBlurred))
                         }
                     }
                 }
@@ -598,7 +597,7 @@ class WKAdvancedApplication private constructor() {
             val isDeletedObject = channel.localExtra[ChatBgKeys.chatBgIsDeleted]
             val isSvgObject = channel.localExtra[ChatBgKeys.chatBgIsSvg]
 //            val colorIndexObject = channel.localExtra[WKChannelCustomerExtras.chatBgColorIndex]
-            val gradientAngleObject = channel.localExtra[ChatBgKeys.chatBgIsSvg]
+            val gradientAngleObject = channel.localExtra[ChatBgKeys.chatBgGradientAngle]
             val showPatternObject = channel.localExtra[ChatBgKeys.chatBgShowPattern]
             val isBlurredObject = channel.localExtra[ChatBgKeys.chatBgIsBlurred]
             val colorObject =
@@ -619,10 +618,10 @@ class WKAdvancedApplication private constructor() {
             if (isDeleted == 1) return
             if (isSvgObject != null) isSvg = isSvgObject as Int
 //            if (colorIndexObject != null) colorIndex = colorIndexObject as Int
-            if (gradientAngleObject != null) gradientAngle = gradientAngleObject as Int
-            if (showPatternObject != null) showPattern = showPatternObject as Int
-            if (isBlurredObject != null) isBlurred = isBlurredObject as Int
-            val path = WKConstants.chatBgCacheDir + url.replace("/", "_")
+            if (gradientAngleObject != null) gradientAngle = parseChatBgInt(gradientAngleObject)
+            if (showPatternObject != null) showPattern = parseChatBgInt(showPatternObject)
+            if (isBlurredObject != null) isBlurred = parseChatBgInt(isBlurredObject)
+            val path = ChatBgKeys.cacheFilePath(url)
             val file = File(path)
             if (file.exists()) {
                 if (isSvg == 1)
@@ -633,13 +632,11 @@ class WKAdvancedApplication private constructor() {
                         gradientAngle,
                         menu.rootLayout,
                         menu.backGroundIV,
+                        menu.blurView,
                         isDark
                     )
                 else {
-                    menu.blurView.visibility =
-                        if (isBlurred == 1) View.VISIBLE else View.GONE
-                    GlideUtils.getInstance()
-                        .showImg(menu.backGroundIV.context, path, menu.backGroundIV)
+                    applyImageChatBG(menu, path, isBlurred)
                 }
             } else {
                 // 下载文件
@@ -652,13 +649,11 @@ class WKAdvancedApplication private constructor() {
                             gradientAngle,
                             menu.rootLayout,
                             menu.backGroundIV,
+                            menu.blurView,
                             isDark
                         )
                     else {
-                        menu.blurView.visibility =
-                            if (isBlurred == 1) View.VISIBLE else View.GONE
-                        GlideUtils.getInstance()
-                            .showImg(menu.backGroundIV.context, path, menu.backGroundIV)
+                        applyImageChatBG(menu, path, isBlurred)
                     }
                 }
             }
@@ -671,35 +666,43 @@ class WKAdvancedApplication private constructor() {
         savePath: String,
         result: () -> Unit
     ) {
-        Glide.with(context)
-            .downloadOnly()
-            .load(WKApiConfig.getShowUrl(url))
-            .listener(object : RequestListener<File?> {
-                override fun onLoadFailed(
-                    e: GlideException?,
-                    model: Any?,
-                    target: Target<File?>,
-                    isFirstResource: Boolean
-                ): Boolean {
-                    return false
-                }
+        val downloadUrl = WKApiConfig.getShowUrl(url)
+        File(savePath).parentFile?.mkdirs()
+        WKDownloader.instance.download(downloadUrl, savePath, object : WKProgressManager.IProgress {
+            override fun onProgress(tag: Any?, progress: Int) {}
 
-                override fun onResourceReady(
-                    resource: File,
-                    model: Any,
-                    target: Target<File?>?,
-                    dataSource: DataSource,
-                    isFirstResource: Boolean
-                ): Boolean {
-                    if (resource.exists()) {
-                        WKFileUtils.getInstance()
-                            .fileCopy(resource.absolutePath, savePath)
+            override fun onSuccess(tag: Any?, path: String?) {
+                AndroidUtilities.runOnUIThread {
+                    if (File(savePath).exists()) {
                         result()
                     }
-                    return false
                 }
-            })
-            .preload()
+            }
+
+            override fun onFail(tag: Any?, msg: String?) {}
+        })
+    }
+
+    private fun applyImageChatBG(menu: SetChatBgMenu, path: String, isBlurred: Int) {
+        menu.rootLayout.background = null
+        menu.blurView.visibility = View.GONE
+        menu.backGroundIV.setImageDrawable(null)
+        val context = menu.backGroundIV.context
+        val displayPath = if (isBlurred == 1) {
+            ChatBgBlurHelper.displayPath(context, path)
+        } else {
+            path
+        }
+        GlideUtils.getInstance().showImg(context, displayPath, menu.backGroundIV)
+    }
+
+    private fun parseChatBgInt(value: Any?): Int {
+        return when (value) {
+            is Int -> value
+            is Number -> value.toInt()
+            is String -> value.toIntOrNull() ?: 0
+            else -> 0
+        }
     }
 
     private fun setSvgBG(
@@ -709,23 +712,22 @@ class WKAdvancedApplication private constructor() {
         gradientAngle: Int,
         rootLayout: View,
         imageView: ImageView,
+        blurView: View,
         isDark: Boolean
     ) {
-        if (isDark) {
-            val index = abs(path.hashCode()) % Theme.defaultColorsDark.size
-            val drawable = GradientDrawable(
-                Theme.getGradientOrientation(gradientAngle),
-                Theme.defaultColorsDark[index]
-            )
-            rootLayout.background = drawable
+        blurView.visibility = View.GONE
+        val gradientColors = if (colors.isNotEmpty()) {
+            colors
+        } else if (isDark) {
+            Theme.defaultColorsDark[abs(path.hashCode()) % Theme.defaultColorsDark.size]
         } else {
-            if (colors.isNotEmpty()) {
-                val drawable = GradientDrawable(
-                    Theme.getGradientOrientation(gradientAngle),
-                    colors
-                )
-                rootLayout.background = drawable
-            }
+            intArrayOf()
+        }
+        if (gradientColors.isNotEmpty()) {
+            rootLayout.background = GradientDrawable(
+                Theme.getGradientOrientation(gradientAngle),
+                gradientColors
+            )
         }
 //        val colors1 = intArrayOf(
 //            Color.parseColor("#5f4167"),
@@ -851,6 +853,7 @@ class WKAdvancedApplication private constructor() {
         val view = LayoutInflater.from(context)
             .inflate(R.layout.item_msg_receipt_layout, chatSettingCellMenu.parentLayout, false)
         val switchView = view.findViewById<SwitchView>(R.id.receiptSwitchView)
+        Theme.applyAccentSwitchStyle(context, switchView)
 //        var seekBarView: SeekBarView? = null
 
         val channel = WKIM.getInstance().channelManager.getChannel(

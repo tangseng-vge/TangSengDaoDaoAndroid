@@ -3,13 +3,14 @@
     <string name="connecting">连接中</string>
     <string name="not_connected">未连接</string>
     <string name="news_line">以下为新消息</string>
-    <string name="contacts_num">%d位联系人</string>
+    <string name="contacts_num">%d 个朋友</string>
     <string name="login_out">退出登录</string>
     <string name="login_out_dialog">退出后不会删除任何历史数据，下次登录依然可以使用本账号。</string>
     <string name="tab_msg">消息</string>
     <string name="tab_contacts">通讯录</string>
+    <string name="str_search">搜索...</string>
     <string name="tab_me">我的</string>
-    <string name="new_friends">新朋友</string>
+    <string name="new_friends">新的朋友</string>
     <string name="agree_apply">通过验证</string>
     <string name="agreed_apply">已通过</string>
     <string name="press_talk">按住说话</string>
@@ -72,9 +73,9 @@
     <string name="apply_join_group">[进群申请]</string>
     <string name="ar_feed_sound_cancel">松手取消</string>
     <string name="new_msg_notice">新消息通知</string>
-    <string name="web_login">电脑端登录</string>
+    <string name="web_login">网页端</string>
     <string name="currency">通用</string>
-    <string name="saved_groups">保存的群聊</string>
+    <string name="saved_groups">群聊</string>
     <string name="head_portrait">头像</string>
     <string name="name">名字</string>
     <string name="identity">%s号</string>
@@ -129,6 +130,7 @@
     <string name="is_forward">已转发</string>
     <string name="input_remark">请输入备注</string>
     <string name="send_to">发送给：</string>
+    <string name="chat_send_to_hint">发送给 \"%1$s\"</string>
     <string name="create_new_chat">创建新的聊天</string>
     <string name="lately_chat">最近聊天</string>
     <string name="request_add_frined">请求加好友</string>
@@ -158,7 +160,7 @@
     <string name="user_detail_info">资料设置</string>
     <string name="delete_conver_msg_tips">删除后，将清空该聊天的消息记录</string>
     <string name="remove_conver_msg_tips">确定不显示该聊天？</string>
-    <string name="language">Languages/多语言</string>
+    <string name="language">多语言</string>
     <string name="disabled">未开启</string>
     <string name="enabled">已开启</string>
     <string name="scan_user_qr">扫描二维码名片</string>
@@ -256,6 +258,8 @@
     <string name="backup_message_desc">1．迁移本地聊天记录，需要将您的聊天记录上传至服务器以支持新设备下载；\n2．聊天记录会以不记名加密的方式存储在服务器；\n3．为了防止信息泄露，服务器将于每天0:00删除当天用户上传的聊天记录；\n4．每一次备份，都将覆盖前一次备份的聊天记录，请谨慎操作；\n5．建议用户确认聊天记录迁移完毕后再删除原设备上的聊天记录；\n6．由此功能造成任何的不良后果由用户自行承担；</string>
     <string name="recovery_msg_fail">恢复聊天记录失败</string>
     <string name="choose_module">修改密码</string>
+    <string name="black_list">黑名单</string>
+    <string name="no_black_list">暂无黑名单用户</string>
     <string name="third_party_sharing_list">第三方信息共享清单</string>
     <string name="error_data">开发日志</string>
     <string name="call_blacklist_group">您已被拉入群黑名单，无法音视频聊天</string>
@@ -279,9 +283,11 @@
     <string name="open_new_msg_notice_desc">在系统通知权限页面的类别分类中，打开‘新消息通知’页面，开启‘允许通知’和‘振动’，‘声音’选项</string>
     <string name="open_new_rtc_notice">打开音视频邀请通知</string>
     <string name="open_new_rtc_notice_desc">在系统通知权限页面的类别分类中，打开‘音视频邀请通知’页面，开启‘允许通知’和‘振动’，‘声音’选项</string>
-    <string name="tab_text_chat">聊天</string>
-    <string name="tab_text_contacts">联系人</string>
-    <string name="tab_text_me">我的</string>
+    <string name="tab_text_chat">消息</string>
+    <string name="tab_text_contacts">通讯录</string>
+    <string name="tab_text_discover">发现</string>
+    <string name="tab_discover_placeholder">发现页内容开发中</string>
+    <string name="tab_text_me">我</string>
     <string name="invitation_sent">邀请已发送</string>
     <string name="find_chat_content">查找聊天记录</string>
     <string name="uikit_search_specified_content">搜索指定内容</string>
@@ -306,5 +312,8 @@
     <string name="placeholder_pwd">请输入密码</string>
     <string name="update_loading">加载中</string>
     <string name="update_sure">确认</string>
+    <string name="update_label_old_password">旧密码</string>
+    <string name="update_label_new_password">新密码</string>
+    <string name="update_label_confirm_password">确认密码</string>
 </resources>
 

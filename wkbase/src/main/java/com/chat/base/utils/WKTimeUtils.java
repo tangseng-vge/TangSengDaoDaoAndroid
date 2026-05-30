@@ -2,9 +2,10 @@ package com.chat.base.utils;
 
 import android.util.Log;
 
-import com.chat.base.WKBaseApplication;
 import com.chat.base.R;
+import com.chat.base.utils.language.AppLocaleStrings;
 import com.chat.base.utils.language.WKLanguageType;
+import com.chat.base.utils.language.WKMultiLanguageUtil;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -36,15 +37,15 @@ public class WKTimeUtils {
         String str = df.format(date);
         int a = Integer.parseInt(str);
         if (a <= 12) {
-            return WKBaseApplication.getInstance().getContext().getString(R.string.time_am);
+            return AppLocaleStrings.getString(R.string.time_am);
         } else {
-            return WKBaseApplication.getInstance().getContext().getString(R.string.time_pm);
+            return AppLocaleStrings.getString(R.string.time_pm);
         }
     }
 
     public String getTimeString(long timestamp) {
         String result;
-        //  String[] weekNames = {WKBaseApplication.getInstance().getContext().getString(R.string.weak_7), WKBaseApplication.getInstance().getContext().getString(R.string.weak_1), WKBaseApplication.getInstance().getContext().getString(R.string.weak_2), WKBaseApplication.getInstance().getContext().getString(R.string.weak_3), WKBaseApplication.getInstance().getContext().getString(R.string.weak_4), WKBaseApplication.getInstance().getContext().getString(R.string.weak_5), WKBaseApplication.getInstance().getContext().getString(R.string.weak_6)};
+        //  String[] weekNames = {AppLocaleStrings.getString(R.string.weak_7), AppLocaleStrings.getString(R.string.weak_1), AppLocaleStrings.getString(R.string.weak_2), AppLocaleStrings.getString(R.string.weak_3), AppLocaleStrings.getString(R.string.weak_4), AppLocaleStrings.getString(R.string.weak_5), AppLocaleStrings.getString(R.string.weak_6)};
         String hourTimeFormat = "HH:mm";
         String monthTimeFormat = "M-d HH:mm";
         String yearTimeFormat = "yyyy-M-d HH:mm";
@@ -61,7 +62,7 @@ public class WKTimeUtils {
                             result = getTime(timestamp, hourTimeFormat);
                             break;
                         case 1://昨天
-                            result = WKBaseApplication.getInstance().getContext().getString(R.string.yesterday) + getTime(timestamp, hourTimeFormat);
+                            result = AppLocaleStrings.getString(R.string.yesterday) + getTime(timestamp, hourTimeFormat);
                             break;
 //                        case 2:
 //                        case 3:
@@ -88,7 +89,21 @@ public class WKTimeUtils {
         }
     }
 
-    String[] dayNames = {WKBaseApplication.getInstance().getContext().getString(R.string.sunday), WKBaseApplication.getInstance().getContext().getString(R.string.monday), WKBaseApplication.getInstance().getContext().getString(R.string.tuesday), WKBaseApplication.getInstance().getContext().getString(R.string.wednesday), WKBaseApplication.getInstance().getContext().getString(R.string.thursday), WKBaseApplication.getInstance().getContext().getString(R.string.friday), WKBaseApplication.getInstance().getContext().getString(R.string.saterday)};
+    private Locale appLocale() {
+        return WKMultiLanguageUtil.getInstance().resolveLocale();
+    }
+
+    private String[] getDayNames() {
+        return new String[]{
+                AppLocaleStrings.getString(R.string.sunday),
+                AppLocaleStrings.getString(R.string.monday),
+                AppLocaleStrings.getString(R.string.tuesday),
+                AppLocaleStrings.getString(R.string.wednesday),
+                AppLocaleStrings.getString(R.string.thursday),
+                AppLocaleStrings.getString(R.string.friday),
+                AppLocaleStrings.getString(R.string.saterday)
+        };
+    }
 
     public String getNewChatTime(long timeStamp) {
         String result;
@@ -118,8 +133,8 @@ public class WKTimeUtils {
 //                        result = time2HourStr(timeStamp);
                         break;
                     case 1:
-//                        result = String.format("%s %s", WKBaseApplication.getInstance().getContext().getString(R.string.yesterday), time2HourStr(timeStamp));
-                        result = String.format("%s", WKBaseApplication.getInstance().getContext().getString(R.string.yesterday));
+//                        result = String.format("%s %s", AppLocaleStrings.getString(R.string.yesterday), time2HourStr(timeStamp));
+                        result = String.format("%s", AppLocaleStrings.getString(R.string.yesterday));
                         break;
                     case 2:
                     case 3:
@@ -131,7 +146,7 @@ public class WKTimeUtils {
                         if (dayOfMonth == todayOfMonth) {//表示是同一周
                             int dayOfWeek = otherCalendar.get(Calendar.DAY_OF_WEEK);
                             if (dayOfWeek != 1) {//判断当前是不是星期日     如想显示为：周日 12:09 可去掉此判断
-                                result = dayNames[otherCalendar.get(Calendar.DAY_OF_WEEK) - 1] + time2HourStr(timeStamp);
+                                result = getDayNames()[otherCalendar.get(Calendar.DAY_OF_WEEK) - 1] + time2HourStr(timeStamp);
                             } else {
                                 result = getTime(timeStamp, timeFormat);
                             }
@@ -153,7 +168,7 @@ public class WKTimeUtils {
     }
 
     public String getYearTime(long time, String yearTimeFormat) {
-        SimpleDateFormat format = new SimpleDateFormat(yearTimeFormat, Locale.getDefault());
+        SimpleDateFormat format = new SimpleDateFormat(yearTimeFormat, appLocale());
         return format.format(new Date(time));
     }
 
@@ -163,7 +178,7 @@ public class WKTimeUtils {
     }
 
     private String dateFormat(Date date, String pattern) {
-        SimpleDateFormat format = new SimpleDateFormat(pattern, Locale.getDefault());
+        SimpleDateFormat format = new SimpleDateFormat(pattern, appLocale());
         return format.format(date);
     }
 
@@ -229,11 +244,12 @@ public class WKTimeUtils {
     }
 
     public String time2HourStr(long timeStamp) {
+        Locale locale = appLocale();
         SimpleDateFormat sdf;
         if (is24Hour()) {
-            sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
+            sdf = new SimpleDateFormat("HH:mm", locale);
         } else {
-            sdf = new SimpleDateFormat("hh:mm", Locale.getDefault());
+            sdf = new SimpleDateFormat("h:mm", locale);
         }
         return sdf.format(new Date(timeStamp));
 
@@ -319,9 +335,9 @@ public class WKTimeUtils {
             if (r > 60) {
                 return "";
             } else
-                return String.format(WKBaseApplication.getInstance().getContext().getString(R.string.str_min), r + "");
+                return String.format(AppLocaleStrings.getString(R.string.str_min), r + "");
         }
-        return WKBaseApplication.getInstance().getContext().getString(R.string.str_just);
+        return AppLocaleStrings.getString(R.string.str_just);
     }
 
     private final int SECONDS_IN_DAY = 60 * 60 * 24;
@@ -395,7 +411,7 @@ public class WKTimeUtils {
     }
 
     public boolean is24Hour() {
-        return android.text.format.DateFormat.is24HourFormat(WKBaseApplication.getInstance().getContext());
+        return android.text.format.DateFormat.is24HourFormat(AppLocaleStrings.localizedContext());
     }
 
     private static long lastClickTime = 0;

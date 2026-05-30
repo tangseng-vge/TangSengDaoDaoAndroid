@@ -16,6 +16,7 @@
             android:layout_height="match_parent"
             android:layout_gravity="center"
             android:scaleType="centerCrop"
+            android:layout_marginHorizontal="5dp"
             android:src="@drawable/default_view_bg" />
 
         <androidx.appcompat.widget.AppCompatImageView

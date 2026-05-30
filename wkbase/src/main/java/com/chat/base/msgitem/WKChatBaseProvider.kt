@@ -432,24 +432,24 @@ abstract class WKChatBaseProvider : BaseItemProvider<WKUIChatMsgItemEntity>() {
     }
 
     protected open fun isShowAvatar(nowMsg: WKMsg?, nextMsg: WKMsg?): Boolean {
-        var isShowAvatar = false
-        var nowUID = ""
-        var nextUID = ""
-        if (nowMsg != null && !TextUtils.isEmpty(nowMsg.fromUID)
-            && nowMsg.remoteExtra.revoke == 0 && !WKContentType.isSystemMsg(nowMsg.type)
-        ) {
-            nowUID = nowMsg.fromUID
+        return shouldShowMessageAvatar(nowMsg)
+    }
+
+    protected open fun shouldShowMessageAvatar(msg: WKMsg?): Boolean {
+        if (msg == null) return false
+        if (msg.remoteExtra != null && msg.remoteExtra.revoke == 1) return false
+        if (WKContentType.isSystemMsg(msg.type)) return false
+        when (msg.type) {
+            WKContentType.loading,
+            WKContentType.emptyView,
+            WKContentType.spanEmptyView,
+            WKContentType.msgPromptTime,
+            WKContentType.msgPromptNewMsg,
+            WKContentType.noRelation,
+            WKContentType.sensitiveWordsTips,
+            WKContentType.revoke -> return false
         }
-        if (nextMsg != null && !TextUtils.isEmpty(nextMsg.fromUID)
-            && nextMsg.type != WKContentType.screenshot
-            && nextMsg.remoteExtra.revoke == 0 && !WKContentType.isSystemMsg(nextMsg.type)
-        ) {
-            nextUID = nextMsg.fromUID
-        }
-        if (nowUID != nextUID) {
-            isShowAvatar = true
-        }
-        return isShowAvatar
+        return true
     }
 
     private fun setChoose(
@@ -618,22 +618,11 @@ abstract class WKChatBaseProvider : BaseItemProvider<WKUIChatMsgItemEntity>() {
             adapter.conversationContext.onChatAvatarClick(uiChatMsgItemEntity.wkMsg.fromUID, true)
             true
         }
-        // 控制头像是否显示
-        if (uiChatMsgItemEntity.wkMsg.channelType == WKChannelType.PERSONAL) {
-            avatarView.visibility = GONE
-        } else {
-            if (from == WKChatIteMsgFromType.SEND) {
-                avatarView.visibility = GONE
-            } else avatarView.visibility =
-                if (isShowAvatar(
-                        uiChatMsgItemEntity.wkMsg,
-                        uiChatMsgItemEntity.nextMsg
-                    )
-                ) VISIBLE else GONE
-        }
-
-        if (uiChatMsgItemEntity.wkMsg != null && avatarView.isVisible) {
+        if (shouldShowMessageAvatar(uiChatMsgItemEntity.wkMsg)) {
+            avatarView.visibility = VISIBLE
             setAvatar(uiChatMsgItemEntity, avatarView)
+        } else {
+            avatarView.visibility = GONE
         }
     }
 
@@ -673,19 +662,16 @@ abstract class WKChatBaseProvider : BaseItemProvider<WKUIChatMsgItemEntity>() {
         }
         var margin = 10f
         if (isBubble) margin = 0f
+        val showAvatar = shouldShowMessageAvatar(uiChatMsgItemEntity.wkMsg)
+        val avatarSpace = if (showAvatar) 50f else 10f
         if (from == WKChatIteMsgFromType.SEND) {
             fullContentLayoutParams.gravity = Gravity.END
-            fullContentLayoutParams.rightMargin = AndroidUtilities.dp(margin)
+            fullContentLayoutParams.rightMargin = AndroidUtilities.dp(avatarSpace + margin)
             fullContentLayoutParams.leftMargin = AndroidUtilities.dp(55f)
         } else {
             fullContentLayoutParams.gravity = Gravity.START
-            if (uiChatMsgItemEntity.wkMsg.channelType == WKChannelType.PERSONAL) {
-                fullContentLayoutParams.rightMargin = AndroidUtilities.dp(55f)
-                fullContentLayoutParams.leftMargin = AndroidUtilities.dp(margin)
-            } else {
-                fullContentLayoutParams.leftMargin = AndroidUtilities.dp(50f + margin)
-                fullContentLayoutParams.rightMargin = AndroidUtilities.dp(55f)
-            }
+            fullContentLayoutParams.leftMargin = AndroidUtilities.dp(avatarSpace + margin)
+            fullContentLayoutParams.rightMargin = AndroidUtilities.dp(55f)
         }
         fullContentLayout.layoutParams = fullContentLayoutParams
     }
@@ -737,15 +723,25 @@ abstract class WKChatBaseProvider : BaseItemProvider<WKUIChatMsgItemEntity>() {
         if (!WKTimeUtils.getInstance().is24Hour) msgTimeTv.text =
             String.format("%s %s", timeSpace, time) else msgTimeTv.text =
             String.format("%s", time)
+        msgTimeTv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 10f)
+        editedTv?.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 9f)
         val isShowNormalColor: Boolean
         val drawable: RLottieDrawable
         var autoRepeat = false
-        if (mMsg.type == WKContentType.WK_IMAGE || mMsg.type == WKContentType.WK_GIF || mMsg.type == WKContentType.WK_VIDEO || mMsg.type == WKContentType.WK_VECTOR_STICKER || mMsg.type == WKContentType.WK_EMOJI_STICKER || mMsg.type == WKContentType.WK_LOCATION) {
+        val whiteColor = ContextCompat.getColor(context, R.color.white)
+        val normalColor = ContextCompat.getColor(context, R.color.color999)
+        if (fromType == WKChatIteMsgFromType.SEND) {
             isShowNormalColor = false
-            msgTimeTv.setTextColor(ContextCompat.getColor(context, R.color.white))
+            msgTimeTv.setTextColor(whiteColor)
+            editedTv?.setTextColor(whiteColor)
+        } else if (mMsg.type == WKContentType.WK_IMAGE || mMsg.type == WKContentType.WK_GIF || mMsg.type == WKContentType.WK_VIDEO || mMsg.type == WKContentType.WK_VECTOR_STICKER || mMsg.type == WKContentType.WK_EMOJI_STICKER || mMsg.type == WKContentType.WK_LOCATION) {
+            isShowNormalColor = false
+            msgTimeTv.setTextColor(whiteColor)
+            editedTv?.setTextColor(whiteColor)
         } else {
             isShowNormalColor = true
-            msgTimeTv.setTextColor(ContextCompat.getColor(context, R.color.color999))
+            msgTimeTv.setTextColor(normalColor)
+            editedTv?.setTextColor(normalColor)
         }
         pinIV.colorFilter =
             PorterDuffColorFilter(
@@ -1519,13 +1515,16 @@ abstract class WKChatBaseProvider : BaseItemProvider<WKUIChatMsgItemEntity>() {
         if (msgItemEntity.isShowPinnedMessage) {
             pinnedWidth = 35
         }
+        val showAvatar = shouldShowMessageAvatar(msgItemEntity.wkMsg)
+        val avatarReserve = if (showAvatar) 72 else 0
+        val horizontalReserve = 52 + checkBoxMargin + avatarReserve + flameWidth + pinnedWidth
         width =
             if (fromType == WKChatIteMsgFromType.SEND || msgItemEntity.wkMsg.channelType == WKChannelType.PERSONAL) {
-                maxWidth - AndroidUtilities.dp((70 + checkBoxMargin).toFloat() + flameWidth + pinnedWidth)
+                maxWidth - AndroidUtilities.dp(horizontalReserve.toFloat())
             } else {
-                maxWidth - AndroidUtilities.dp((70 + 40 + checkBoxMargin).toFloat() + flameWidth + pinnedWidth)
+                maxWidth - AndroidUtilities.dp((horizontalReserve + 36).toFloat())
             }
-        return width
+        return width.coerceAtLeast(AndroidUtilities.dp(140f))
     }
 
     protected open fun getShowContent(contentJson: String): String? {
@@ -1579,25 +1578,25 @@ abstract class WKChatBaseProvider : BaseItemProvider<WKUIChatMsgItemEntity>() {
             previousFromUID = getAdapter()!!.data[position - 1].wkMsg.fromUID
         }
         if (TextUtils.isEmpty(currentFromUID)) {
-            top = AndroidUtilities.dp(4f)
-            bottom = AndroidUtilities.dp(4f)
+            top = AndroidUtilities.dp(8f)
+            bottom = AndroidUtilities.dp(8f)
         } else {
             top = if (!TextUtils.isEmpty(previousFromUID) && previousFromUID == currentFromUID) {
-                AndroidUtilities.dp(1f)
-            } else {
                 AndroidUtilities.dp(4f)
+            } else {
+                AndroidUtilities.dp(8f)
             }
             bottom = if (!TextUtils.isEmpty(nextFromUID) && nextFromUID == currentFromUID) {
-                AndroidUtilities.dp(1f)
-            } else {
                 AndroidUtilities.dp(4f)
+            } else {
+                AndroidUtilities.dp(8f)
             }
         }
         if (position == getAdapter()!!.data.size - 1) {
-            bottom = AndroidUtilities.dp(10f)
+            bottom = AndroidUtilities.dp(14f)
         }
         if (position == 0) {
-            top = AndroidUtilities.dp(10f)
+            top = AndroidUtilities.dp(14f)
         }
         viewGroupLayout.setPadding(0, top, 0, bottom)
     }

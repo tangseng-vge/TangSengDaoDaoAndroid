@@ -33,13 +33,39 @@ class WaveformView : View {
 
     private var waveformBytes: ByteArray? = null
 
-    private var innerColor = ContextCompat.getColor(context,R.color.color999)
-    private var outerColor = ContextCompat.getColor(context,R.color.colorAccent)
+    private var innerColor = ContextCompat.getColor(context, R.color.color999)
+    private var outerColor = ContextCompat.getColor(context, R.color.colorAccent)
     private var freshColor = ContextCompat.getColor(context, R.color.blue)
     private var paintInner: Paint = Paint()
     private var paintOuter: Paint = Paint()
     private var thumbX = 0
     var isFresh = false
+    private var senderWaveStyle = false
+    private var senderIdleColor = ContextCompat.getColor(context, R.color.color999)
+    private var senderPlayingColor = ContextCompat.getColor(context, R.color.white)
+
+    fun setSenderWaveStyle(enabled: Boolean) {
+        senderWaveStyle = enabled
+        if (enabled) {
+            applySenderPlayingState(thumbX > 0)
+        } else {
+            innerColor = ContextCompat.getColor(context, R.color.color999)
+            outerColor = ContextCompat.getColor(context, R.color.colorAccent)
+        }
+        invalidate()
+    }
+
+    fun applySenderPlayingState(playing: Boolean) {
+        if (!senderWaveStyle) return
+        if (playing) {
+            innerColor = senderIdleColor
+            outerColor = senderPlayingColor
+        } else {
+            innerColor = senderIdleColor
+            outerColor = senderIdleColor
+        }
+        invalidate()
+    }
 
     fun setProgress(progress: Float) {
         if (progress < 0) {
@@ -50,6 +76,9 @@ class WaveformView : View {
             thumbX = 0
         } else if (thumbX > width) {
             thumbX = width
+        }
+        if (senderWaveStyle) {
+            applySenderPlayingState(thumbX > 0)
         }
         invalidate()
     }

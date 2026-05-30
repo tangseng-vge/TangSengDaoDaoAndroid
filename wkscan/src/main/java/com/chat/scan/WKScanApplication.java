@@ -41,7 +41,7 @@ public class WKScanApplication {
             return null;
         });
         //添加tab页扫一扫功能
-        EndpointManager.getInstance().setMethod(EndpointCategory.tabMenus + "_scan", EndpointCategory.tabMenus, 99, object -> new PopupMenuItem( context.getString(R.string.wk_scan_module_scan), R.mipmap.menu_scan,() -> {
+        EndpointManager.getInstance().setMethod(EndpointCategory.tabMenus + "_scan", EndpointCategory.tabMenus, 99, object -> new PopupMenuItem( context.getString(R.string.wk_scan_module_scan), R.mipmap.ic_scan_qr,() -> {
             Intent intent = new Intent(context, WKScanActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);

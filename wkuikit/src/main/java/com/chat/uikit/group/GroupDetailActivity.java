@@ -22,6 +22,7 @@ import com.chat.base.entity.WKChannelCustomerExtras;
 import com.chat.base.entity.WKGroupType;
 import com.chat.base.msgitem.WKChannelMemberRole;
 import com.chat.base.net.HttpResponseCode;
+import com.chat.base.ui.Theme;
 import com.chat.base.utils.WKDialogUtils;
 import com.chat.base.utils.WKReader;
 import com.chat.base.utils.WKToastUtils;
@@ -81,6 +82,10 @@ public class GroupDetailActivity extends WKBaseActivity<ActGroupDetailLayoutBind
 
     @Override
     protected void initView() {
+        Theme.applyAccentSwitchStyle(this, wkVBinding.muteSwitchView);
+        Theme.applyAccentSwitchStyle(this, wkVBinding.stickSwitchView);
+        Theme.applyAccentSwitchStyle(this, wkVBinding.saveSwitchView);
+        Theme.applyAccentSwitchStyle(this, wkVBinding.showNickSwitchView);
         FullyGridLayoutManager layoutManager = new FullyGridLayoutManager(this, 5);
         wkVBinding.userRecyclerView.setLayoutManager(layoutManager);
         groupMemberAdapter = new GroupMemberAdapter(new ArrayList<>());

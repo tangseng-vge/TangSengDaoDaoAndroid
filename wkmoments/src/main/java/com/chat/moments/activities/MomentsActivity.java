@@ -5,10 +5,13 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Build;
+import android.graphics.Color;
 import android.text.TextUtils;
-import android.view.Gravity;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
+
+import androidx.core.graphics.ColorUtils;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -27,6 +30,8 @@ import com.chat.base.config.WKConstants;
 import com.chat.base.config.WKSharedPreferencesUtil;
 import com.chat.base.endpoint.EndpointCategory;
 import com.chat.base.endpoint.EndpointManager;
+import com.chat.base.endpoint.EndpointSID;
+import com.chat.base.endpoint.entity.ChatViewMenu;
 import com.chat.base.entity.BottomSheetItem;
 import com.chat.base.glide.ChooseMimeType;
 import com.chat.base.glide.ChooseResult;
@@ -35,6 +40,7 @@ import com.chat.base.net.HttpResponseCode;
 import com.chat.base.net.ud.WKDownloader;
 import com.chat.base.net.ud.WKProgressManager;
 import com.chat.base.net.ud.WKUploader;
+import com.chat.base.ui.Theme;
 import com.chat.base.ui.components.AvatarView;
 import com.chat.base.ui.components.FilterImageView;
 import com.chat.base.utils.AndroidUtilities;
@@ -45,6 +51,7 @@ import com.chat.base.utils.WKPermissions;
 import com.chat.base.utils.WKReader;
 import com.chat.base.utils.WKTimeUtils;
 import com.chat.base.utils.singleclick.SingleClickUtil;
+import com.chat.base.utils.systembar.WKStatusBarUtils;
 import com.chat.moments.R;
 import com.chat.moments.WKMomentsApplication;
 import com.chat.moments.adapter.MomentsAdapter;
@@ -76,6 +83,7 @@ import java.util.Objects;
  * 朋友圈列表
  */
 public class MomentsActivity extends WKBaseActivity<ActMomentsLayoutBinding> implements MomentsContact.MomentsView {
+
     RecyclerView recyclerView;
     private View newMomentsLayout;
     private AvatarView newMomentsAvatarIv;//新消息头像
@@ -87,7 +95,13 @@ public class MomentsActivity extends WKBaseActivity<ActMomentsLayoutBinding> imp
     private String replyMomentNo;
     private MomentsReply replyMomentsReply;
     private String uid;//查看某人的朋友圈
+    /** 仅 Discover/通讯录主入口（无 uid）时展示滚动折叠标题 */
+    private boolean showTitleCenterTv;
 
+    private static final int HEADER_COVER_HEIGHT_DP = 240;
+    private int titleOverlayHeightPx;
+    private int collapseStartPx;
+    private int collapseRangePx;
 
     @Override
     protected ActMomentsLayoutBinding getViewBinding() {
@@ -98,6 +112,7 @@ public class MomentsActivity extends WKBaseActivity<ActMomentsLayoutBinding> imp
     protected void initPresenter() {
         if (getIntent().hasExtra("uid"))
             uid = getIntent().getStringExtra("uid");
+        showTitleCenterTv = TextUtils.isEmpty(uid);
         presenter = new MomentsPresenter(this);
 
     }
@@ -114,30 +129,33 @@ public class MomentsActivity extends WKBaseActivity<ActMomentsLayoutBinding> imp
         EndpointManager.getInstance().invokes(EndpointCategory.wkRefreshMailList, null);
 //        wkVBinding.emojiPanelView.initEmojiPanel(this);
         wkVBinding.refreshLayout.setEnableRefresh(false);
-        wkVBinding.wrapview.setTitleViews(wkVBinding.titleCenterTv, wkVBinding.backIv, wkVBinding.cameraIv, wkVBinding.titleView);
+        wkVBinding.wrapview.setTitleViews(
+                wkVBinding.titleCenterTv,
+                wkVBinding.backIv,
+                wkVBinding.cameraIv,
+                wkVBinding.msgIv,
+                wkVBinding.titleView);
         wkVBinding.wrapview.setUid(uid);
+        setupTitleOverlay();
+        setupTitleBarActions();
+        wkVBinding.titleView.bringToFront();
         adapter = new MomentsAdapter(false, new ArrayList<>());
         recyclerView = wkVBinding.wrapview.getmContentView();
         ((DefaultItemAnimator) Objects.requireNonNull(recyclerView.getItemAnimator())).setSupportsChangeAnimations(false);
         initAdapter(recyclerView, adapter);
         recyclerView.setLayoutManager(mLinearLayoutManager);
+        recyclerView.setNestedScrollingEnabled(true);
         View headerView = wkVBinding.wrapview.getmHeadViw();
         adapter.addHeaderView(headerView);
         newMomentsLayout = headerView.findViewById(R.id.newMomentsLayout);
-        //用户头像
         FilterImageView avatarIv = headerView.findViewById(R.id.avatarIv);
         avatarIv.setAllCorners(8);
-        //用户名称
         TextView nameTv = headerView.findViewById(R.id.nameTv);
         newMomentsAvatarIv = headerView.findViewById(R.id.avatarView);
         newMomentsAvatarIv.setSize(25);
         newMomentsAvatarIv.setStrokeWidth(1);
         newMomentsCountTv = headerView.findViewById(R.id.newMomentsCountTv);
-        wkVBinding.wrapview.startRefresh();
-        //隐藏发布按钮
-
         if (!TextUtils.isEmpty(uid) && !uid.equals(WKConfig.getInstance().getUid())) {
-            wkVBinding.cameraIv.setVisibility(View.GONE);
             WKChannel channel = WKIM.getInstance().getChannelManager().getChannel(uid, WKChannelType.PERSONAL);
             if (channel != null) {
                 nameTv.setText(TextUtils.isEmpty(channel.channelRemark) ? channel.channelName : channel.channelRemark);
@@ -145,7 +163,6 @@ public class MomentsActivity extends WKBaseActivity<ActMomentsLayoutBinding> imp
             } else {
                 GlideUtils.getInstance().showImg(this, WKApiConfig.getShowAvatar(uid, WKChannelType.PERSONAL), avatarIv);
             }
-            wkVBinding.cameraIv.setVisibility(View.GONE);
         } else {
             WKChannel channel = WKIM.getInstance().getChannelManager().getChannel(WKConfig.getInstance().getUid(), WKChannelType.PERSONAL);
             if (channel != null) {
@@ -153,20 +170,40 @@ public class MomentsActivity extends WKBaseActivity<ActMomentsLayoutBinding> imp
             } else {
                 GlideUtils.getInstance().showImg(this, WKApiConfig.getShowAvatar(WKConfig.getInstance().getUid(), WKChannelType.PERSONAL), avatarIv);
             }
-            wkVBinding.cameraIv.setVisibility(View.VISIBLE);
             nameTv.setText(WKConfig.getInstance().getUserName());
-            if (TextUtils.isEmpty(uid))
+            if (TextUtils.isEmpty(uid)) {
                 SingleClickUtil.onSingleClick(avatarIv, view1 -> {
                     Intent intent = new Intent(this, MomentsActivity.class);
                     intent.putExtra("uid", WKConfig.getInstance().getUid());
                     startActivity(intent);
                 });
+            }
         }
-        if (TextUtils.isEmpty(uid))
-            presenter.list(page);
-        else presenter.listByUid(page, uid);
         getUserMomentBg();
         getMomentMsg();
+        wkVBinding.wrapview.startRefresh();
+        if (TextUtils.isEmpty(uid)) {
+            presenter.list(page);
+        } else {
+            presenter.listByUid(page, uid);
+        }
+    }
+
+    private void setupTitleBarActions() {
+        boolean isOtherUser = !TextUtils.isEmpty(uid)
+                && !TextUtils.equals(uid, WKConfig.getInstance().getUid());
+        boolean isOwnMoments = TextUtils.isEmpty(uid)
+                || TextUtils.equals(uid, WKConfig.getInstance().getUid());
+        wkVBinding.wrapview.setTitleActionVisibility(isOwnMoments, isOtherUser);
+    }
+
+    private void openChatWithUser() {
+        if (TextUtils.isEmpty(uid)) {
+            return;
+        }
+        EndpointManager.getInstance().invoke(
+                EndpointSID.chatView,
+                new ChatViewMenu(this, uid, WKChannelType.PERSONAL, 0, true));
     }
 
     LinearLayoutManager mLinearLayoutManager = new LinearLayoutManager(this) {
@@ -176,13 +213,137 @@ public class MomentsActivity extends WKBaseActivity<ActMomentsLayoutBinding> imp
         }
     };
 
+    private void setupTitleOverlay() {
+        int statusBar = WKStatusBarUtils.getStatusBarHeight(this);
+        wkVBinding.titleView.setBackgroundColor(Color.TRANSPARENT);
+//        wkVBinding.titleView.setPadding(
+//                wkVBinding.titleView.getPaddingLeft(),
+//                statusBar + AndroidUtilities.dp(8),
+//                wkVBinding.titleView.getPaddingRight(),
+//                AndroidUtilities.dp(10));
+        wkVBinding.titleCenterTv.setVisibility(View.GONE);
+        wkVBinding.titleCenterTv.setAlpha(0f);
+        wkVBinding.titleView.post(this::measureTitleCollapseThresholds);
+    }
+
+    private void measureTitleCollapseThresholds() {
+        titleOverlayHeightPx = wkVBinding.titleView.getHeight();
+        if (titleOverlayHeightPx <= 0) {
+            titleOverlayHeightPx = WKStatusBarUtils.getStatusBarHeight(this) + AndroidUtilities.dp(52);
+        }
+        int coverHeightPx = AndroidUtilities.dp(HEADER_COVER_HEIGHT_DP);
+        collapseStartPx = Math.max(AndroidUtilities.dp(16),
+                coverHeightPx - titleOverlayHeightPx + AndroidUtilities.dp(8));
+        collapseRangePx = AndroidUtilities.dp(72);
+    }
+
+    private void initMomentsScrollListener() {
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                applyTitleBarForScroll(computeTitleCollapseRatio());
+            }
+        });
+        wkVBinding.titleView.post(() -> applyTitleBarForScroll(computeTitleCollapseRatio()));
+    }
+
+    private int getHeaderScrollOffset() {
+        if (recyclerView == null || mLinearLayoutManager == null) {
+            return 0;
+        }
+        int firstPos = mLinearLayoutManager.findFirstVisibleItemPosition();
+        if (firstPos > 0) {
+            return collapseStartPx + collapseRangePx;
+        }
+        if (firstPos < 0 || recyclerView.getChildCount() == 0) {
+            return 0;
+        }
+        View headerChild = null;
+        for (int i = 0; i < recyclerView.getChildCount(); i++) {
+            View child = recyclerView.getChildAt(i);
+            if (recyclerView.getChildAdapterPosition(child) == 0) {
+                headerChild = child;
+                break;
+            }
+        }
+        if (headerChild == null) {
+            headerChild = recyclerView.getChildAt(0);
+        }
+        return Math.max(0, -headerChild.getTop());
+    }
+
+    private float computeTitleCollapseRatio() {
+        if (collapseRangePx <= 0) {
+            measureTitleCollapseThresholds();
+        }
+        int scrollOffset = getHeaderScrollOffset();
+        if (scrollOffset <= collapseStartPx) {
+            return 0f;
+        }
+        float raw = (scrollOffset - collapseStartPx) / (float) collapseRangePx;
+        return Math.min(1f, Math.max(0f, raw));
+    }
+
+    /** Smoothstep: natural ease-in-out while scrolling. */
+    private static float smoothStep(float t) {
+        return t * t * (3f - 2f * t);
+    }
+
+    private void applyTitleBarForScroll(float collapseRatio) {
+        float ratio = smoothStep(collapseRatio);
+        boolean isDarkMode = Theme.getDarkModeStatus(this);
+        int iconFrom = ContextCompat.getColor(this, R.color.white);
+        int iconTo = ContextCompat.getColor(this, isDarkMode ? R.color.white : R.color.black);
+        int iconColor = ColorUtils.blendARGB(iconFrom, iconTo, ratio);
+
+        wkVBinding.titleView.setBackgroundColor(Color.TRANSPARENT);
+        if (ratio <= 0.001f) {
+            wkVBinding.titleBgIv.setVisibility(View.GONE);
+            wkVBinding.titleBgIv.setAlpha(0f);
+            wkVBinding.titleCenterTv.setVisibility(View.GONE);
+            wkVBinding.titleCenterTv.setAlpha(0f);
+        } else {
+            wkVBinding.titleBgIv.setVisibility(View.VISIBLE);
+            float bgAlpha = ratio >= 0.98f ? 1f : ratio;
+            wkVBinding.titleBgIv.setAlpha(bgAlpha);
+            if (showTitleCenterTv) {
+                wkVBinding.titleCenterTv.setVisibility(View.VISIBLE);
+                wkVBinding.titleCenterTv.setAlpha(ratio);
+            } else {
+                wkVBinding.titleCenterTv.setVisibility(View.GONE);
+                wkVBinding.titleCenterTv.setAlpha(0f);
+            }
+        }
+
+//        applyTitleIconColor(wkVBinding.backIv, iconColor);
+        clearTitleIconTint(wkVBinding.cameraIv);
+        clearTitleIconTint(wkVBinding.msgIv);
+    }
+
+    private void applyTitleIconColor(ImageView icon, int color) {
+        if (icon == null) {
+            return;
+        }
+        icon.setColorFilter(color);
+    }
+
+    private void clearTitleIconTint(ImageView icon) {
+        if (icon == null) {
+            return;
+        }
+        icon.clearColorFilter();
+    }
+
     @Override
     protected void initListener() {
+        initMomentsScrollListener();
 
-        SingleClickUtil.onSingleClick(newMomentsLayout, view1 -> {
-            Intent intent = new Intent(this, MomentsMsgListActivity.class);
-            startActivity(intent);
-        });
+        if (newMomentsLayout != null) {
+            SingleClickUtil.onSingleClick(newMomentsLayout, view1 -> {
+                Intent intent = new Intent(this, MomentsMsgListActivity.class);
+                startActivity(intent);
+            });
+        }
         wkVBinding.wrapview.setOnRefreshListener(() -> {
             page = 1;
             wkVBinding.refreshLayout.setEnableLoadMore(true);
@@ -204,8 +365,9 @@ public class MomentsActivity extends WKBaseActivity<ActMomentsLayoutBinding> imp
 
             }
         });
-        //更改封面
         wkVBinding.wrapview.setOnConverClick(this::chooseIMG);
+
+        SingleClickUtil.onSingleClick(wkVBinding.msgIv, v -> openChatWithUser());
 
         wkVBinding.cameraIv.setOnLongClickListener(view1 -> {
             if (!TextUtils.isEmpty(uid) && uid.equals(WKConfig.getInstance().getUid()))
@@ -222,7 +384,7 @@ public class MomentsActivity extends WKBaseActivity<ActMomentsLayoutBinding> imp
             showCommentDialog(String.format(getString(R.string.str_moments_reply_user), reply.name));
 //            wkVBinding.emojiPanelView.showEmojiPanel(String.format(getString(R.string.str_moments_reply_user), reply.name));
         }));
-        adapter.addChildClickViewIds(R.id.contentStatusTv, R.id.moreIv, R.id.deleteTv, R.id.avatarIv);
+        adapter.addChildClickViewIds(R.id.contentStatusTv, R.id.moreIv, R.id.deleteTv, R.id.avatarIv,R.id.tvMore);
         adapter.setOnItemChildClickListener((adapter1, view1, position) -> {
             Moments moments = (Moments) adapter1.getItem(position);
             if (moments != null) {
@@ -231,7 +393,7 @@ public class MomentsActivity extends WKBaseActivity<ActMomentsLayoutBinding> imp
                     adapter1.notifyItemChanged(position + adapter1.getHeaderLayoutCount());
                 } else if (view1.getId() == R.id.avatarIv) {
                     WKMomentsApplication.getInstance().gotoUserDetail(MomentsActivity.this, moments.publisher);
-                } else if (view1.getId() == R.id.moreIv) {
+                } else if (view1.getId() == R.id.moreIv || view1.getId() == R.id.tvMore) {
                     boolean isLiked = false;
                     if (WKReader.isNotEmpty(moments.likes)) {
                         for (int i = 0, size = moments.likes.size(); i < size; i++) {
@@ -290,11 +452,7 @@ public class MomentsActivity extends WKBaseActivity<ActMomentsLayoutBinding> imp
                     if (feedActionPopup.isShowing()) {
                         feedActionPopup.dismiss();
                     } else {
-                        int[] location = new int[2];
-                        view1.getLocationOnScreen(location);
-                        int xOffset = location[0] - AndroidUtilities.dp(180f + 10);
-                        int yOffset = location[1] + (view1.getHeight() - AndroidUtilities.dp(34)) / 2;
-                        feedActionPopup.showAtLocation(view1, Gravity.NO_GRAVITY, xOffset, yOffset);
+                        feedActionPopup.showBelowAnchor(view1);
                     }
 
                 } else if (view1.getId() == R.id.deleteTv) {
@@ -312,43 +470,13 @@ public class MomentsActivity extends WKBaseActivity<ActMomentsLayoutBinding> imp
             }
         });
         wkVBinding.cameraIv.setOnClickListener(v -> {
-
             if (TextUtils.isEmpty(uid)) {
-                String desc = String.format(getString(R.string.file_permissions_des), getString(R.string.app_name));
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    WKPermissions.getInstance().checkPermissions(new WKPermissions.IPermissionResult() {
-                        @Override
-                        public void onResult(boolean result) {
-                            if (result) {
-                                choose();
-                            }
-                        }
-
-                        @Override
-                        public void clickResult(boolean isCancel) {
-                        }
-                    }, this, desc, Manifest.permission.CAMERA);
-
-                } else {
-                    WKPermissions.getInstance().checkPermissions(new WKPermissions.IPermissionResult() {
-                        @Override
-                        public void onResult(boolean result) {
-                            if (result) {
-                                choose();
-                            }
-                        }
-
-                        @Override
-                        public void clickResult(boolean isCancel) {
-                        }
-                    }, this, desc, Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE);
-                }
+                choose();
             } else {
                 if (TextUtils.equals(uid, WKConfig.getInstance().getUid())) {
                     startActivity(new Intent(this, MomentsMsgListActivity.class));
                 }
             }
-
         });
         wkVBinding.backIv.setOnClickListener(v -> finish());
         //监听刷新通讯录
@@ -378,9 +506,76 @@ public class MomentsActivity extends WKBaseActivity<ActMomentsLayoutBinding> imp
         int publishType;
         if (position == 0) {
             publishType = MomentsType.video_text;
+            checkVideoPublishPermissions(publishType);
         } else {
             publishType = MomentsType.image_text;
+            checkImagePublishPermissions(publishType);
         }
+    }
+
+    private void checkVideoPublishPermissions(int publishType) {
+        String desc = String.format(getString(R.string.camera_permissions_desc), getString(R.string.app_name));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            WKPermissions.getInstance().checkPermissions(new WKPermissions.IPermissionResult() {
+                @Override
+                public void onResult(boolean result) {
+                    if (result) {
+                        launchPublishActivity(publishType);
+                    }
+                }
+
+                @Override
+                public void clickResult(boolean isCancel) {
+                }
+            }, this, desc, Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO);
+        } else {
+            WKPermissions.getInstance().checkPermissions(new WKPermissions.IPermissionResult() {
+                @Override
+                public void onResult(boolean result) {
+                    if (result) {
+                        launchPublishActivity(publishType);
+                    }
+                }
+
+                @Override
+                public void clickResult(boolean isCancel) {
+                }
+            }, this, desc, Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        }
+    }
+
+    private void checkImagePublishPermissions(int publishType) {
+        String desc = String.format(getString(R.string.file_permissions_des), getString(R.string.app_name));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            WKPermissions.getInstance().checkPermissions(new WKPermissions.IPermissionResult() {
+                @Override
+                public void onResult(boolean result) {
+                    if (result) {
+                        launchPublishActivity(publishType);
+                    }
+                }
+
+                @Override
+                public void clickResult(boolean isCancel) {
+                }
+            }, this, desc, Manifest.permission.CAMERA, Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO);
+        } else {
+            WKPermissions.getInstance().checkPermissions(new WKPermissions.IPermissionResult() {
+                @Override
+                public void onResult(boolean result) {
+                    if (result) {
+                        launchPublishActivity(publishType);
+                    }
+                }
+
+                @Override
+                public void clickResult(boolean isCancel) {
+                }
+            }, this, desc, Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE);
+        }
+    }
+
+    private void launchPublishActivity(int publishType) {
         Intent intent = new Intent(MomentsActivity.this, PublishMomentsActivity.class);
         intent.putExtra("publishType", publishType);
         chooseResultLac.launch(intent);
@@ -422,6 +617,9 @@ public class MomentsActivity extends WKBaseActivity<ActMomentsLayoutBinding> imp
     }
 
     private void getMomentMsg() {
+        if (newMomentsLayout == null) {
+            return;
+        }
         //不是查看自己的朋友圈不显示动态消息
         if (!TextUtils.isEmpty(uid) && !TextUtils.equals(uid, WKConfig.getInstance().getUid()))
             return;

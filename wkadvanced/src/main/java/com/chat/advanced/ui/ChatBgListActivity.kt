@@ -131,6 +131,7 @@ class ChatBgListActivity : WKBaseActivity<ActChatBgListLayoutBinding>() {
                 intent.putExtra("channelID", channelID)
                 intent.putExtra("channelType", channelType)
                 intent.putExtra("url", item.url)
+                intent.putExtra("cover", item.cover)
                 intent.putExtra("isSvg", item.is_svg)
                 if (item.is_svg == 1) {
                     val sp = StringBuffer()

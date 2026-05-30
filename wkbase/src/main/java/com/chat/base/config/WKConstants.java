@@ -3,6 +3,7 @@ package com.chat.base.config;
 import android.annotation.SuppressLint;
 import android.provider.Settings;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.chat.base.WKBaseApplication;
 

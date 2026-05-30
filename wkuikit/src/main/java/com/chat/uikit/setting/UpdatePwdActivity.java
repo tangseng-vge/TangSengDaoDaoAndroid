@@ -1,8 +1,9 @@
 package com.chat.uikit.setting;
 
-import android.content.Context;
 import android.os.Bundle;
-import android.widget.Button;
+import android.text.method.HideReturnsTransformationMethod;
+import android.text.method.PasswordTransformationMethod;
+import android.widget.CheckBox;
 import android.widget.EditText;
 
 import androidx.annotation.Nullable;
@@ -43,19 +44,22 @@ public class UpdatePwdActivity extends WKBaseActivity<ActUpdatePasswordLayoutBin
     @Override
     protected void initView() {
         wkVBinding.updateBtn.getBackground().setTint(Theme.colorAccount);
-        if (Theme.getDarkModeStatus(this)) {
-            wkVBinding.bgIv.setVisibility(android.view.View.GONE);
-            Theme.setColorFilter(this, wkVBinding.backIv, R.color.white);
-        } else {
-            wkVBinding.bgIv.setVisibility(android.view.View.VISIBLE);
-            Theme.setColorFilter(this, wkVBinding.backIv, R.color.colorDark);
-        }
+//        if (Theme.getDarkModeStatus(this)) {
+//            wkVBinding.bgIv.setVisibility(android.view.View.GONE);
+//            Theme.setColorFilter(this, wkVBinding.backIv, R.color.white);
+//        } else {
+//            wkVBinding.bgIv.setVisibility(android.view.View.VISIBLE);
+//            Theme.setColorFilter(this, wkVBinding.backIv, R.color.colorDark);
+//        }
         Theme.setPressedBackground(wkVBinding.backIv);
     }
 
     @Override
     protected void initListener() {
         super.initListener();
+        bindPasswordToggle(wkVBinding.oldPwdCheckBox, wkVBinding.updatePwdEt);
+        bindPasswordToggle(wkVBinding.newPwdCheckBox, wkVBinding.newPwdEt);
+        bindPasswordToggle(wkVBinding.confirmPwdCheckBox, wkVBinding.pwdConfirmEt);
         wkVBinding.backIv.setOnClickListener(v -> finish());
         wkVBinding.updateBtn.setOnClickListener(v -> {
             if (checkEditInputIsEmpty(wkVBinding.updatePwdEt, R.string.placeholder_pwd)) return;
@@ -74,6 +78,7 @@ public class UpdatePwdActivity extends WKBaseActivity<ActUpdatePasswordLayoutBin
 
             loadingPopup.show();
             loadingPopup.setTitle(getString(R.string.loading));
+
             String oldPassword = Objects.requireNonNull(wkVBinding.updatePwdEt.getText()).toString();
             String newPassword = Objects.requireNonNull(wkVBinding.newPwdEt.getText()).toString();
             UserModel.getInstance().updatePassword(oldPassword, newPassword, new ICommonListener() {
@@ -88,6 +93,17 @@ public class UpdatePwdActivity extends WKBaseActivity<ActUpdatePasswordLayoutBin
                     }
                 }
             });
+        });
+    }
+
+    private void bindPasswordToggle(CheckBox checkBox, EditText editText) {
+        checkBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                editText.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
+            } else {
+                editText.setTransformationMethod(PasswordTransformationMethod.getInstance());
+            }
+            editText.setSelection(Objects.requireNonNull(editText.getText()).length());
         });
     }
 }

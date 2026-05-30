@@ -222,6 +222,11 @@ public class BubbleLayout extends LinearLayout {
         mPaint.setColor(mBubbleColor);
         mPath.reset();
 
+        if (mLookWidth <= 0 && mLookLength <= 0) {
+            buildRoundRectPath();
+            return;
+        }
+
         int topOffset = (topOffset = mLookPosition) + mLookLength > mBottom ? mBottom - mLookWidth : topOffset;
         // topOffset = Math.max(topOffset, mShadowRadius);
         topOffset = getHeight();
@@ -348,6 +353,17 @@ public class BubbleLayout extends LinearLayout {
                 break;
         }
 
+        mPath.close();
+    }
+
+    private void buildRoundRectPath() {
+        float[] radii = new float[]{
+                getLTR(), getLTR(),
+                getRTR(), getRTR(),
+                getRDR(), getRDR(),
+                getLDR(), getLDR()
+        };
+        mPath.addRoundRect(new RectF(mLeft, mTop, mRight, mBottom), radii, Path.Direction.CW);
         mPath.close();
     }
 
@@ -689,6 +705,52 @@ public class BubbleLayout extends LinearLayout {
         void edge();
     }
 
+    /**
+     * Unified bubble corners: small radius on avatar side, large radius on outer side.
+     * RECEIVED: left small, right large. SEND: flipped horizontally.
+     */
+    private void applyUnifiedBubbleCornerRadius(int normalRadius, WKChatIteMsgFromType msgFrom) {
+        int smallRadius = 10;
+        if (msgFrom == WKChatIteMsgFromType.SEND) {
+            setLTR(normalRadius);
+            setLDR(normalRadius);
+            setRTR(smallRadius);
+            setRDR(smallRadius);
+        } else {
+            setLTR(smallRadius);
+            setLDR(smallRadius);
+            setRTR(normalRadius);
+            setRDR(normalRadius);
+        }
+        setArrowTopLeftRadius(0);
+        setArrowTopRightRadius(0);
+        setArrowDownLeftRadius(0);
+        setArrowDownRightRadius(0);
+        setLookWidth(0);
+        setLookLength(0);
+        setLook(Look.TOP);
+    }
+
+    private void applyUnifiedBubbleMargins(LayoutParams linearLayout, WKChatIteMsgFromType msgFrom) {
+/*
+        if (bgType == WKMsgBgType.center || bgType == WKMsgBgType.top) {
+            if (msgFrom == WKChatIteMsgFromType.RECEIVED)
+                linearLayout.leftMargin = AndroidUtilities.dp(10);
+            else linearLayout.rightMargin = AndroidUtilities.dp(10);
+        } else {
+            linearLayout.rightMargin = 0;
+            linearLayout.leftMargin = 0;
+        }
+*/
+        linearLayout.leftMargin = 0;
+        linearLayout.rightMargin = 0;
+        if (msgFrom == WKChatIteMsgFromType.RECEIVED) {
+            linearLayout.leftMargin = AndroidUtilities.dp(10);
+        } else {
+            linearLayout.rightMargin = AndroidUtilities.dp(10);
+        }
+    }
+
     @Override
     public void setPressed(boolean pressed) {
         super.setPressed(pressed);
@@ -702,14 +764,7 @@ public class BubbleLayout extends LinearLayout {
         setShadowY(1);
         ViewGroup.LayoutParams layoutParams = getLayoutParams();
         if (layoutParams instanceof LayoutParams linearLayout) {
-            if (bgType == WKMsgBgType.center || bgType == WKMsgBgType.top) {
-                if (msgFrom == WKChatIteMsgFromType.RECEIVED)
-                    linearLayout.leftMargin = AndroidUtilities.dp(10);
-                else linearLayout.rightMargin = AndroidUtilities.dp(10);
-            } else {
-                linearLayout.rightMargin = 0;
-                linearLayout.leftMargin = 0;
-            }
+            applyUnifiedBubbleMargins(linearLayout, msgFrom);
         }
         int lookWidth = 10;
         int normalRadius = 20;
@@ -720,94 +775,107 @@ public class BubbleLayout extends LinearLayout {
 
             setBubbleNormalColor(normalColor);
             setBubbleSelectedColor(selectedColor);
+/*
             if (bgType == WKMsgBgType.bottom) {
-                setLook(BubbleLayout.Look.RIGHT);
+//                setLook(BubbleLayout.Look.RIGHT);
                 setArrowDownLeftRadius(AndroidUtilities.dp(lookWidth * 2));
                 setLookWidth(0);
                 setArrowTopLeftRadius(0);
-                setRTR(smallRadius);
-                setLTR(normalRadius);
-                setLDR(normalRadius);
-                setRDR(normalRadius);
+//                setRTR(smallRadius);
+//                setLTR(normalRadius);
+//                setLDR(normalRadius);
+//                setRDR(normalRadius);
+                applyUnifiedBubbleCornerRadius(normalRadius);
                 setLookLength(AndroidUtilities.dp(lookWidth));
             } else if (bgType == WKMsgBgType.center) {
-                setLook(Look.TOP);
+//                setLook(Look.TOP);
                 setLookWidth(normalRadius * 2);
                 setLookLength(0);
                 setArrowTopLeftRadius(0);
                 setArrowTopRightRadius(0);
                 setArrowDownLeftRadius(0);
                 setArrowDownRightRadius(0);
-                setRTR(smallRadius);
-                setLTR(normalRadius);
-                setLDR(normalRadius);
-                setRDR(smallRadius);
+//                setRTR(smallRadius);
+//                setLTR(normalRadius);
+//                setLDR(normalRadius);
+//                setRDR(smallRadius);
+                applyUnifiedBubbleCornerRadius(normalRadius);
             } else if (bgType == WKMsgBgType.top) {
-                setLook(Look.TOP);
+//                setLook(Look.TOP);
                 setLookWidth(normalRadius * 2);
                 setLookLength(0);
-                setRTR(normalRadius);
-                setLTR(normalRadius);
-                setLDR(normalRadius);
-                setRDR(smallRadius);
+//                setRTR(normalRadius);
+//                setLTR(normalRadius);
+//                setLDR(normalRadius);
+//                setRDR(smallRadius);
+                applyUnifiedBubbleCornerRadius(normalRadius);
                 setLook(Look.BOTTOM);
                 setLookPosition(getWidth() / 2);
                 setArrowTopLeftRadius(0);
             } else if (bgType == WKMsgBgType.single) {
-                setRTR(normalRadius);
-                setLTR(normalRadius);
-                setLDR(normalRadius);
-                setRDR(normalRadius);
-                setLook(BubbleLayout.Look.RIGHT);
+//                setRTR(normalRadius);
+//                setLTR(normalRadius);
+//                setLDR(normalRadius);
+//                setRDR(normalRadius);
+                applyUnifiedBubbleCornerRadius(normalRadius);
+//                setLook(BubbleLayout.Look.RIGHT);
                 setArrowDownLeftRadius(AndroidUtilities.dp(lookWidth * 2));
                 setLookWidth(0);
                 setArrowTopLeftRadius(0);
                 setLookLength(AndroidUtilities.dp(lookWidth));
             }
+*/
         } else {
             setBubbleBorderColor(ContextCompat.getColor(getContext(), R.color.chat_border_color));
             setBubbleNormalColor(normalColor);
             setBubbleSelectedColor(selectedColor);
+/*
             if (bgType == WKMsgBgType.bottom) {
-                setLook(Look.LEFT);
+//                setLook(Look.LEFT);
                 setArrowDownRightRadius(AndroidUtilities.dp(lookWidth * 2));
                 setLookWidth(0);
                 setArrowTopRightRadius(0);
                 setLookLength(AndroidUtilities.dp(lookWidth));
-                setRDR(normalRadius);
-                setRTR(normalRadius);
-                setLDR(normalRadius);
-                setLTR(smallRadius);
+//                setRDR(normalRadius);
+//                setRTR(normalRadius);
+//                setLDR(normalRadius);
+//                setLTR(smallRadius);
+                applyUnifiedBubbleCornerRadius(normalRadius);
             } else if (bgType == WKMsgBgType.center) {
-                setLook(Look.TOP);
+//                setLook(Look.TOP);
                 setLookWidth(smallRadius * 2);
                 setLookLength(0);
-                setLTR(smallRadius);
-                setLDR(smallRadius);
-                setRTR(normalRadius);
-                setRDR(normalRadius);
+//                setLTR(smallRadius);
+//                setLDR(smallRadius);
+//                setRTR(normalRadius);
+//                setRDR(normalRadius);
+                applyUnifiedBubbleCornerRadius(normalRadius);
                 setArrowTopRightRadius(0);
             } else if (bgType == WKMsgBgType.top) {
-                setLook(Look.TOP);
+//                setLook(Look.TOP);
                 setLookWidth(normalRadius * 2);
                 setLookLength(0);
-                setLTR(normalRadius);
-                setLDR(smallRadius);
-                setRTR(normalRadius);
-                setRDR(normalRadius);
+//                setLTR(normalRadius);
+//                setLDR(smallRadius);
+//                setRTR(normalRadius);
+//                setRDR(normalRadius);
+                applyUnifiedBubbleCornerRadius(normalRadius);
                 setArrowTopRightRadius(0);
             } else if (bgType == WKMsgBgType.single) {
-                setLook(Look.LEFT);
+//                setLook(Look.LEFT);
                 setArrowDownRightRadius(AndroidUtilities.dp(lookWidth * 2));
                 setLookWidth(0);
                 setArrowTopRightRadius(0);
                 setLookLength(AndroidUtilities.dp(lookWidth));
-                setLTR(normalRadius);
-                setLDR(normalRadius);
-                setRTR(normalRadius);
-                setRDR(normalRadius);
+//                setLTR(normalRadius);
+//                setLDR(normalRadius);
+//                setRTR(normalRadius);
+//                setRDR(normalRadius);
+                applyUnifiedBubbleCornerRadius(normalRadius);
             }
+*/
         }
+        applyUnifiedBubbleCornerRadius(normalRadius, msgFrom);
         invalidate();
     }
 
@@ -819,14 +887,7 @@ public class BubbleLayout extends LinearLayout {
         setShadowY(0);
         ViewGroup.LayoutParams layoutParams = getLayoutParams();
         if (layoutParams instanceof LayoutParams linearLayout) {
-            if (bgType == WKMsgBgType.center || bgType == WKMsgBgType.top) {
-                if (msgFrom == WKChatIteMsgFromType.RECEIVED)
-                    linearLayout.leftMargin = AndroidUtilities.dp(10);
-                else linearLayout.rightMargin = AndroidUtilities.dp(10);
-            } else {
-                linearLayout.rightMargin = 0;
-                linearLayout.leftMargin = 0;
-            }
+            applyUnifiedBubbleMargins(linearLayout, msgFrom);
         }
 
         int lookWidth = 10;
@@ -844,15 +905,17 @@ public class BubbleLayout extends LinearLayout {
                 setBubbleNormalColor(R.color.chat_send_bg_normal);
                 setBubbleSelectedColor(R.color.chat_send_bg_select);
             }
+/*
             if (bgType == WKMsgBgType.bottom) {
                 setLook(BubbleLayout.Look.RIGHT);
                 setArrowDownLeftRadius(AndroidUtilities.dp(lookWidth * 2));
                 setLookWidth(0);
                 setArrowTopLeftRadius(0);
-                setRTR(smallRadius);
-                setLTR(normalRadius);
-                setLDR(normalRadius);
-                setRDR(normalRadius);
+//                setRTR(smallRadius);
+//                setLTR(normalRadius);
+//                setLDR(normalRadius);
+//                setRDR(normalRadius);
+                applyUnifiedBubbleCornerRadius(normalRadius);
                 setLookLength(AndroidUtilities.dp(lookWidth));
             } else if (bgType == WKMsgBgType.center) {
                 setLook(Look.TOP);
@@ -862,64 +925,72 @@ public class BubbleLayout extends LinearLayout {
                 setArrowTopRightRadius(0);
                 setArrowDownLeftRadius(0);
                 setArrowDownRightRadius(0);
-                setRTR(smallRadius);
-                setLTR(normalRadius);
-                setLDR(normalRadius);
-                setRDR(smallRadius);
+//                setRTR(smallRadius);
+//                setLTR(normalRadius);
+//                setLDR(normalRadius);
+//                setRDR(smallRadius);
+                applyUnifiedBubbleCornerRadius(normalRadius);
             } else if (bgType == WKMsgBgType.top) {
                 setLook(Look.TOP);
                 setLookWidth(normalRadius * 2);
                 setLookLength(0);
-                setRTR(normalRadius);
-                setLTR(normalRadius);
-                setLDR(normalRadius);
-                setRDR(smallRadius);
+//                setRTR(normalRadius);
+//                setLTR(normalRadius);
+//                setLDR(normalRadius);
+//                setRDR(smallRadius);
+                applyUnifiedBubbleCornerRadius(normalRadius);
                 setLook(Look.BOTTOM);
                 setLookPosition(getWidth() / 2);
                 setArrowTopLeftRadius(0);
             } else if (bgType == WKMsgBgType.single) {
-                setRTR(normalRadius);
-                setLTR(normalRadius);
-                setLDR(normalRadius);
-                setRDR(normalRadius);
+//                setRTR(normalRadius);
+//                setLTR(normalRadius);
+//                setLDR(normalRadius);
+//                setRDR(normalRadius);
+                applyUnifiedBubbleCornerRadius(normalRadius);
                 setLook(BubbleLayout.Look.RIGHT);
                 setArrowDownLeftRadius(AndroidUtilities.dp(lookWidth * 2));
                 setLookWidth(0);
                 setArrowTopLeftRadius(0);
                 setLookLength(AndroidUtilities.dp(lookWidth));
             }
+*/
         } else {
             setBubbleBorderColor(ContextCompat.getColor(getContext(), R.color.transparent));
             setBubbleNormalColor(R.color.chat_received_bg_normal);
             setBubbleSelectedColor(R.color.chat_received_bg_selected);
+/*
             if (bgType == WKMsgBgType.bottom) {
                 setLook(Look.LEFT);
                 setArrowDownRightRadius(AndroidUtilities.dp(lookWidth * 2));
                 setLookWidth(0);
                 setArrowTopRightRadius(0);
                 setLookLength(AndroidUtilities.dp(lookWidth));
-                setRDR(normalRadius);
-                setRTR(normalRadius);
-                setLDR(normalRadius);
-                setLTR(smallRadius);
+//                setRDR(normalRadius);
+//                setRTR(normalRadius);
+//                setLDR(normalRadius);
+//                setLTR(smallRadius);
+                applyUnifiedBubbleCornerRadius(normalRadius);
             } else if (bgType == WKMsgBgType.center) {
                 setLook(Look.TOP);
                 setLookWidth(smallRadius * 2);
                 setLookLength(0);
-                setLTR(smallRadius);
-                setLDR(smallRadius);
-                setRTR(normalRadius);
-                setRDR(normalRadius);
+//                setLTR(smallRadius);
+//                setLDR(smallRadius);
+//                setRTR(normalRadius);
+//                setRDR(normalRadius);
+                applyUnifiedBubbleCornerRadius(normalRadius);
                 setArrowTopRightRadius(0);
             } else if (bgType == WKMsgBgType.top) {
                 setLook(Look.BOTTOM);
                 setLookWidth(smallRadius * 2);
                 setLookPosition(getWidth() / 2);
                 setLookLength(0);
-                setLTR(normalRadius);
-                setLDR(smallRadius);
-                setRTR(normalRadius);
-                setRDR(normalRadius);
+//                setLTR(normalRadius);
+//                setLDR(smallRadius);
+//                setRTR(normalRadius);
+//                setRDR(normalRadius);
+                applyUnifiedBubbleCornerRadius(normalRadius);
                 setArrowTopRightRadius(0);
             } else if (bgType == WKMsgBgType.single) {
                 setLook(Look.LEFT);
@@ -927,12 +998,15 @@ public class BubbleLayout extends LinearLayout {
                 setLookWidth(0);
                 setArrowTopRightRadius(0);
                 setLookLength(AndroidUtilities.dp(lookWidth));
-                setLTR(normalRadius);
-                setLDR(normalRadius);
-                setRTR(normalRadius);
-                setRDR(normalRadius);
+//                setLTR(normalRadius);
+//                setLDR(normalRadius);
+//                setRTR(normalRadius);
+//                setRDR(normalRadius);
+                applyUnifiedBubbleCornerRadius(normalRadius);
             }
+*/
         }
+        applyUnifiedBubbleCornerRadius(normalRadius, msgFrom);
         setShadowColor(Color.TRANSPARENT);
         setShadowX(0);
         setShadowY(0);

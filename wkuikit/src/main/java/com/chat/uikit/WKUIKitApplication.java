@@ -76,6 +76,7 @@ import com.chat.base.utils.WKFileUtils;
 import com.chat.base.utils.WKMediaFileUtils;
 import com.chat.base.utils.WKPermissions;
 import com.chat.base.utils.WKReader;
+import com.chat.base.utils.language.EndpointLocaleHelper;
 import com.chat.base.utils.WKToastUtils;
 import com.chat.uikit.chat.ChooseChatActivity;
 import com.chat.uikit.chat.face.WKVoiceViewManager;
@@ -250,25 +251,25 @@ public class WKUIKitApplication {
         });
 
         //添加个人中心
-        EndpointManager.getInstance().setMethod("personal_center_currency", EndpointCategory.personalCenter, 2, object -> new PersonalInfoMenu(R.mipmap.icon_setting, mContext.get().getString(R.string.currency), () -> {
-            Intent intent = new Intent(mContext.get(), SettingActivity.class);
+        EndpointManager.getInstance().setMethod("personal_center_currency", EndpointCategory.personalCenter, 2, object -> new PersonalInfoMenu(R.mipmap.icon_setting, EndpointLocaleHelper.getString(object, R.string.currency), () -> {
+            Intent intent = new Intent(mContext.get(),  SettingActivity.class);
             intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
             mContext.get().startActivity(intent);
         }));
-        EndpointManager.getInstance().setMethod("personal_center_new_msg_notice", EndpointCategory.personalCenter, 3, object -> new PersonalInfoMenu(R.mipmap.icon_notice, mContext.get().getString(R.string.new_msg_notice), () -> {
+        EndpointManager.getInstance().setMethod("personal_center_new_msg_notice", EndpointCategory.personalCenter, 3, object -> new PersonalInfoMenu(R.mipmap.icon_notice, EndpointLocaleHelper.getString(object, R.string.new_msg_notice), () -> {
             Intent intent = new Intent(mContext.get(), MsgNoticesSettingActivity.class);
             intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
             mContext.get().startActivity(intent);
         }));
-        EndpointManager.getInstance().setMethod("personal_center_web_login", EndpointCategory.personalCenter, 1000, object -> new PersonalInfoMenu(R.mipmap.icon_web_login, mContext.get().getString(R.string.web_login), () -> EndpointManager.getInstance().invoke("show_web_login_desc", mContext.get())));
+        EndpointManager.getInstance().setMethod("personal_center_web_login", EndpointCategory.personalCenter, 1000, object -> new PersonalInfoMenu(R.mipmap.icon_web_login, EndpointLocaleHelper.getString(object, R.string.web_login), () -> EndpointManager.getInstance().invoke("show_web_login_desc", mContext.get())));
 
         //添加通讯录
-        EndpointManager.getInstance().setMethod(EndpointCategory.mailList + "_friends", EndpointCategory.mailList, 100, object -> new ContactsMenu("friend", R.mipmap.icon_new_friend, mContext.get().getString(R.string.new_friends), () -> {
+        EndpointManager.getInstance().setMethod(EndpointCategory.mailList + "_friends", EndpointCategory.mailList, 100, object -> new ContactsMenu("friend", R.mipmap.ic_new_friends, EndpointLocaleHelper.getString(object, R.string.new_friends), () -> {
             Intent intent = new Intent(mContext.get(), NewFriendsActivity.class);
             intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
             mContext.get().startActivity(intent);
         }));
-        EndpointManager.getInstance().setMethod(EndpointCategory.mailList + "_groups", EndpointCategory.mailList, 90, object -> new ContactsMenu("group", R.mipmap.icon_groups, mContext.get().getString(R.string.saved_groups), () -> {
+        EndpointManager.getInstance().setMethod(EndpointCategory.mailList + "_groups", EndpointCategory.mailList, 90, object -> new ContactsMenu("group", R.mipmap.ic_group_chat, EndpointLocaleHelper.getString(object, R.string.saved_groups), () -> {
             Intent intent = new Intent(mContext.get(), SavedGroupsActivity.class);
             intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
             mContext.get().startActivity(intent);
@@ -300,25 +301,23 @@ public class WKUIKitApplication {
         });
 
         // 添加聊天工具栏菜单
+        // 更多：功能菜单已常驻输入栏下方，此处仅保留工具栏入口（如新图提示）
         EndpointManager.getInstance().setMethod(EndpointCategory.wkChatToolBar + "_more", EndpointCategory.wkChatToolBar, 40, object -> {
             IConversationContext iConversationContext = (IConversationContext) object;
-            View moreView = FaceManger.getInstance().getFunctionView(iConversationContext, chatFunctionMenu -> chatFunctionMenu.iChatFunctionCLick.onClick(iConversationContext));
-
-            return new ChatToolBarMenu("wk_chat_toolbar_more", R.mipmap.icon_chat_toolbar_more, R.mipmap.icon_chat_toolbar_more, moreView, (isSelected, iConversationContext13) -> {
-
+            return new ChatToolBarMenu("wk_chat_toolbar_more", R.mipmap.icon_chat_toolbar_more, R.mipmap.icon_chat_toolbar_more, null, (isSelected, iConversationContext13) -> {
             });
         });
         //添加聊天功能面板
-        EndpointManager.getInstance().setMethod(EndpointCategory.chatFunction + "_chooseImg", EndpointCategory.chatFunction, 100, object -> new ChatFunctionMenu("chooseImg", R.mipmap.icon_func_album, mContext.get().getString(R.string.image), this::chooseIMG));
-        EndpointManager.getInstance().setMethod(EndpointCategory.chatFunction + "_chooseCard", EndpointCategory.chatFunction, 95, object -> new ChatFunctionMenu("chooseCard", R.mipmap.icon_func_card, mContext.get().getString(R.string.card), IConversationContext::sendCardMsg));
+        EndpointManager.getInstance().setMethod(EndpointCategory.chatFunction + "_chooseImg", EndpointCategory.chatFunction, 100, object -> new ChatFunctionMenu("chooseImg", R.mipmap.ic_send_image, mContext.get().getString(R.string.image), this::chooseIMG));
+        EndpointManager.getInstance().setMethod(EndpointCategory.chatFunction + "_chooseCard", EndpointCategory.chatFunction, 95, object -> new ChatFunctionMenu("chooseCard", R.mipmap.ic_send_contact, mContext.get().getString(R.string.card), IConversationContext::sendCardMsg));
 
         //添加tab页
-        EndpointManager.getInstance().setMethod(EndpointCategory.tabMenus + "_start_chat", EndpointCategory.tabMenus, 200, object -> new PopupMenuItem(mContext.get().getString(R.string.start_group_chat), R.mipmap.menu_chats, () -> {
+        EndpointManager.getInstance().setMethod(EndpointCategory.tabMenus + "_start_chat", EndpointCategory.tabMenus, 200, object -> new PopupMenuItem(mContext.get().getString(R.string.start_group_chat), R.mipmap.ic_send_new_msg, () -> {
             Intent intent = new Intent(mContext.get(), ChooseContactsActivity.class);
             intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
             mContext.get().startActivity(intent);
         }));
-        EndpointManager.getInstance().setMethod(EndpointCategory.tabMenus + "_add_friends", EndpointCategory.tabMenus, 99, object -> new PopupMenuItem(mContext.get().getString(R.string.add_friends), R.mipmap.menu_invite, () -> {
+        EndpointManager.getInstance().setMethod(EndpointCategory.tabMenus + "_add_friends", EndpointCategory.tabMenus, 99, object -> new PopupMenuItem(mContext.get().getString(R.string.add_friends), R.mipmap.ic_add_new_friend, () -> {
             Intent intent = new Intent(mContext.get(), AddFriendsActivity.class);
             intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
             mContext.get().startActivity(intent);

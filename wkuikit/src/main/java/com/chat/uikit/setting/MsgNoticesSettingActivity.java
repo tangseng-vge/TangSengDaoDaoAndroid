@@ -7,9 +7,9 @@ import com.chat.base.base.WKBaseActivity;
 import com.chat.base.config.WKConfig;
 import com.chat.base.config.WKConstants;
 import com.chat.base.endpoint.EndpointManager;
-import com.chat.base.endpoint.entity.ChatBgItemMenu;
 import com.chat.base.entity.UserInfoEntity;
 import com.chat.base.net.HttpResponseCode;
+import com.chat.base.ui.Theme;
 import com.chat.base.utils.systembar.WKOSUtils;
 import com.chat.uikit.R;
 import com.chat.uikit.databinding.ActMsgNoticesSetLayoutBinding;
@@ -44,6 +44,10 @@ public class MsgNoticesSettingActivity extends WKBaseActivity<ActMsgNoticesSetLa
         wkVBinding.refreshLayout.setEnableOverScrollDrag(true);
         wkVBinding.refreshLayout.setEnableLoadMore(false);
         wkVBinding.refreshLayout.setEnableRefresh(false);
+        Theme.applyAccentSwitchStyle(this, wkVBinding.newMsgNoticeSwitch);
+        Theme.applyAccentSwitchStyle(this, wkVBinding.newMsgNoticeDetailSwitch);
+        Theme.applyAccentSwitchStyle(this, wkVBinding.voiceSwitch);
+        Theme.applyAccentSwitchStyle(this, wkVBinding.shockSwitch);
         wkVBinding.newMsgNoticeSwitch.setChecked(userInfoEntity.setting.new_msg_notice == 1);
         wkVBinding.voiceSwitch.setChecked(userInfoEntity.setting.voice_on == 1);
         wkVBinding.shockSwitch.setChecked(userInfoEntity.setting.shock_on == 1);
@@ -56,8 +60,8 @@ public class MsgNoticesSettingActivity extends WKBaseActivity<ActMsgNoticesSetLa
 
     @Override
     protected void initListener() {
-        wkVBinding.newMsgNoticeSwitch.setOnCheckedChangeListener((compoundButton, b) -> {
-            if (compoundButton.isPressed()) {
+        wkVBinding.newMsgNoticeSwitch.setOnCheckedChangeListener((view, b) -> {
+            if (view.isPressed()) {
                 userInfoEntity.setting.new_msg_notice = b ? 1 : 0;
                 UserModel.getInstance().updateUserSetting("new_msg_notice", userInfoEntity.setting.new_msg_notice, (code, msg) -> {
                     if (code == HttpResponseCode.success) {
@@ -66,8 +70,8 @@ public class MsgNoticesSettingActivity extends WKBaseActivity<ActMsgNoticesSetLa
                 });
             }
         });
-        wkVBinding.voiceSwitch.setOnCheckedChangeListener((compoundButton, b) -> {
-            if (compoundButton.isPressed()) {
+        wkVBinding.voiceSwitch.setOnCheckedChangeListener((view, b) -> {
+            if (view.isPressed()) {
                 userInfoEntity.setting.voice_on = b ? 1 : 0;
                 UserModel.getInstance().updateUserSetting("voice_on", userInfoEntity.setting.voice_on, (code, msg) -> {
                     if (code == HttpResponseCode.success) {
@@ -76,8 +80,8 @@ public class MsgNoticesSettingActivity extends WKBaseActivity<ActMsgNoticesSetLa
                 });
             }
         });
-        wkVBinding.shockSwitch.setOnCheckedChangeListener((compoundButton, b) -> {
-            if (compoundButton.isPressed()) {
+        wkVBinding.shockSwitch.setOnCheckedChangeListener((view, b) -> {
+            if (view.isPressed()) {
                 userInfoEntity.setting.shock_on = b ? 1 : 0;
                 UserModel.getInstance().updateUserSetting("shock_on", userInfoEntity.setting.shock_on, (code, msg) -> {
                     if (code == HttpResponseCode.success) {
@@ -86,8 +90,8 @@ public class MsgNoticesSettingActivity extends WKBaseActivity<ActMsgNoticesSetLa
                 });
             }
         });
-        wkVBinding.newMsgNoticeDetailSwitch.setOnCheckedChangeListener((compoundButton, b) -> {
-            if (compoundButton.isPressed()) {
+        wkVBinding.newMsgNoticeDetailSwitch.setOnCheckedChangeListener((view, b) -> {
+            if (view.isPressed()) {
                 userInfoEntity.setting.msg_show_detail = b ? 1 : 0;
                 UserModel.getInstance().updateUserSetting("msg_show_detail", userInfoEntity.setting.msg_show_detail, (code, msg) -> {
                     if (code == HttpResponseCode.success) {
@@ -103,4 +107,5 @@ public class MsgNoticesSettingActivity extends WKBaseActivity<ActMsgNoticesSetLa
             WKOSUtils.openChannelSetting(this, WKConstants.newRTCChannelID);
         });
     }
+
 }

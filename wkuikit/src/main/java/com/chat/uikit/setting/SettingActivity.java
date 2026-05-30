@@ -5,6 +5,7 @@ import android.text.TextUtils;
 import android.view.View;
 import android.widget.TextView;
 
+import com.chat.advanced.ui.ChatBgListActivity;
 import com.chat.base.act.WKWebViewActivity;
 import com.chat.base.base.WKBaseActivity;
 import com.chat.base.common.WKCommonModel;
@@ -14,6 +15,7 @@ import com.chat.base.endpoint.entity.ChatBgItemMenu;
 import com.chat.base.ui.Theme;
 import com.chat.base.utils.AndroidUtilities;
 import com.chat.base.utils.DataCleanManager;
+import com.chat.base.utils.WKDeviceUtils;
 import com.chat.base.utils.WKDialogUtils;
 import com.chat.base.utils.WKLogUtils;
 import com.chat.base.utils.singleclick.SingleClickUtil;
@@ -23,6 +25,7 @@ import com.chat.uikit.databinding.ActSettingLayoutBinding;
 import com.chat.uikit.message.BackupRestoreMessageActivity;
 import com.chat.uikit.user.service.UserModel;
 import com.xinbida.wukongim.WKIM;
+import com.xinbida.wukongim.entity.WKChannel;
 import com.xinbida.wukongim.entity.WKChannelType;
 
 /**
@@ -51,8 +54,10 @@ public class SettingActivity extends WKBaseActivity<ActSettingLayoutBinding> {
 
     @Override
     protected void initView() {
+        String version = WKDeviceUtils.getInstance().getVersionName(this);
+        wkVBinding.newVersionIv.setText(version);
         getCacheSize();
-        EndpointManager.getInstance().invoke("set_chat_bg_view", new ChatBgItemMenu(this, wkVBinding.chatBgLayout, "", WKChannelType.PERSONAL));
+//        EndpointManager.getInstance().invoke("set_chat_bg_view", new ChatBgItemMenu(this, wkVBinding.chatBgLayout, "", WKChannelType.PERSONAL));
     }
 
     @Override
@@ -85,15 +90,15 @@ public class SettingActivity extends WKBaseActivity<ActSettingLayoutBinding> {
             }
         }));
         SingleClickUtil.onSingleClick(wkVBinding.moduleLayout, view1 -> startActivity(new Intent(this, UpdatePwdActivity.class)));
-        SingleClickUtil.onSingleClick(wkVBinding.aboutLayout, view1 -> startActivity(new Intent(this, WKAboutActivity.class)));
+//        SingleClickUtil.onSingleClick(wkVBinding.aboutLayout, view1 -> startActivity(new Intent(this, WKAboutActivity.class)));
         SingleClickUtil.onSingleClick(wkVBinding.fontSizeLayout, view1 -> startActivity(new Intent(this, WKSetFontSizeActivity.class)));
-        WKCommonModel.getInstance().getAppNewVersion(false, version -> {
-            if (version != null && !TextUtils.isEmpty(version.download_url)) {
-                wkVBinding.newVersionIv.setVisibility(View.VISIBLE);
-            } else {
-                wkVBinding.newVersionIv.setVisibility(View.GONE);
-            }
-        });
+//        WKCommonModel.getInstance().getAppNewVersion(false, version -> {
+//            if (version != null && !TextUtils.isEmpty(version.download_url)) {
+//                wkVBinding.newVersionIv.setVisibility(View.VISIBLE);
+//            } else {
+//                wkVBinding.newVersionIv.setVisibility(View.GONE);
+//            }
+//        });
 
         SingleClickUtil.onSingleClick(wkVBinding.msgBackupLayout, view1 -> {
             Intent intent = new Intent(this, BackupRestoreMessageActivity.class);
@@ -112,6 +117,23 @@ public class SettingActivity extends WKBaseActivity<ActSettingLayoutBinding> {
         });
         SingleClickUtil.onSingleClick(wkVBinding.errorLogLayout, view1 -> startActivity(new Intent(this, ErrorLogsActivity.class)));
 
+        SingleClickUtil.onSingleClick(wkVBinding.llPrivacy, view1 -> {
+            // 隐私政策
+            showWebView(WKApiConfig.baseWebUrl + "privacy_policy.html");
+        });
+        SingleClickUtil.onSingleClick(wkVBinding.llUserAgreement, view1 -> {
+            // 用户协议
+            showWebView(WKApiConfig.baseWebUrl + "user_agreement.html");
+        });
+        SingleClickUtil.onSingleClick(wkVBinding.changeBgLayout,view1 -> {
+            Intent intent = new Intent(this, ChatBgListActivity.class);
+            intent.putExtra("channelID", "");
+            intent.putExtra("channelType", WKChannelType.PERSONAL);
+            startActivity(intent);
+        });
+
+        SingleClickUtil.onSingleClick(wkVBinding.blackListLayout, view1 ->
+                startActivity(new Intent(this, BlackListActivity.class)));
     }
 
 

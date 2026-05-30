@@ -97,7 +97,7 @@ public class WKVideoApplication {
 //        });
         EndpointManager.getInstance().setMethod("is_register_video", object -> true);
         //添加聊天功能面板
-        EndpointManager.getInstance().setMethod(EndpointCategory.chatFunction + "_recording", EndpointCategory.chatFunction, 99, object -> new ChatFunctionMenu("recording", R.mipmap.icon_func_recording, context.getString(R.string.wkvideo_recording), (iConversationContext) -> {
+        EndpointManager.getInstance().setMethod(EndpointCategory.chatFunction + "_recording", EndpointCategory.chatFunction, 99, object -> new ChatFunctionMenu("recording", R.mipmap.ic_send_camera, context.getString(R.string.wkvideo_recording), (iConversationContext) -> {
             this.iConversationContext = (IConversationContext) object;
             startRecord(iConversationContext.getChatActivity());
         }));

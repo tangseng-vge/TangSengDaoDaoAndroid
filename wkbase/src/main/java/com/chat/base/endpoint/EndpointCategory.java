@@ -11,6 +11,10 @@ public class EndpointCategory {
     public final static String mailList = "mail_list";
     //刷新通讯录红点
     public final static String wkRefreshMailList = "wk_refresh_mailList";
+    /** 语言切换后刷新「我的」页 Endpoint 菜单文案 */
+    public final static String wkRefreshPersonalCenter = "wk_refresh_personal_center";
+    /** 语言切换后刷新会话列表等依赖 AppLocaleStrings 的 UI */
+    public final static String wkRefreshChatConversation = "wk_refresh_chat_conversation";
     //获取通讯录要显示的红点
     public final static String wkGetMailListRedDot = "wk_get_mailList_red_dot";
     //聊天功能面板

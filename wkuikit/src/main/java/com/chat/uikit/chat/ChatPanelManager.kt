@@ -17,10 +17,12 @@ import android.util.TypedValue
 import android.view.Gravity
 import android.view.HapticFeedbackConstants
 import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
+import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.RelativeLayout
@@ -75,6 +77,7 @@ import com.chat.base.views.FullyGridLayoutManager
 import com.chat.base.views.NoEventRecycleView
 import com.chat.uikit.R
 import com.chat.uikit.chat.adapter.WKChatToolBarAdapter
+import com.chat.uikit.chat.manager.FaceManger
 import com.chat.uikit.chat.manager.SendMsgEntity
 import com.chat.uikit.chat.manager.WKSendMsgUtils
 import com.chat.uikit.chat.msgmodel.WKMultiForwardContent
@@ -93,6 +96,7 @@ import com.chat.uikit.robot.service.WKRobotModel
 import com.chat.uikit.user.UserDetailActivity
 import com.chat.uikit.utils.mentionDisplay
 import com.effective.android.panel.PanelSwitchHelper
+import com.effective.android.panel.view.panel.IPanelView
 import com.xinbida.wukongim.WKIM
 import com.xinbida.wukongim.entity.WKChannel
 import com.xinbida.wukongim.entity.WKChannelExtras
@@ -125,7 +129,8 @@ class ChatPanelManager(
 ) {
     private val eventKey = "InputPanel"
     private val loginUID = WKConfig.getInstance().uid
-    private var isShowSendBtn: Boolean = false
+    private var isChatFunctionExpanded = false
+    private var effectivePanelHeight = 0
     private var flame = 0
     private var lastInputTime: Long = 0
     private var inlineQueryOffset: String = ""
@@ -138,9 +143,17 @@ class ChatPanelManager(
     private val editText: ContactEditText = parentView.findViewById(R.id.editText)
     private val hitTv: AppCompatTextView = parentView.findViewById(R.id.hitTv)
     private val sendIV: AppCompatImageView = parentView.findViewById(R.id.sendIV)
+    private val sendBtnLayout: View = sendIV.parent as View
+    private val sendOptionIV: AppCompatImageView = parentView.findViewById(R.id.sendOptionIV)
     private val markdownIv: AppCompatImageView = parentView.findViewById(R.id.markdownIv)
     private val flameIV: AppCompatImageView = parentView.findViewById(R.id.flameIV)
     private val menuIv: AppCompatImageView = parentView.findViewById(R.id.menuIv)
+    private val chatEmojiIV: AppCompatImageView = parentView.findViewById(R.id.chatEmojiIV)
+    private val recordVoiceIV: AppCompatImageView = parentView.findViewById(R.id.recordVoiceIV)
+    private var fallbackEmojiToolBarMenu: ChatToolBarMenu? = null
+    private var stickerToolBarMenu: ChatToolBarMenu? = null
+    private var voiceToolBarMenu: ChatToolBarMenu? = null
+    private var toolBarInteractionDisabled = false
     private val panelView: FrameLayout = parentView.findViewById(R.id.panelView)
     private val chatView: LinearLayout = parentView.findViewById(R.id.chatView)
     private val chatTopLayout: FrameLayout = parentView.findViewById(R.id.chatTopLayout)
@@ -165,6 +178,8 @@ class ChatPanelManager(
     private var toolBarAdapter: WKChatToolBarAdapter? = null
     private val toolbarRecyclerView: RecyclerView =
         parentView.findViewById(R.id.toolbarRecyclerView)
+    private val chatFunctionLayout: FrameLayout =
+        parentView.findViewById(R.id.chatFunctionLayout)
 
     // 艾特
     private var remindRecycleView: NoEventRecycleView? = null
@@ -183,6 +198,8 @@ class ChatPanelManager(
     private var lastHeight = 0
     private var lastTargetLines = 1 // 追踪上一次的目标行数
     private val maxLines: Int = 3
+    private var chatInputHintText: String = ""
+    private var isRobotPlaceholderActive = false
 
     init {
         this.menuView.background = Theme.getBackground(Theme.colorAccount, 30f)
@@ -196,12 +213,29 @@ class ChatPanelManager(
         initRobotGIF()
         initRobotMenu()
         initTool()
+        initInputIconListeners()
+        initChatFunctionPanel()
         initMultipleChoiceView()
         initBanView()
         initForbiddenView()
         initChatTopView()
         initFlame()
         initNewImageView()
+        editText.hint = ""
+        hitTv.maxLines = 1
+        hitTv.ellipsize = TextUtils.TruncateAt.END
+        hitTv.setSingleLine(true)
+        hitTv.setTextColor(ContextCompat.getColor(iConversationContext.chatActivity, R.color.color999))
+        refreshSendActionButtons()
+        updateEditHint(
+            iConversationContext.chatChannelInfo.let { channel ->
+                when {
+                    !TextUtils.isEmpty(channel.channelRemark) -> channel.channelRemark
+                    !TextUtils.isEmpty(channel.channelName) -> channel.channelName
+                    else -> ""
+                }
+            }
+        )
         EndpointManager.getInstance().invoke(
             "initInputPanel",
             InitInputPanelMenu(
@@ -285,6 +319,7 @@ class ChatPanelManager(
     fun showMultipleChoice() {
         chatView.visibility = View.GONE
         isDisableToolBar(true)
+        setChatFunctionVisible(false)
         helper.resetState()
         CommonAnim.getInstance().showBottom2Top(multipleChoiceView)
     }
@@ -304,6 +339,7 @@ class ChatPanelManager(
         forbiddenView?.visibility = View.GONE
         chatView.visibility = View.GONE
         isDisableToolBar(true)
+        setChatFunctionVisible(false)
     }
 
     //隐藏封禁
@@ -336,6 +372,7 @@ class ChatPanelManager(
         forbiddenView?.visibility = View.VISIBLE
         chatView.visibility = View.GONE
         toolbarRecyclerView.visibility = View.GONE
+        setChatFunctionVisible(false)
         banView?.visibility = View.GONE
         val forbiddenTV =
             forbiddenView?.findViewWithTag<AppCompatTextView>("forbiddenTV")
@@ -346,22 +383,62 @@ class ChatPanelManager(
         if (forbiddenView?.visibility == View.GONE) return
         forbiddenView?.visibility = View.GONE
         chatView.visibility = View.VISIBLE
-        toolbarRecyclerView.visibility = View.VISIBLE
         val forbiddenTV =
             forbiddenView?.findViewWithTag<AppCompatTextView>("forbiddenTV")
         forbiddenTV?.text = iConversationContext.chatActivity.getString(R.string.fullStaffing)
     }
 
     private fun isDisableToolBar(isDisable: Boolean) {
-        for (index in toolBarAdapter!!.data.indices) {
-            toolBarAdapter!!.data[index].isDisable = isDisable
-        }
-        toolBarAdapter!!.notifyItemRangeChanged(0, toolBarAdapter!!.itemCount)
-
+        toolBarInteractionDisabled = isDisable
+        stickerToolBarMenu?.isDisable = isDisable
+        voiceToolBarMenu?.isDisable = isDisable
+        fallbackEmojiToolBarMenu?.isDisable = isDisable
+        toolBarAdapter?.data?.forEach { it.isDisable = isDisable }
+        toolBarAdapter?.notifyDataSetChanged()
+        chatEmojiIV.isEnabled = !isDisable
+        recordVoiceIV.isEnabled = !isDisable
+        val alpha = if (isDisable) 0.5f else 1f
+        chatEmojiIV.alpha = alpha
+        recordVoiceIV.alpha = alpha
     }
 
     fun getEditText(): ContactEditText {
         return this.editText
+    }
+
+    fun updateEditHint(displayName: String?) {
+        val name = displayName?.trim().orEmpty()
+        chatInputHintText =
+            iConversationContext.chatActivity.getString(R.string.chat_send_to_hint, name)
+        editText.hint = ""
+        refreshInputHintVisibility()
+    }
+
+    private fun resetHitTvDefaultLayout() {
+        val lp = RelativeLayout.LayoutParams(
+            RelativeLayout.LayoutParams.MATCH_PARENT,
+            RelativeLayout.LayoutParams.WRAP_CONTENT
+        )
+        lp.addRule(RelativeLayout.ALIGN_PARENT_START)
+        lp.addRule(RelativeLayout.CENTER_VERTICAL)
+        lp.marginStart = AndroidUtilities.dp(5f)
+        lp.marginEnd = AndroidUtilities.dp(10f)
+        hitTv.layoutParams = lp
+        hitTv.maxLines = 1
+        hitTv.ellipsize = TextUtils.TruncateAt.END
+        hitTv.setSingleLine(true)
+    }
+
+    private fun refreshInputHintVisibility() {
+        if (isRobotPlaceholderActive) return
+        if (isEditContentEmpty() && !TextUtils.isEmpty(chatInputHintText)) {
+            hitTv.text = chatInputHintText
+            hitTv.hint = null
+            resetHitTvDefaultLayout()
+            hitTv.visibility = View.VISIBLE
+        } else {
+            hitTv.visibility = View.GONE
+        }
     }
 
     fun showReplyLayout(mMsg: WKMsg) {
@@ -873,90 +950,298 @@ class ChatPanelManager(
     }
 
 
+    private fun initChatFunctionPanel() {
+        chatFunctionLayout.removeAllViews()
+        val functionView = FaceManger.getInstance().getInlineFunctionView(
+            iConversationContext
+        ) { chatFunctionMenu ->
+            chatFunctionMenu.iChatFunctionCLick.onClick(iConversationContext)
+        }
+        chatFunctionLayout.addView(
+            functionView,
+            LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT.toFloat())
+        )
+        setChatFunctionVisible(false)
+    }
+
+    private fun isEditContentEmpty(): Boolean {
+        return TextUtils.isEmpty(StringUtils.replaceBlank(editText.text?.toString() ?: ""))
+    }
+
+    private fun refreshSendActionButtons() {
+        val hasText = !isEditContentEmpty()
+        sendBtnLayout.tag = null
+        sendOptionIV.tag = null
+        if (hasText) {
+            sendBtnLayout.visibility = View.VISIBLE
+            sendOptionIV.visibility = View.GONE
+            updateSendIvTint()
+            collapseChatFunctionPanel()
+        } else {
+            sendBtnLayout.visibility = View.GONE
+            sendOptionIV.visibility = View.VISIBLE
+        }
+        refreshInputHintVisibility()
+    }
+
+    private fun updateSendIvTint() {
+        val colorRes = if (!isEditContentEmpty()) {
+            R.color.colorAccent
+        } else {
+            R.color.popupTextColor
+        }
+        sendIV.colorFilter = PorterDuffColorFilter(
+            ContextCompat.getColor(iConversationContext.chatActivity, colorRes),
+            PorterDuff.Mode.SRC_IN
+        )
+    }
+
+    private fun isVoicePanelOpen(): Boolean {
+        if (!helper.isPanelState()) return false
+        return voiceToolBarMenu?.isSelected == true
+    }
+
+    private fun updateRecordVoiceTint() {
+        val colorRes = if (isVoicePanelOpen()) {
+            R.color.colorAccent
+        } else {
+            R.color.popupTextColor
+        }
+        recordVoiceIV.colorFilter = PorterDuffColorFilter(
+            ContextCompat.getColor(iConversationContext.chatActivity, colorRes),
+            PorterDuff.Mode.SRC_IN
+        )
+    }
+
+    private fun updateSendOptionTint() {
+        val colorRes = if (isChatFunctionExpanded) {
+            R.color.colorAccent
+        } else {
+            R.color.popupTextColor
+        }
+        sendOptionIV.colorFilter = PorterDuffColorFilter(
+            ContextCompat.getColor(iConversationContext.chatActivity, colorRes),
+            PorterDuff.Mode.SRC_IN
+        )
+    }
+
+    private fun collapseChatFunctionPanel() {
+        if (!isChatFunctionExpanded && chatFunctionLayout.isGone) {
+            updateSendOptionTint()
+            return
+        }
+        isChatFunctionExpanded = false
+        chatFunctionLayout.visibility = View.GONE
+        updateSendOptionTint()
+    }
+
+    fun hideChatFunctionIfKeyboardVisible() {
+        if (editText.hasFocus() && helper.isKeyboardState()) {
+            collapseChatFunctionPanel()
+        }
+    }
+
+    private fun toggleChatFunctionPanel() {
+        if (toolBarInteractionDisabled || !isEditContentEmpty()) {
+            return
+        }
+        if (isChatFunctionExpanded) {
+            collapseChatFunctionPanel()
+            return
+        }
+        dismissInputKeyboard()
+        closeEmojiAndVoicePanel()
+        setChatFunctionVisible(true)
+    }
+
+    fun dismissChatFunctionOnOutsideTouch(ev: MotionEvent) {
+        if (!isChatFunctionExpanded) return
+        val location = IntArray(2)
+        parentView.getLocationOnScreen(location)
+        val rawX = ev.rawX
+        val rawY = ev.rawY
+        val insidePanel = rawX >= location[0] && rawX <= location[0] + parentView.width
+                && rawY >= location[1] && rawY <= location[1] + parentView.height
+        if (!insidePanel) {
+            collapseChatFunctionPanel()
+        }
+    }
+
+    private fun closeEmojiAndVoicePanel() {
+        clearAllToolBarSelections()
+        moreLayout.removeAllViews()
+        if (helper.isPanelState()) {
+            helper.resetState()
+        }
+        updateChatEmojiTint()
+        updateRecordVoiceTint()
+    }
+
+    private fun dismissInputKeyboard() {
+        SoftKeyboardUtils.getInstance().loseFocus(editText)
+        editText.clearFocus()
+        SoftKeyboardUtils.getInstance()
+            .hideInput(iConversationContext.chatActivity, editText)
+        if (helper.isKeyboardState() || helper.isPanelState()) {
+            helper.resetState()
+        }
+    }
+
+    private fun setChatFunctionVisible(visible: Boolean) {
+        isChatFunctionExpanded = visible
+        chatFunctionLayout.visibility = if (visible) View.VISIBLE else View.GONE
+        updateSendOptionTint()
+    }
+
     private fun initTool() {
+        // wkChatToolBar 端点保留注册，仅隐藏 UI；交互改由输入栏图标与底部 chatFunction 承担
+        toolbarRecyclerView.visibility = View.GONE
+        loadHiddenToolBarMenus()
         toolBarAdapter = WKChatToolBarAdapter()
         toolBarAdapter?.animationEnable = false
-        toolbarRecyclerView.adapter = toolBarAdapter
-        toolbarRecyclerView.layoutManager =
-            LinearLayoutManager(
-                iConversationContext.chatActivity,
-                LinearLayoutManager.HORIZONTAL,
-                false
-            )
-        //去除刷新条目闪动动画
-        (Objects.requireNonNull(toolbarRecyclerView.itemAnimator) as DefaultItemAnimator).supportsChangeAnimations =
-            false
+        toolBarAdapter?.setList(ArrayList())
+    }
+
+    /**
+     * 从 Endpoint 加载工具栏菜单（不展示 RecyclerView），供 chatEmojiIV / recordVoiceIV 使用
+     */
+    private fun loadHiddenToolBarMenus() {
+        stickerToolBarMenu = null
+        voiceToolBarMenu = null
+        var isAddEmojiLayout = true
         val toolBarList = EndpointManager.getInstance()
             .invokes<ChatToolBarMenu>(EndpointCategory.wkChatToolBar, iConversationContext)
-        val tempToolBarList: MutableList<ChatToolBarMenu> = ArrayList()
-        var isAddEmojiLayout = true
         for (menu in toolBarList) {
-            if (menu != null) {
-                if (menu.sid.equals("chat_toolbar_sticker")) {
+            if (menu == null) continue
+            when (menu.sid) {
+                "chat_toolbar_sticker" -> {
+                    stickerToolBarMenu = menu
                     isAddEmojiLayout = false
                 }
-                tempToolBarList.add(menu)
+                "wk_chat_toolbar_voice" -> voiceToolBarMenu = menu
             }
         }
-        if (isAddEmojiLayout) {
-            val emojiToolBar = ChatToolBarMenu(
+        fallbackEmojiToolBarMenu = if (isAddEmojiLayout) {
+            ChatToolBarMenu(
                 "emojiToolBar",
                 R.mipmap.icon_chat_toolbar_emoji,
                 R.mipmap.icon_chat_toolbar_emoji,
                 getEmojiLayout()
             ) { _, _ -> }
-            tempToolBarList.add(0, emojiToolBar)
+        } else {
+            null
         }
-        toolBarAdapter?.setList(tempToolBarList)
-        toolBarAdapter?.addChildClickViewIds(R.id.imageView)
-        toolBarAdapter?.setOnItemChildClickListener { adapter1: BaseQuickAdapter<*, *>, view: View, position: Int ->
-            if (view.id == R.id.imageView) {
-                SingleClickUtil.determineTriggerSingleClick(view, 500) {
-                    val mChatToolBarMenu =
-                        adapter1.getItem(position) as ChatToolBarMenu?
-                            ?: return@determineTriggerSingleClick
-                    if (mChatToolBarMenu.isDisable) return@determineTriggerSingleClick
-                    // 如果点击的是@
-                    if (mChatToolBarMenu.sid == "wk_chat_toolbar_remind") {
-                        val index = editText.selectionStart
-                        if (index != Objects.requireNonNull(editText.text)
-                                .toString().length
-                        ) {
-                            editText.text.insert(
-                                editText.selectionStart,
-                                "@"
-                            )
-                        } else {
-                            editText.append("@")
-                        }
-                        return@determineTriggerSingleClick
-                    }
-                    //如果点击的是更多
-                    if (mChatToolBarMenu.sid == "wk_chat_toolbar_more") {
-                        val path = ImageUtils.getInstance().newestPhoto
-                        val oldPath =
-                            WKSharedPreferencesUtil.getInstance().getSP("new_img_path")
-                        if (!TextUtils.isEmpty(path) && TextUtils.isEmpty(oldPath)
-                            || !TextUtils.isEmpty(path) && !TextUtils.isEmpty(oldPath) && oldPath != path
-                        ) {
-                            Handler(Looper.myLooper()!!).postDelayed({
-                                showNewImgDialog(path)
-                            }, 300)
-                        }
-                    }
-                    if (mChatToolBarMenu.sid == "wk_chat_toolbar_voice") {
-                        checkPermission(
-                            iConversationContext.chatActivity,
-                            mChatToolBarMenu,
-                            position,
-                            toolBarAdapter!!
-                        )
-                        return@determineTriggerSingleClick
-                    }
-                    toolBarClick(mChatToolBarMenu, position, toolBarAdapter!!)
-                }
+    }
+
+    private fun clearAllToolBarSelections() {
+        toolBarAdapter?.data?.forEach { it.isSelected = false }
+        stickerToolBarMenu?.isSelected = false
+        voiceToolBarMenu?.isSelected = false
+        fallbackEmojiToolBarMenu?.isSelected = false
+    }
+
+    private fun initInputIconListeners() {
+        Theme.setPressedBackground(chatEmojiIV)
+        Theme.setPressedBackground(recordVoiceIV)
+        Theme.setPressedBackground(sendOptionIV)
+        updateChatEmojiTint()
+        updateSendOptionTint()
+        chatEmojiIV.setOnClickListener {
+            SingleClickUtil.determineTriggerSingleClick(it, 500) {
+                performEmojiPanelClick()
             }
         }
+        recordVoiceIV.setOnClickListener {
+            SingleClickUtil.determineTriggerSingleClick(it, 500) {
+                performVoicePanelClick()
+            }
+        }
+        sendOptionIV.setOnClickListener {
+            SingleClickUtil.determineTriggerSingleClick(it, 500) {
+                toggleChatFunctionPanel()
+            }
+        }
+        updateRecordVoiceTint()
+    }
+
+    private fun performEmojiPanelClick() {
+        if (toolBarInteractionDisabled) return
+        val adapter = toolBarAdapter ?: return
+        val menu = stickerToolBarMenu ?: fallbackEmojiToolBarMenu ?: return
+        if (menu.isDisable) return
+        if (!menu.isSelected) {
+            collapseChatFunctionPanel()
+        }
+        toolBarClick(menu, -1, adapter)
+        updateChatEmojiTint()
+        updateRecordVoiceTint()
+    }
+
+    private fun performVoicePanelClick() {
+        if (toolBarInteractionDisabled) return
+        val adapter = toolBarAdapter ?: return
+        val menu = voiceToolBarMenu ?: return
+        if (menu.isDisable) return
+        collapseChatFunctionPanel()
+        checkPermission(iConversationContext.chatActivity, menu, -1, adapter)
+    }
+
+    fun getEffectivePanelScrollHeight(panelHeight: Int): Int {
+        return if (panelHeight > 0) panelHeight else defaultPanelHeightPx()
+    }
+
+    fun onPanelSizeChange(panelView: IPanelView?, width: Int, height: Int) {
+        val heightPx = if (height > 0) height else defaultPanelHeightPx()
+        effectivePanelHeight = heightPx
+        applyPanelContainerStyle(heightPx)
+    }
+
+    private fun defaultPanelHeightPx(): Int {
+        val keyboardHeight = WKConstants.getKeyboardHeight()
+        return if (keyboardHeight > 0) {
+            keyboardHeight
+        } else {
+            AndroidUtilities.getScreenHeight() / 3
+        }
+    }
+
+    private fun applyPanelContainerStyle(heightPx: Int) {
+        val activity = iConversationContext.chatActivity
+        val panelBg = ContextCompat.getColor(activity, R.color.homeColor)
+        listOf(R.id.panel_container, R.id.panel_emotion).forEach { viewId ->
+            activity.findViewById<View>(viewId)?.let { panelView ->
+                val lp = panelView.layoutParams ?: return@forEach
+                lp.height = heightPx
+                panelView.layoutParams = lp
+                panelView.setBackgroundColor(panelBg)
+            }
+        }
+        moreLayout.setBackgroundColor(panelBg)
+        moreLayout.layoutParams?.let { lp ->
+            lp.height = ViewGroup.LayoutParams.MATCH_PARENT
+            moreLayout.layoutParams = lp
+        }
+    }
+
+    private fun applyToolBarPanelHeight(toolBarMenu: ChatToolBarMenu?) {
+        applyPanelContainerStyle(
+            if (effectivePanelHeight > 0) effectivePanelHeight else defaultPanelHeightPx()
+        )
+    }
+
+    private fun updateChatEmojiTint() {
+        val color = if (isEmojiPanelOpen()) {
+            ContextCompat.getColor(iConversationContext.chatActivity, R.color.colorAccent)
+        } else {
+            ContextCompat.getColor(iConversationContext.chatActivity, R.color.popupTextColor)
+        }
+        chatEmojiIV.colorFilter = PorterDuffColorFilter(color, PorterDuff.Mode.SRC_IN)
+    }
+
+    private fun isEmojiPanelOpen(): Boolean {
+        if (!helper.isPanelState()) return false
+        return stickerToolBarMenu?.isSelected == true
+                || fallbackEmojiToolBarMenu?.isSelected == true
     }
 
     private fun initRobotMenu() {
@@ -1233,9 +1518,7 @@ class ChatPanelManager(
             stickerContent.url = entity.url
             iConversationContext.sendMessage(stickerContent)
             editText.text = null
-//            CommonAnim.getInstance().showOrHide(closeSearchLottieIV, false, true)
-            CommonAnim.getInstance().showOrHide(sendIV, true, true)
-            CommonAnim.getInstance().showOrHide(hitTv, false, true)
+            refreshSendActionButtons()
         }
         this.robotGifRecyclerView!!.visibility = View.GONE
     }
@@ -1243,6 +1526,11 @@ class ChatPanelManager(
     private fun initListener() {
         panelView.setOnClickListener {
 
+        }
+        editText.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) {
+                editText.post { hideChatFunctionIfKeyboardVisible() }
+            }
         }
         EndpointManager.getInstance().setMethod(
             "emoji_click"
@@ -1281,11 +1569,6 @@ class ChatPanelManager(
             var content = StringUtils.replaceBlank(editText.text.toString())
             if (!TextUtils.isEmpty(content)) {
                 content = editText.text.toString()
-                sendIV.colorFilter = PorterDuffColorFilter(
-                    ContextCompat.getColor(
-                        iConversationContext.chatActivity, R.color.popupTextColor
-                    ), PorterDuff.Mode.MULTIPLY
-                )
                 val drawable = EmojiManager.getInstance()
                     .getDrawable(iConversationContext.chatActivity, content)
                 if (drawable != null && iConversationContext.replyMsg == null) {
@@ -1303,6 +1586,7 @@ class ChatPanelManager(
                         if (result) {
                             editText.text = null
                             lastInputTime = 0
+                            refreshSendActionButtons()
                             return@setOnClickListener
                         }
                     }
@@ -1331,6 +1615,7 @@ class ChatPanelManager(
                 iConversationContext.sendMessage(textMsgModel)
                 editText.text = null
                 lastInputTime = 0
+                refreshSendActionButtons()
                 if (chatTopView?.visibility == View.VISIBLE) {
                     CommonAnim.getInstance().animateClose(chatTopView)
                 }
@@ -1345,24 +1630,8 @@ class ChatPanelManager(
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
                 this.start = start
                 this.count = count
+                refreshSendActionButtons()
                 if (!TextUtils.isEmpty(s.toString())) {
-                    val content = StringUtils.replaceBlank(s.toString())
-//                    val content = s.toString().replace("\\s*|\r|\n|\t", "")
-                    if (!isShowSendBtn && !TextUtils.isEmpty(content)) {
-                        CommonAnim.getInstance().animImageView(sendIV)
-                    }
-                    isShowSendBtn = true
-                    if (TextUtils.isEmpty(content)) {
-                        sendIV.colorFilter = PorterDuffColorFilter(
-                            ContextCompat.getColor(
-                                iConversationContext.chatActivity, R.color.popupTextColor
-                            ), PorterDuff.Mode.MULTIPLY
-                        )
-                    } else {
-                        sendIV.colorFilter = PorterDuffColorFilter(
-                            Theme.colorAccount, PorterDuff.Mode.MULTIPLY
-                        )
-                    }
                     CommonAnim.getInstance().showOrHide(markdownIv, false, true)
                     if (flame == 1) {
                         CommonAnim.getInstance().showOrHide(flameIV, false, true)
@@ -1372,12 +1641,6 @@ class ChatPanelManager(
                     if (flame == 1) {
                         CommonAnim.getInstance().showOrHide(flameIV, true, true)
                     }
-                    isShowSendBtn = false
-                    sendIV.colorFilter = PorterDuffColorFilter(
-                        ContextCompat.getColor(
-                            iConversationContext.chatActivity, R.color.popupTextColor
-                        ), PorterDuff.Mode.MULTIPLY
-                    )
                 }
                 val selectionStart = editText.selectionStart
                 val selectionEnd = editText.selectionEnd
@@ -1431,10 +1694,10 @@ class ChatPanelManager(
                 } else {
                     hideRemindView()
                     hideRobotView()
-                    CommonAnim.getInstance().showOrHide(hitTv, false, true)
+                    isRobotPlaceholderActive = false
+                    refreshInputHintVisibility()
 //                    CommonAnim.getInstance()
 //                        .showOrHide(closeSearchLottieIV, false, true)
-                    CommonAnim.getInstance().showOrHide(sendIV, true, true)
                 }
             }
 
@@ -1549,7 +1812,8 @@ class ChatPanelManager(
                             )
                     ) {
 
-                        CommonAnim.getInstance().showOrHide(hitTv, false, true)
+                        isRobotPlaceholderActive = false
+                        refreshInputHintVisibility()
                         inlineQueryOffset = ""
 //                        if (TextUtils.isEmpty(searchKey)) {
 //                            if (this.robotGifRecyclerView!!.visibility != View.GONE) {
@@ -1572,6 +1836,8 @@ class ChatPanelManager(
                             searchNameCharsIndex++
                         }
                         if (count == 1) {
+                            isRobotPlaceholderActive = true
+                            hitTv.text = ""
                             hitTv.hint = mRobot.placeholder
                             CommonAnim.getInstance().showOrHide(hitTv, true, true)
                             val lp = RelativeLayout.LayoutParams(
@@ -1582,17 +1848,19 @@ class ChatPanelManager(
                             lp.leftMargin = textWidth.toInt() + AndroidUtilities.dp(10f)
                             hitTv.layoutParams = lp
                         } else {
-                            CommonAnim.getInstance().showOrHide(hitTv, false, true)
+                            isRobotPlaceholderActive = false
+                            refreshInputHintVisibility()
                         }
                     }
-                    CommonAnim.getInstance().showOrHide(sendIV, false, true)
+                    sendBtnLayout.visibility = View.GONE
 //                    CommonAnim.getInstance().showOrHide(closeSearchLottieIV, true, true)
 
                 } else {
-                    CommonAnim.getInstance().showOrHide(hitTv, false, true)
+                    isRobotPlaceholderActive = false
+                    refreshInputHintVisibility()
 //                    CommonAnim.getInstance()
 //                        .showOrHide(closeSearchLottieIV, false, true)
-                    CommonAnim.getInstance().showOrHide(sendIV, true, true)
+                    refreshSendActionButtons()
 
                     val list: MutableList<WKRobotEntity> = ArrayList()
                     list.add(
@@ -1606,9 +1874,10 @@ class ChatPanelManager(
                     hideRobotView()
                 }
             } else {
-                CommonAnim.getInstance().showOrHide(hitTv, false, true)
+                isRobotPlaceholderActive = false
+                refreshInputHintVisibility()
 //                CommonAnim.getInstance().showOrHide(closeSearchLottieIV, false, true)
-                CommonAnim.getInstance().showOrHide(sendIV, true, true)
+                refreshSendActionButtons()
                 hideRobotView()
             }
         }
@@ -1762,12 +2031,16 @@ class ChatPanelManager(
 
 
     fun resetToolBar() {
-        for (index in toolBarAdapter!!.data.indices) {
-            toolBarAdapter!!.getItem(index).isDisable =
-                false
-            toolBarAdapter!!.getItem(index).isSelected = false
-        }
-        toolBarAdapter!!.notifyItemRangeChanged(0, toolBarAdapter!!.itemCount)
+        toolBarInteractionDisabled = false
+        clearAllToolBarSelections()
+        stickerToolBarMenu?.isDisable = false
+        voiceToolBarMenu?.isDisable = false
+        fallbackEmojiToolBarMenu?.isDisable = false
+        toolBarAdapter?.data?.forEach { it.isDisable = false }
+        toolBarAdapter?.notifyDataSetChanged()
+        applyToolBarPanelHeight(null)
+        updateChatEmojiTint()
+        updateRecordVoiceTint()
     }
 
     private fun getEmojiLayout(): View {
@@ -1846,24 +2119,25 @@ class ChatPanelManager(
             if (mChatToolBarMenu.isSelected) {
                 //已经选中就隐藏底部view弹起软键盘
                 mChatToolBarMenu.isSelected = false
+                applyToolBarPanelHeight(null)
                 SoftKeyboardUtils.getInstance().requestFocus(editText)
                 SoftKeyboardUtils.getInstance()
                     .showSoftKeyBoard(iConversationContext.chatActivity, editText)
                 helper.toKeyboardState()
-                toolBarAdapter!!.notifyItemChanged(position)
-            } else {
-                var i = 0
-                val size = toolBarAdapter!!.data.size
-                while (i < size) {
-                    toolBarAdapter!!.data[i].isSelected = false
-                    i++
+                if (position >= 0) {
+                    toolBarAdapter!!.notifyItemChanged(position)
                 }
+            } else {
+                clearAllToolBarSelections()
                 mChatToolBarMenu.isSelected = true
-                adapter1.notifyItemRangeChanged(0, adapter1.data.size)
+                if (adapter1.data.isNotEmpty()) {
+                    adapter1.notifyItemRangeChanged(0, adapter1.data.size)
+                }
                 if (!helper.isPanelState()) {
                     helper.toPanelState(R.id.emotionView)
                 }
                 moreLayout.removeAllViews()
+                collapseChatFunctionPanel()
                 moreLayout.addView(
                     mChatToolBarMenu.bottomView,
                     LayoutHelper.createFrame(
@@ -1871,6 +2145,7 @@ class ChatPanelManager(
                         LayoutHelper.MATCH_PARENT.toFloat()
                     )
                 )
+                applyToolBarPanelHeight(mChatToolBarMenu)
                 mChatToolBarMenu.bottomView.startAnimation(
                     loadAnimation(
                         iConversationContext
@@ -1885,6 +2160,8 @@ class ChatPanelManager(
             true,
             iConversationContext
         )
+        updateChatEmojiTint()
+        updateRecordVoiceTint()
     }
 
     private fun loadAnimation(iConversationContext: IConversationContext): Animation? {
@@ -2107,18 +2384,9 @@ class ChatPanelManager(
                                                         )
                                                     )
 
-                                                for (index in toolBarAdapter!!.data.indices) {
-                                                    toolBarAdapter!!.getItem(index).isDisable =
-                                                        false
-                                                }
-                                                toolBarAdapter!!.notifyItemRangeChanged(
-                                                    0,
-                                                    toolBarAdapter!!.itemCount
-                                                )
+                                                isDisableToolBar(false)
                                                 multipleChoiceView?.visibility = View.GONE
                                                 chatView.visibility = View.VISIBLE
-                                                toolbarRecyclerView.visibility =
-                                                    View.VISIBLE
                                                 resetTitleViewListener()
                                             }
                                         },
@@ -2248,7 +2516,6 @@ class ChatPanelManager(
                         MsgModel.getInstance().deleteMsg(list, null)
                         resetTitleViewListener()
                         multipleChoiceView?.visibility = View.GONE
-                        toolbarRecyclerView.visibility = View.VISIBLE
                         CommonAnim.getInstance().showBottom2Top(chatView)
                         var i = 0
                         val itemCount: Int = chatAdapter.itemCount

@@ -1,17 +1,160 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/swipeRootLayout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:descendantFocusability="blocksDescendants"
-    android:orientation="vertical">
+    android:layout_marginBottom="5dp"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:descendantFocusability="blocksDescendants">
 
+    <LinearLayout
+        android:id="@+id/swipeActionsContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+
+        <LinearLayout
+            android:id="@+id/swipeActionsLayout"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="2"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:orientation="horizontal"
+            android:paddingHorizontal="@dimen/chat_swipe_actions_padding_h"
+            android:paddingVertical="@dimen/chat_swipe_actions_padding_v">
+
+        <LinearLayout
+            android:id="@+id/swipeActionMute"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="@dimen/chat_swipe_action_margin"
+            android:layout_weight="1"
+            android:background="@drawable/bg_chat_swipe_mute"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingHorizontal="4dp"
+            android:paddingVertical="8dp">
+
+            <ImageView
+                android:id="@+id/swipeMuteIcon"
+                android:layout_width="@dimen/chat_swipe_action_icon_size"
+                android:layout_height="@dimen/chat_swipe_action_icon_size"
+                android:contentDescription="@null"
+                android:scaleType="centerInside" />
+
+            <TextView
+                android:id="@+id/swipeMuteText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:ellipsize="end"
+                android:gravity="center"
+                android:maxLines="2"
+                android:textColor="@color/white"
+                android:textSize="@dimen/chat_swipe_action_text_size" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/swipeActionTop"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="@dimen/chat_swipe_action_margin"
+            android:layout_weight="1"
+            android:background="@drawable/bg_chat_swipe_top"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingHorizontal="4dp"
+            android:paddingVertical="8dp">
+
+            <ImageView
+                android:id="@+id/swipeTopIcon"
+                android:layout_width="@dimen/chat_swipe_action_icon_size"
+                android:layout_height="@dimen/chat_swipe_action_icon_size"
+                android:contentDescription="@null"
+                android:scaleType="centerInside" />
+
+            <TextView
+                android:id="@+id/swipeTopText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:ellipsize="end"
+                android:gravity="center"
+                android:maxLines="2"
+                android:textColor="@color/white"
+                android:textSize="@dimen/chat_swipe_action_text_size" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/swipeActionDelete"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/bg_chat_swipe_delete"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingHorizontal="4dp"
+            android:paddingVertical="8dp">
+
+            <ImageView
+                android:id="@+id/swipeDeleteIcon"
+                android:layout_width="@dimen/chat_swipe_action_icon_size"
+                android:layout_height="@dimen/chat_swipe_action_icon_size"
+                android:contentDescription="@null"
+                android:scaleType="centerInside" />
+
+            <TextView
+                android:id="@+id/swipeDeleteText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:ellipsize="end"
+                android:gravity="center"
+                android:maxLines="2"
+                android:textColor="@color/white"
+                android:textSize="@dimen/chat_swipe_action_text_size" />
+        </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/contentLayout"
         style="@style/layoutBg"
-        android:paddingTop="5dp"
-        android:paddingBottom="5dp">
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:paddingStart="0dp"
+        android:paddingEnd="0dp"
+        android:layout_marginBottom="5dp"
+        android:elevation="2dp">
+
+        <View
+            android:id="@+id/topStickIndicator"
+            android:layout_width="@dimen/chat_sticky_indicator_width"
+            android:layout_height="match_parent"
+            android:layout_marginVertical="@dimen/chat_sticky_indicator_margin_v"
+            android:background="@color/colorAccent"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/contentBodyLayout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            >
 
         <FrameLayout
             android:layout_width="60dp"
@@ -32,10 +175,10 @@
 
 
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
-            android:layout_marginStart="10dp"
+            android:layout_weight="1"
             android:orientation="vertical">
 
             <LinearLayout
@@ -185,5 +328,6 @@
                     android:visibility="visible" />
             </LinearLayout>
         </LinearLayout>
+        </LinearLayout>
     </LinearLayout>
-</LinearLayout>
+</FrameLayout>

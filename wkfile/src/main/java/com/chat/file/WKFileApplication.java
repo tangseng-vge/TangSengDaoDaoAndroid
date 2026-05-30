@@ -65,7 +65,7 @@ public class WKFileApplication {
             int type = (int) object;
             return type == WKContentType.WK_FILE;
         });
-        EndpointManager.getInstance().setMethod(EndpointCategory.chatFunction + "_chooseFile", EndpointCategory.chatFunction, 94, object -> new ChatFunctionMenu("", R.mipmap.icon_func_file, context.getString(R.string.str_file_file), (iConversationContext) -> {
+        EndpointManager.getInstance().setMethod(EndpointCategory.chatFunction + "_chooseFile", EndpointCategory.chatFunction, 94, object -> new ChatFunctionMenu("", R.mipmap.ic_send_file, context.getString(R.string.str_file_file), (iConversationContext) -> {
             WKFileApplication.this.iConversationContext = new WeakReference<>((IConversationContext) object);
             if (iConversationContext.getChatChannelInfo().flame == 1) {
                 WKToastUtils.getInstance().showToast(iConversationContext.getChatActivity().getString(R.string.flame_can_not_send_file));

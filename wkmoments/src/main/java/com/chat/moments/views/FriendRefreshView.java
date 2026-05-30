@@ -15,7 +15,6 @@ import android.widget.AbsListView;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
 import androidx.customview.widget.ViewDragHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -37,7 +36,10 @@ import java.util.List;
 public class FriendRefreshView extends ViewGroup implements OnDetectScrollListener {
     private ImageView backIv;
     private ImageView cameraIv;
+    private ImageView msgIv;
     private View titleView;
+    private boolean titleShowCamera;
+    private boolean titleShowMsg;
     private TextView titleTv;
     private TextView updateBgTv;
     //圆形指示器
@@ -68,8 +70,12 @@ public class FriendRefreshView extends ViewGroup implements OnDetectScrollListen
     //圆形加载指示器的半径
     private final int rainbowRadius = 100;
     private int rainbowTop = -120;
+    private int rainbowLeft;
+    private int rainbowSize;
     //圆形加载指示器旋转的角度
     private int rainbowRotateAngle = 0;
+    /** 刷新时在屏幕中央播放旋转动画 */
+    private boolean centerRainbowMode;
 
     private boolean bViewHelperSettling = false;
 
@@ -104,7 +110,7 @@ public class FriendRefreshView extends ViewGroup implements OnDetectScrollListen
         initDragHelper();
         initListView();
         initRainbowView();
-        setBackgroundColor(ContextCompat.getColor(context, R.color.color303030));
+        setBackgroundColor(Color.TRANSPARENT);
         onDetectScrollListener = this;
     }
 
@@ -128,13 +134,31 @@ public class FriendRefreshView extends ViewGroup implements OnDetectScrollListen
                 super.handleMessage(msg);
                 switch (msg.what) {
                     case 0:
+                        if (centerRainbowMode) {
+                            centerRainbowMode = false;
+                            mRainbowView.setVisibility(GONE);
+                            mRainbowView.setAlpha(1f);
+                            rainbowTop = rainbowStartTop;
+                            break;
+                        }
                         if (rainbowTop > rainbowStartTop) {
                             rainbowTop -= 10;
                             requestLayout();
                             mHandler.sendEmptyMessageDelayed(0, 15);
+                        } else {
+                            mRainbowView.setVisibility(GONE);
                         }
                         break;
                     case 1:
+                        if (centerRainbowMode) {
+                            if (isRefreshing()) {
+                                rainbowRotateAngle -= 10;
+                                mRainbowView.setRotation(rainbowRotateAngle);
+                                requestLayout();
+                                mHandler.sendEmptyMessageDelayed(1, 15);
+                            }
+                            break;
+                        }
                         if (rainbowTop <= rainbowStickyTop) {
                             if (rainbowTop < rainbowStickyTop) {
                                 rainbowTop += 10;
@@ -146,9 +170,10 @@ public class FriendRefreshView extends ViewGroup implements OnDetectScrollListen
                         } else {
                             mRainbowView.setRotation(rainbowRotateAngle += 10);
                         }
-
+                        if (mRainbowView.getVisibility() != VISIBLE) {
+                            mRainbowView.setVisibility(VISIBLE);
+                        }
                         requestLayout();
-
                         mHandler.sendEmptyMessageDelayed(1, 15);
                         break;
                 }
@@ -188,6 +213,10 @@ public class FriendRefreshView extends ViewGroup implements OnDetectScrollListen
                         currentTop = top;
                     } else {
                         top = 0;
+                    }
+                    if (centerRainbowMode && isRefreshing()) {
+                        requestLayout();
+                        return;
                     }
                     int lastTop = rainbowTop;
                     int rTop = top + rainbowStartTop;
@@ -319,7 +348,35 @@ public class FriendRefreshView extends ViewGroup implements OnDetectScrollListen
     private void initRainbowView() {
         mRainbowView = new ImageView(getContext());
         mRainbowView.setImageResource(R.mipmap.rainbow_ic);
+        rainbowSize = AndroidUtilities.dp(30);
+        mRainbowView.setVisibility(GONE);
         addView(mRainbowView);
+    }
+
+    private void beginCenterRainbowAnimation() {
+        centerRainbowMode = true;
+        mRainbowView.setVisibility(VISIBLE);
+        mRainbowView.setAlpha(1f);
+        rainbowRotateAngle = 0;
+        mRainbowView.setRotation(0);
+        if (sWidth > 0) {
+            rainbowLeft = (sWidth - rainbowSize) / 2;
+            rainbowTop = computeRainbowTopBelowTitleBar();
+        }
+        requestLayout();
+    }
+
+    /** 刷新动画显示在 act_moments_layout 的 titleView 下方居中 */
+    private int computeRainbowTopBelowTitleBar() {
+        if (titleView == null) {
+            return Math.max(0, (sHeight - rainbowSize) / 2);
+        }
+        int[] titleLoc = new int[2];
+        int[] selfLoc = new int[2];
+        titleView.getLocationOnScreen(titleLoc);
+        getLocationOnScreen(selfLoc);
+        int top = titleLoc[1] + titleView.getHeight() - selfLoc[1] + AndroidUtilities.dp(28);
+        return Math.max(AndroidUtilities.dp(8), top);
     }
 
     /**
@@ -341,7 +398,6 @@ public class FriendRefreshView extends ViewGroup implements OnDetectScrollListen
                 WKDialogUtils.getInstance().showBottomSheet(getContext(), getContext().getString(R.string.moment_cover), false, list);
             }
         });
-        boolean isDarkModel = Theme.getDarkModeStatus(getContext());
         this.addView(mContentView);
         mContentView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
@@ -352,69 +408,42 @@ public class FriendRefreshView extends ViewGroup implements OnDetectScrollListen
             @Override
             public void onScrolled(@NotNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
-
                 LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
-                //控制tab透明度
-                assert layoutManager != null;
-                if (layoutManager.findFirstVisibleItemPosition() == 0) {
-                    mDistanceY = -recyclerView.getChildAt(0).getTop();
-                    //完全变色的高度
-                    int changeHeight = AndroidUtilities.dp(150);
-                    //当滑动的距离 <= toolbar高度的时候，改变Toolbar背景色的透明度，达到渐变的效果
-                    if (mDistanceY <= changeHeight) {
-                        float scale = (float) mDistanceY / changeHeight;
-                        float alpha = scale * 255;
-                        titleView.setBackgroundColor(Color.argb((int) alpha, isDarkModel ? 17 : 246, isDarkModel ? 17 : 246, isDarkModel ? 17 : 246));
-                        backIv.setImageResource(R.mipmap.ic_ab_back);
-                        Theme.setColorFilter(getContext(), backIv, R.color.white);
-                        titleTv.setVisibility(INVISIBLE);
-
-                        if (TextUtils.isEmpty(uid)) {
-                            cameraIv.setVisibility(VISIBLE);
-                            Theme.setColorFilter(getContext(), cameraIv, R.color.white);
-                            cameraIv.setImageResource(R.mipmap.floating_camera);
-                        } else {
-                            if (uid.equals(WKConfig.getInstance().getUid())) {
-                                cameraIv.setVisibility(VISIBLE);
-                                Theme.setColorFilter(getContext(), cameraIv, R.color.white);
-                                cameraIv.setImageResource(R.mipmap.floating_message);
-                            } else {
-                                cameraIv.setVisibility(GONE);
-                            }
-                        }
-                    } else {
-                        titleTv.setVisibility(VISIBLE);
-                        Theme.setColorFilter(getContext(), backIv, isDarkModel ? R.color.white : R.color.black);
-                        if (TextUtils.isEmpty(uid)) {
-                            Theme.setColorFilter(getContext(), cameraIv, isDarkModel ? R.color.white : R.color.black);
-                            cameraIv.setVisibility(VISIBLE);
-                        } else {
-                            if (uid.equals(WKConfig.getInstance().getUid())) {
-                                cameraIv.setVisibility(VISIBLE);
-                                Theme.setColorFilter(getContext(), cameraIv, isDarkModel ? R.color.white : R.color.black);
-                                cameraIv.setImageResource(R.mipmap.floating_message);
-                            } else {
-                                cameraIv.setVisibility(GONE);
-                            }
-                        }
-                        //将标题栏的颜色设置为完全不透明状态
-                        titleView.setBackgroundColor(ContextCompat.getColor(getContext(), R.color.homeColor));
-                    }
-                } else {
-                    titleTv.setVisibility(VISIBLE);
-                    Theme.setColorFilter(getContext(), backIv, isDarkModel ? R.color.white : R.color.black);
-                    if (TextUtils.isEmpty(uid)) {
-                        Theme.setColorFilter(getContext(), cameraIv, isDarkModel ? R.color.white : R.color.black);
-                    } else {
-                        if (uid.equals(WKConfig.getInstance().getUid())) {
-                            cameraIv.setImageResource(R.mipmap.floating_message);
-                            Theme.setColorFilter(getContext(), cameraIv, isDarkModel ? R.color.white : R.color.black);
-                        } else cameraIv.setVisibility(GONE);
-                    }
-                    titleView.setBackgroundColor(ContextCompat.getColor(getContext(), R.color.homeColor));
+                if (layoutManager == null || titleView == null) {
+                    return;
                 }
+                int scrollOffset = 0;
+                if (layoutManager.findFirstVisibleItemPosition() == 0
+                        && recyclerView.getChildCount() > 0
+                        && recyclerView.getChildAt(0) != null) {
+                    scrollOffset = -recyclerView.getChildAt(0).getTop();
+                }
+                mDistanceY = scrollOffset;
             }
         });
+    }
+
+    public void setTitleActionVisibility(boolean showCamera, boolean showMsg) {
+        titleShowCamera = showCamera;
+        titleShowMsg = showMsg;
+        applyTitleActionVisibility();
+    }
+
+    private void applyTitleActionVisibility() {
+        if (cameraIv != null) {
+            cameraIv.setVisibility(titleShowCamera ? VISIBLE : GONE);
+            if (titleShowCamera) {
+                cameraIv.setImageResource(R.mipmap.floating_camera);
+                cameraIv.clearColorFilter();
+            }
+        }
+        if (msgIv != null) {
+            msgIv.setVisibility(titleShowMsg ? VISIBLE : GONE);
+            if (titleShowMsg) {
+                msgIv.setImageResource(R.mipmap.floating_message);
+                msgIv.clearColorFilter();
+            }
+        }
     }
 
     @Override
@@ -435,8 +464,17 @@ public class FriendRefreshView extends ViewGroup implements OnDetectScrollListen
         mContentView.layout(contentParams.left, currentTop,
                 contentParams.left + sWidth, currentTop + sHeight);
 
-        mRainbowView.layout(rainbowRadius, rainbowTop,
-                rainbowRadius * 2, rainbowTop + rainbowRadius);
+        if (mRainbowView.getVisibility() != VISIBLE) {
+            mRainbowView.layout(0, rainbowStartTop, rainbowSize, rainbowStartTop + rainbowSize);
+            return;
+        }
+        if (centerRainbowMode) {
+            rainbowLeft = (sWidth - rainbowSize) / 2;
+            rainbowTop = computeRainbowTopBelowTitleBar();
+        }
+        int left = centerRainbowMode ? rainbowLeft : rainbowRadius;
+        int top = rainbowTop;
+        mRainbowView.layout(left, top, left + rainbowSize, top + rainbowSize);
     }
 
     @Override
@@ -510,7 +548,7 @@ public class FriendRefreshView extends ViewGroup implements OnDetectScrollListen
 
         public FriendRefreshListView(Context context, AttributeSet attrs, int defStyleAttr) {
             super(context, attrs, defStyleAttr);
-            setBackgroundColor(ContextCompat.getColor(context, R.color.layoutColor));
+            setBackgroundColor(Color.TRANSPARENT);
         }
 
         /*当前活动的点Id,有效的点的Id*/
@@ -570,8 +608,14 @@ public class FriendRefreshView extends ViewGroup implements OnDetectScrollListen
         if (!isRefreshing()) {
             mHandler.removeMessages(0);
             mHandler.removeMessages(1);
-            mHandler.sendEmptyMessage(1);
             mState = State.REFRESHING;
+            if (currentTop < AndroidUtilities.dp(60)) {
+                beginCenterRainbowAnimation();
+            } else {
+                centerRainbowMode = false;
+                mRainbowView.setVisibility(VISIBLE);
+            }
+            mHandler.sendEmptyMessage(1);
             invokeListener();
         }
 
@@ -593,11 +637,15 @@ public class FriendRefreshView extends ViewGroup implements OnDetectScrollListen
         this.mRefreshLisenter = listener;
     }
 
-    public void setTitleViews(TextView titleTv, ImageView backIv, ImageView cameraIv, View titleView) {
+    public void setTitleViews(TextView titleTv, ImageView backIv, ImageView cameraIv, ImageView msgIv, View titleView) {
         this.titleView = titleView;
         this.backIv = backIv;
         this.cameraIv = cameraIv;
+        this.msgIv = msgIv;
         this.titleTv = titleTv;
+        if (titleView != null) {
+            titleView.setBackgroundColor(Color.TRANSPARENT);
+        }
     }
 
     private String uid;

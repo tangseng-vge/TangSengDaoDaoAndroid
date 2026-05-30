@@ -3,6 +3,7 @@ package com.chat.uikit.view;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -11,7 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 /**
- * 2021/7/26 17:42
+ * 文本与时间同行：时间在最后一行右侧，正文仅在末尾为时间预留空间（行内不截断）
  */
 public class ChatTextTimeLayout extends FrameLayout {
     public ChatTextTimeLayout(@NonNull Context context) {
@@ -45,8 +46,8 @@ public class ChatTextTimeLayout extends FrameLayout {
         }
 
         int availableWidth = widthSize - getPaddingLeft() - getPaddingRight();
-        int textViewWidth = textView.getMeasuredWidth() +
-                viewPartMainLayoutParams.leftMargin + viewPartMainLayoutParams.rightMargin;
+        int textViewWidth = textView.getMeasuredWidth()
+                + viewPartMainLayoutParams.leftMargin + viewPartMainLayoutParams.rightMargin;
         int textViewHeight =
                 textView.getMeasuredHeight() + viewPartMainLayoutParams.topMargin + viewPartMainLayoutParams.bottomMargin;
 
@@ -58,9 +59,11 @@ public class ChatTextTimeLayout extends FrameLayout {
 
         int viewPartMainLineCount = textView.getLineCount();
         float viewPartMainLastLineWidth;
-        if (viewPartMainLineCount > 0)
+        if (viewPartMainLineCount > 0 && textView.getLayout() != null) {
             viewPartMainLastLineWidth = textView.getLayout().getLineWidth(viewPartMainLineCount - 1);
-        else viewPartMainLastLineWidth = 0.0f;
+        } else {
+            viewPartMainLastLineWidth = 0.0f;
+        }
 
         widthSize = getPaddingLeft() + getPaddingRight();
         int heightSize = getPaddingTop() + getPaddingBottom();
@@ -79,21 +82,18 @@ public class ChatTextTimeLayout extends FrameLayout {
             heightSize += textViewHeight;
         }
 
-        /*
-         * If you are showing user name on each row, calculate user name width and add it to the
-         * with of message and time if the width of them is lower than user name
-         *
-         * you can remove it if you want or improve the logic by passing a boolean variable to the
-         * TextViewFlowLayout by Attributes to turn on/off this feature
-         *  */
-
-        int usernameWidth = ((LinearLayout) getParent()).getChildAt(0).getMeasuredWidth();
-
+        int usernameWidth = 0;
+        if (getParent() instanceof LinearLayout) {
+            LinearLayout parentLayout = (LinearLayout) getParent();
+            if (parentLayout.getChildCount() > 0) {
+                usernameWidth = parentLayout.getChildAt(0).getMeasuredWidth();
+            }
+        }
         if (usernameWidth > textViewWidth + containerWidth) {
-            widthSize = usernameWidth;
+            widthSize = usernameWidth + getPaddingLeft() + getPaddingRight();
         }
         if (widthSize < Math.max(textViewWidth, containerWidth)) {
-            widthSize = Math.max(textViewWidth, containerWidth);
+            widthSize = Math.max(textViewWidth, containerWidth) + getPaddingLeft() + getPaddingRight();
         }
         setMeasuredDimension(widthSize, heightSize);
         super.onMeasure(
@@ -105,6 +105,13 @@ public class ChatTextTimeLayout extends FrameLayout {
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         super.onLayout(changed, left, top, right, bottom);
+
+        if (textView == null) {
+            textView = (TextView) getChildAt(0);
+        }
+        if (containerView == null) {
+            containerView = getChildAt(getChildCount() - 1);
+        }
 
         textView.layout(
                 getPaddingLeft(),

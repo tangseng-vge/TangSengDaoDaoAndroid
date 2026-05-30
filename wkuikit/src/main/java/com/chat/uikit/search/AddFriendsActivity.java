@@ -45,6 +45,9 @@ public class AddFriendsActivity extends WKBaseActivity<ActAddFriendsLayoutBindin
         SingleClickUtil.onSingleClick(wkVBinding.searchLayout, v -> startActivity(new Intent(this, SearchUserActivity.class)));
         SingleClickUtil.onSingleClick(wkVBinding.scanLayout, v -> EndpointManager.getInstance().invoke("wk_scan_show", null));
         SingleClickUtil.onSingleClick(wkVBinding.mailListLayout, v -> startActivity(new Intent(this, MailListActivity.class)));
+
+        SingleClickUtil.onSingleClick(wkVBinding.rlSearch, v -> startActivity(new Intent(this, SearchUserActivity.class)));
+
     }
 
 }

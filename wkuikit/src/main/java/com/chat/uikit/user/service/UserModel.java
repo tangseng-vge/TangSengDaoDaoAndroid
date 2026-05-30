@@ -21,6 +21,7 @@ import com.chat.base.utils.WKDeviceUtils;
 import com.chat.base.utils.WKReader;
 import com.chat.base.utils.WKTimeUtils;
 import com.chat.uikit.R;
+import com.chat.uikit.enity.BlackListEntity;
 import com.chat.uikit.enity.Device;
 import com.chat.uikit.enity.MailListEntity;
 import com.chat.uikit.enity.OnlineUser;
@@ -160,6 +161,24 @@ public class UserModel extends WKBaseModel {
                 iCommonListener.onResult(code, msg);
             }
         });
+    }
+
+    public void getBlackLists(final IGetBlackLists iGetBlackLists) {
+        request(createService(UserService.class).getBlackLists(), new IRequestResultListener<List<BlackListEntity>>() {
+            @Override
+            public void onSuccess(List<BlackListEntity> result) {
+                iGetBlackLists.onResult(HttpResponseCode.success, "", result);
+            }
+
+            @Override
+            public void onFail(int code, String msg) {
+                iGetBlackLists.onResult(code, msg, null);
+            }
+        });
+    }
+
+    public interface IGetBlackLists {
+        void onResult(int code, String msg, List<BlackListEntity> list);
     }
 
 
@@ -370,7 +389,7 @@ public class UserModel extends WKBaseModel {
                     member.memberName = result.group_member.name;
                     member.channelID = result.group_member.group_no;
                     member.channelType = WKChannelType.GROUP;
-                    member.isDeleted = result.group_member.is_deleted;
+                    member.isDeleted = result.group_member.is_deleted; 
                     member.version = result.group_member.version;
                     member.role = result.group_member.role;
                     member.status = result.group_member.status;

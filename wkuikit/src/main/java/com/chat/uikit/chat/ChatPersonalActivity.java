@@ -93,6 +93,8 @@ public class ChatPersonalActivity extends WKBaseActivity<ActChatPersonalLayoutBi
     @Override
     protected void initView() {
 //        int w = AndroidUtilities.getScreenWidth() - AndroidUtilities.dp(10);
+        Theme.applyAccentSwitchStyle(this, wkVBinding.muteSwitchView);
+        Theme.applyAccentSwitchStyle(this, wkVBinding.stickSwitchView);
         wkVBinding.refreshLayout.setEnableOverScrollDrag(true);
         wkVBinding.refreshLayout.setEnableLoadMore(false);
         wkVBinding.refreshLayout.setEnableRefresh(false);

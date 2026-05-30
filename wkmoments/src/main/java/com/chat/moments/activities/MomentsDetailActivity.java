@@ -1,6 +1,5 @@
 package com.chat.moments.activities;
 
-import android.view.Gravity;
 import android.widget.TextView;
 
 import androidx.core.content.ContextCompat;
@@ -123,11 +122,7 @@ public class MomentsDetailActivity extends WKBaseActivity<ActMomentsDetailLayout
                     if (feedActionPopup.isShowing()) {
                         feedActionPopup.dismiss();
                     } else {
-                        int[] location = new int[2];
-                        view1.getLocationOnScreen(location);
-                        int xOffset = location[0] - AndroidUtilities.dp(150f + 10);
-                        int yOffset = location[1] + (view1.getHeight() - AndroidUtilities.dp(34)) / 2;
-                        feedActionPopup.showAtLocation(view1, Gravity.NO_GRAVITY, xOffset, yOffset);
+                        feedActionPopup.showBelowAnchor(view1);
                     }
 
                 } else if (view1.getId() == R.id.deleteTv) {

@@ -18,10 +18,16 @@ import java.util.List;
  */
 public class FunctionAdapter extends BaseQuickAdapter<ChatFunctionMenu, BaseViewHolder> {
     int h;
+    private final boolean useFullItemHeight;
 
     public FunctionAdapter(@Nullable List<ChatFunctionMenu> data, int h) {
+        this(data, h, false);
+    }
+
+    public FunctionAdapter(@Nullable List<ChatFunctionMenu> data, int h, boolean useFullItemHeight) {
         super(R.layout.item_function_layout, data);
         this.h = h;
+        this.useFullItemHeight = useFullItemHeight;
     }
 
     @Override
@@ -29,6 +35,6 @@ public class FunctionAdapter extends BaseQuickAdapter<ChatFunctionMenu, BaseView
         helper.setImageResource(R.id.functionIv, item.imgResourceID);
         helper.setText(R.id.functionNameTv, item.text);
         LinearLayout contentLayout = helper.getView(R.id.contentLayout);
-        contentLayout.getLayoutParams().height = h / 2;
+        contentLayout.getLayoutParams().height = useFullItemHeight ? h : h / 2;
     }
 }

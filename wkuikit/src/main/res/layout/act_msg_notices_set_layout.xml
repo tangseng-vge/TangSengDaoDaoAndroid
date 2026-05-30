@@ -20,18 +20,20 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="@color/homeColor"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:layout_marginHorizontal="5dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@color/white"
                     android:orientation="vertical">
 
                     <View style="@style/view_line_15" />
 
-                    <LinearLayout style="@style/layoutBgPaddingSmall">
+                    <LinearLayout
+                        style="@style/layoutBgPaddingSmall"
+                        android:layout_height="50dp"
+                        >
 
                         <TextView
                             style="@style/leftTextView"
@@ -39,6 +41,7 @@
                             android:layout_weight="1"
                             android:text="@string/new_msg_notice" />
 
+                        <!-- 开关颜色：开启轨道 colorAccent、拇指白色（MsgNoticesSettingActivity.applyAccentSwitchStyle） -->
                         <com.chat.base.ui.components.SwitchView
                             android:id="@+id/newMsgNoticeSwitch"
                             android:layout_width="45dp"
@@ -56,7 +59,8 @@
                         android:paddingBottom="20dp"
                         android:text="@string/close_new_msg_notice_tips" />
 
-                    <LinearLayout style="@style/layoutBgPaddingSmall">
+                    <LinearLayout style="@style/layoutBgPaddingSmall"
+                        android:layout_height="50dp">
 
                         <TextView
                             style="@style/leftTextView"
@@ -73,34 +77,56 @@
 
                     <View style="@style/view_line_15" />
 
-                    <LinearLayout style="@style/layoutBgPaddingSmall">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        style="@style/layoutBgPaddingSmall"
+                        >
 
-                        <TextView
-                            style="@style/leftTextView"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:text="@string/voice" />
+                        <LinearLayout
+                            android:layout_height="45dp"
+                            android:layout_width="match_parent"
+                            >
 
-                        <com.chat.base.ui.components.SwitchView
-                            android:id="@+id/voiceSwitch"
-                            android:layout_width="45dp"
-                            android:layout_height="40dp"
-                            android:checked="true" />
-                    </LinearLayout>
+                            <TextView
+                                style="@style/leftTextView"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:text="@string/voice" />
 
-                    <LinearLayout style="@style/layoutBgPaddingSmall">
+                            <com.chat.base.ui.components.SwitchView
+                                android:id="@+id/voiceSwitch"
+                                android:layout_width="45dp"
+                                android:layout_height="40dp"
+                                android:checked="true"
+                                android:layout_gravity="center_vertical"/>
+                        </LinearLayout>
 
-                        <TextView
-                            style="@style/leftTextView"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:text="@string/shock" />
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="@color/homeColor" />
 
-                        <com.chat.base.ui.components.SwitchView
-                            android:id="@+id/shockSwitch"
-                            android:layout_width="45dp"
-                            android:layout_height="40dp"
-                            android:checked="true" />
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="45dp"
+                            >
+
+                            <TextView
+                                style="@style/leftTextView"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:text="@string/shock" />
+
+                            <com.chat.base.ui.components.SwitchView
+                                android:id="@+id/shockSwitch"
+                                android:layout_width="45dp"
+                                android:layout_height="40dp"
+                                android:checked="true"
+                                android:layout_gravity="center_vertical"/>
+                        </LinearLayout>
+
                     </LinearLayout>
 
                     <TextView
@@ -116,7 +142,9 @@
 
                     <LinearLayout
                         android:id="@+id/openNoticeLayout"
-                        style="@style/layoutBg">
+                        style="@style/layoutBg"
+                        android:layout_height="50dp"
+                        android:visibility="gone">
 
                         <TextView
                             style="@style/leftTextView"
@@ -134,11 +162,14 @@
                         android:paddingTop="5dp"
                         android:paddingEnd="15dp"
                         android:paddingBottom="20dp"
-                        android:text="@string/open_new_msg_notice_desc" />
+                        android:text="@string/open_new_msg_notice_desc"
+                        android:visibility="gone"/>
 
                     <LinearLayout
                         android:id="@+id/openRTCNoticeLayout"
-                        style="@style/layoutBg">
+                        style="@style/layoutBg"
+                        android:layout_height="50dp"
+                        android:visibility="gone">
 
                         <TextView
                             style="@style/leftTextView"
@@ -156,6 +187,7 @@
                         android:paddingTop="5dp"
                         android:paddingEnd="15dp"
                         android:paddingBottom="20dp"
+                        android:visibility="gone"
                         android:text="@string/open_new_rtc_notice_desc" />
 
                 </LinearLayout>

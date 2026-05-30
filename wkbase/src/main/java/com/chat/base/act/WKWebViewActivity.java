@@ -93,7 +93,7 @@ public class WKWebViewActivity extends WKBaseActivity<ActWebvieiwLayoutBinding> 
 
     @Override
     protected int getBackResourceID(ImageView backIv) {
-        return R.mipmap.ic_close_white;
+        return R.mipmap.ic_ab_back;
     }
 
     @Override

@@ -7,6 +7,39 @@
 
     <include layout="@layout/wk_title_bar_layout" />
 
+    <RelativeLayout
+        android:id="@+id/rlSearch"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_marginVertical="5dp"
+        android:layout_marginHorizontal="12dp"
+        android:background="@drawable/bg_contacts_search"
+        android:clickable="true"
+        android:focusable="true">
+
+        <ImageView
+            android:id="@+id/ivSearch"
+            android:layout_width="15dp"
+            android:layout_height="15dp"
+            android:src="@mipmap/ic_contact_search"
+            android:layout_centerVertical="true"
+            android:layout_marginEnd="10dp"
+            android:layout_marginStart="15dp"
+            />
+
+        <TextView
+            android:id="@+id/tvSearch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/str_search"
+            android:textSize="14sp"
+            android:layout_centerVertical="true"
+            android:layout_toEndOf="@+id/ivSearch"
+            />
+
+    </RelativeLayout>
+
+
     <LinearLayout
         android:id="@+id/searchLayout"
         android:layout_width="match_parent"
@@ -14,7 +47,8 @@
         android:layout_marginTop="20dp"
         android:background="@color/layoutColor"
         android:gravity="center"
-        android:padding="10dp">
+        android:padding="10dp"
+        android:visibility="gone">
 
         <androidx.appcompat.widget.AppCompatImageView
             android:layout_width="wrap_content"
@@ -49,7 +83,9 @@
             android:id="@+id/identityTv"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical" />
+            android:layout_gravity="center_vertical"
+            android:textColor="@color/colorAccent"
+            android:paddingEnd="10dp"/>
 
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/qrIv"

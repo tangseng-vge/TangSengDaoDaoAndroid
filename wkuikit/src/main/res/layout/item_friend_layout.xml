@@ -3,7 +3,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/screen_bg"
     android:orientation="vertical">
 
     <TextView
@@ -26,9 +25,11 @@
 
     <LinearLayout
         android:id="@+id/contentLayout"
-        style="@style/layoutBg"
-        android:paddingTop="10dp"
-        android:paddingBottom="10dp">
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingVertical="10dp"
+        android:paddingHorizontal="15dp"
+        >
 
         <com.chat.base.ui.components.AvatarView
             android:id="@+id/avatarView"
@@ -77,5 +78,13 @@
                 android:textSize="@dimen/font_size_14" />
         </LinearLayout>
     </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/homeColor"
+        android:layout_marginStart="70dp"
+        android:layout_marginEnd="20dp"
+        />
 
 </LinearLayout>

@@ -14,6 +14,7 @@ import android.widget.TextView;
 import androidx.core.app.ActivityOptionsCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.util.Pair;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.chat.base.base.WKBaseFragment;
@@ -23,6 +24,7 @@ import com.chat.base.config.WKSharedPreferencesUtil;
 import com.chat.base.config.WKSystemAccount;
 import com.chat.base.endpoint.EndpointCategory;
 import com.chat.base.endpoint.EndpointManager;
+import com.chat.base.endpoint.entity.ChatViewMenu;
 import com.chat.base.endpoint.entity.ContactsMenu;
 import com.chat.base.entity.PopupMenuItem;
 import com.chat.base.ui.Theme;
@@ -34,6 +36,7 @@ import com.chat.base.utils.WKReader;
 import com.chat.base.utils.singleclick.SingleClickUtil;
 import com.chat.base.views.sidebar.listener.OnQuickSideBarTouchListener;
 import com.chat.uikit.R;
+import com.chat.uikit.chat.manager.WKIMUtils;
 import com.chat.uikit.contacts.FriendAdapter;
 import com.chat.uikit.contacts.FriendUIEntity;
 import com.chat.uikit.databinding.FragContactsLayoutBinding;
@@ -50,6 +53,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Observable;
@@ -64,9 +68,14 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
  */
 public class ContactsFragment extends WKBaseFragment<FragContactsLayoutBinding> implements OnQuickSideBarTouchListener {
 
+    private static final int CONTACTS_HEADER_GRID_SPAN = 4;
+
     private ContactsHeaderAdapter contactsHeaderAdapter;
     private FriendAdapter friendAdapter;
     private TextView allContactsCountTv;
+
+    private FriendUIEntity sendFileEntity;
+    private FriendUIEntity systemNoticeEntity;
 
 
     @Override
@@ -90,6 +99,7 @@ public class ContactsFragment extends WKBaseFragment<FragContactsLayoutBinding> 
         wkVBinding.refreshLayout.setEnableOverScrollDrag(true);
         wkVBinding.refreshLayout.setEnableLoadMore(false);
         wkVBinding.refreshLayout.setEnableRefresh(false);
+        wkVBinding.searchIv.setVisibility(View.GONE);
         Theme.setPressedBackground(wkVBinding.searchIv);
         Theme.setPressedBackground(wkVBinding.rightIv);
     }
@@ -109,7 +119,7 @@ public class ContactsFragment extends WKBaseFragment<FragContactsLayoutBinding> 
         initAdapter(wkVBinding.recyclerView, friendAdapter);
         headerRecyclerView.setNestedScrollingEnabled(false);
         contactsHeaderAdapter = new ContactsHeaderAdapter();
-        initAdapter(headerRecyclerView, contactsHeaderAdapter);
+        initContactsHeaderGridAdapter(headerRecyclerView, contactsHeaderAdapter);
         wkVBinding.quickSideBarView.setOnQuickSideBarTouchListener(this);
         friendAdapter.addChildClickViewIds(R.id.contentLayout);
         friendAdapter.setOnItemChildClickListener((adapter, view, position) -> SingleClickUtil.determineTriggerSingleClick(view, view1 -> {
@@ -134,19 +144,23 @@ public class ContactsFragment extends WKBaseFragment<FragContactsLayoutBinding> 
         WKIM.getInstance().getChannelManager().addOnRefreshChannelInfo("contacts_fragment_refresh_channel", (channel, isEnd) -> {
             if (channel != null) {
                 Observable.create((ObservableOnSubscribe<Integer>) e -> {
+                    if (sendFileEntity != null
+                            && sendFileEntity.channel != null
+                            && sendFileEntity.channel.channelID.equals(channel.channelID)
+                            && sendFileEntity.channel.channelType == channel.channelType) {
+                        applyChannelUpdate(sendFileEntity, channel);
+                    }
+                    if (systemNoticeEntity != null
+                            && systemNoticeEntity.channel != null
+                            && systemNoticeEntity.channel.channelID.equals(channel.channelID)
+                            && systemNoticeEntity.channel.channelType == channel.channelType) {
+                        applyChannelUpdate(systemNoticeEntity, channel);
+                    }
                     for (int i = 0, size = friendAdapter.getData().size(); i < size; i++) {
                         if (friendAdapter.getData().get(i).channel != null
                                 && friendAdapter.getData().get(i).channel.channelID.equals(channel.channelID)
                                 && friendAdapter.getData().get(i).channel.channelType == channel.channelType) {
-                            friendAdapter.getData().get(i).channel.channelName = channel.channelName;
-                            friendAdapter.getData().get(i).channel.channelRemark = channel.channelRemark;
-                            friendAdapter.getData().get(i).channel.mute = channel.mute;
-                            friendAdapter.getData().get(i).channel.top = channel.top;
-                            friendAdapter.getData().get(i).channel.avatar = channel.avatar;
-                            friendAdapter.getData().get(i).channel.remoteExtraMap = channel.remoteExtraMap;
-                            friendAdapter.getData().get(i).channel.online = channel.online;
-                            friendAdapter.getData().get(i).channel.lastOffline = channel.lastOffline;
-                            friendAdapter.getData().get(i).channel.deviceFlag = channel.deviceFlag;
+                            applyChannelUpdate(friendAdapter.getData().get(i), channel);
                             e.onNext(i);
                             break;
                         }
@@ -175,6 +189,14 @@ public class ContactsFragment extends WKBaseFragment<FragContactsLayoutBinding> 
 
             }
         });
+        wkVBinding.rlSearch.setOnClickListener( view -> {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                @SuppressWarnings("unchecked") ActivityOptionsCompat activityOptions = ActivityOptionsCompat.makeSceneTransitionAnimation(requireActivity(), new Pair<>(wkVBinding.searchIv, "searchView"));
+                startActivity(new Intent(getActivity(), GlobalActivity.class), activityOptions.toBundle());
+            } else {
+                startActivity(new Intent(getActivity(), GlobalActivity.class));
+            }
+        });
         wkVBinding.searchIv.setOnClickListener(view -> {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 @SuppressWarnings("unchecked") ActivityOptionsCompat activityOptions = ActivityOptionsCompat.makeSceneTransitionAnimation(requireActivity(), new Pair<>(wkVBinding.searchIv, "searchView"));
@@ -198,7 +220,7 @@ public class ContactsFragment extends WKBaseFragment<FragContactsLayoutBinding> 
     @Override
     protected void initData() {
         wkVBinding.quickSideBarView.setLetters(CharacterParser.getInstance().getList());
-        contactsHeaderAdapter.setList(EndpointManager.getInstance().invokes(EndpointCategory.mailList, getActivity()));
+        contactsHeaderAdapter.setList(buildContactsHeaderList());
         getContacts();
     }
 
@@ -211,52 +233,75 @@ public class ContactsFragment extends WKBaseFragment<FragContactsLayoutBinding> 
 
     private void getContacts() {
         List<WKChannel> allList = WKIM.getInstance().getChannelManager().getWithFollowAndStatus(WKChannelType.PERSONAL, 1, 1);
-        List<FriendUIEntity> list = new ArrayList<>();
+        List<FriendUIEntity> friendList = new ArrayList<>();
         for (int i = 0, size = allList.size(); i < size; i++) {
-            list.add(new FriendUIEntity(allList.get(i)));
+            FriendUIEntity entity = new FriendUIEntity(allList.get(i));
+            String channelId = entity.channel.channelID;
+            if (WKSystemAccount.system_file_helper.equals(channelId)) {
+                if (isAdded()) {
+                    entity.channel.channelName = getString(R.string.wk_file_helper);
+                }
+                sendFileEntity = entity;
+                continue;
+            }
+            if (WKSystemAccount.system_team.equals(channelId)) {
+                if (isAdded()) {
+                    entity.channel.channelName = getString(R.string.wk_system_notice);
+                }
+                systemNoticeEntity = entity;
+                continue;
+            }
+            friendList.add(entity);
         }
         List<FriendUIEntity> otherList = new ArrayList<>();
         List<FriendUIEntity> letterList = new ArrayList<>();
         List<FriendUIEntity> numList = new ArrayList<>();
-        for (int i = 0, size = list.size(); i < size; i++) {
-            String showName = list.get(i).channel.channelRemark;
-            if (TextUtils.isEmpty(showName))
-                showName = list.get(i).channel.channelName;
-            if (list.get(i).channel.channelID.equals(WKSystemAccount.system_file_helper)) {
-                if (isAdded())
-                    showName = getString(R.string.wk_file_helper);
-                list.get(i).channel.channelName = showName;
-            }
-            if (list.get(i).channel.channelID.equals(WKSystemAccount.system_team)) {
-                if (isAdded())
-                    showName = getString(R.string.wk_system_notice);
-                list.get(i).channel.channelName = showName;
+        for (int i = 0, size = friendList.size(); i < size; i++) {
+            String showName = friendList.get(i).channel.channelRemark;
+            if (TextUtils.isEmpty(showName)) {
+                showName = friendList.get(i).channel.channelName;
             }
             if (!TextUtils.isEmpty(showName)) {
                 if (PyingUtils.getInstance().isStartNum(showName)) {
-                    list.get(i).pying = "#";
-                } else
-                    list.get(i).pying = HanziToPinyin.getInstance().getPY(showName);
-            } else list.get(i).pying = "#";
+                    friendList.get(i).pying = "#";
+                } else {
+                    friendList.get(i).pying = HanziToPinyin.getInstance().getPY(showName);
+                }
+            } else {
+                friendList.get(i).pying = "#";
+            }
         }
-        PyingUtils.getInstance().sortListBasic(list);
+        PyingUtils.getInstance().sortListBasic(friendList);
 
-        for (int i = 0, size = list.size(); i < size; i++) {
-            if (PyingUtils.getInstance().isStartLetter(list.get(i).pying)) {
-                //字母
-                letterList.add(list.get(i));
-            } else if (PyingUtils.getInstance().isStartNum(list.get(i).pying)) {
-                //数字
-                numList.add(list.get(i));
-            } else otherList.add(list.get(i));
+        for (int i = 0, size = friendList.size(); i < size; i++) {
+            if (PyingUtils.getInstance().isStartLetter(friendList.get(i).pying)) {
+                letterList.add(friendList.get(i));
+            } else if (PyingUtils.getInstance().isStartNum(friendList.get(i).pying)) {
+                numList.add(friendList.get(i));
+            } else {
+                otherList.add(friendList.get(i));
+            }
         }
         List<FriendUIEntity> tempList = new ArrayList<>();
         tempList.addAll(letterList);
         tempList.addAll(numList);
         tempList.addAll(otherList);
         friendAdapter.setList(tempList);
-        if (isAdded())
+        if (isAdded()) {
             allContactsCountTv.setText(String.format(getString(R.string.contacts_num), tempList.size()));
+        }
+    }
+
+    private void applyChannelUpdate(FriendUIEntity entity, WKChannel channel) {
+        entity.channel.channelName = channel.channelName;
+        entity.channel.channelRemark = channel.channelRemark;
+        entity.channel.mute = channel.mute;
+        entity.channel.top = channel.top;
+        entity.channel.avatar = channel.avatar;
+        entity.channel.remoteExtraMap = channel.remoteExtraMap;
+        entity.channel.online = channel.online;
+        entity.channel.lastOffline = channel.lastOffline;
+        entity.channel.deviceFlag = channel.deviceFlag;
     }
 
     private View getFooterView() {
@@ -268,7 +313,7 @@ public class ContactsFragment extends WKBaseFragment<FragContactsLayoutBinding> 
         linearLayout.setOrientation(LinearLayout.HORIZONTAL);
         linearLayout.setLayoutParams(new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
 
-        linearLayout.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.homeColor));
+//        linearLayout.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.homeColor));
         linearLayout.addView(allContactsCountTv, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER));
         LinearLayout.LayoutParams layoutParams = (LinearLayout.LayoutParams) allContactsCountTv.getLayoutParams();
         layoutParams.topMargin = AndroidUtilities.dp(15);
@@ -296,17 +341,58 @@ public class ContactsFragment extends WKBaseFragment<FragContactsLayoutBinding> 
         wkVBinding.quickSideBarTipsView.setVisibility(touching ? View.VISIBLE : View.INVISIBLE);
     }
 
+    private void initContactsHeaderGridAdapter(RecyclerView recyclerView, ContactsHeaderAdapter adapter) {
+        if (recyclerView == null || adapter == null) {
+            return;
+        }
+        GridLayoutManager gridLayoutManager = new GridLayoutManager(requireContext(), CONTACTS_HEADER_GRID_SPAN);
+        recyclerView.setLayoutManager(gridLayoutManager);
+        recyclerView.setHasFixedSize(true);
+        while (recyclerView.getItemDecorationCount() > 0) {
+            recyclerView.removeItemDecorationAt(0);
+        }
+        int spacingPx = getResources().getDimensionPixelSize(R.dimen.contacts_header_grid_spacing);
+        recyclerView.addItemDecoration(new GridSpacingItemDecoration(CONTACTS_HEADER_GRID_SPAN, spacingPx));
+        recyclerView.setAdapter(adapter);
+        adapter.setAnimationFirstOnly(true);
+    }
+
     private void resetHeaderData() {
         if (isAdded()) {
-            List<ContactsMenu> list = EndpointManager.getInstance().invokes(EndpointCategory.mailList, getActivity());
-            for (int i = 0, size = list.size(); i < size; i++) {
-                if (!TextUtils.isEmpty(list.get(i).sid) && list.get(i).sid.equals("friend")) {
-                    list.get(i).badgeNum = WKSharedPreferencesUtil.getInstance().getInt(WKConfig.getInstance().getUid() + "_new_friend_count");
-                    break;
-                }
-            }
-            contactsHeaderAdapter.setList(list);
+            contactsHeaderAdapter.setList(buildContactsHeaderList());
         }
+    }
+
+    /**
+     * 联系人页头部菜单（不含朋友圈，朋友圈在发现页展示）。
+     */
+    private List<ContactsMenu> buildContactsHeaderList() {
+        List<ContactsMenu> contactsMenus = EndpointManager.getInstance().invokes(EndpointCategory.mailList, getActivity());
+        List<ContactsMenu> list = new ArrayList<>();
+        if (contactsMenus != null) {
+            for (ContactsMenu item : contactsMenus) {
+                if (Objects.equals(item.sid, "moments")) {
+                    continue;
+                }
+                if (!TextUtils.isEmpty(item.sid) && item.sid.equals("friend")) {
+                    item.badgeNum = WKSharedPreferencesUtil.getInstance().getInt(WKConfig.getInstance().getUid() + "_new_friend_count");
+                }
+                list.add(item);
+            }
+        }
+        list.add(new ContactsMenu("file_helper", R.mipmap.ic_send_file, getString(R.string.wk_file_helper), () -> {
+            String uid = sendFileEntity != null && sendFileEntity.channel != null
+                    ? sendFileEntity.channel.channelID
+                    : WKSystemAccount.system_file_helper;
+            WKIMUtils.getInstance().startChatActivity(new ChatViewMenu(requireActivity(), uid, WKChannelType.PERSONAL, 0, true));
+        }));
+        list.add(new ContactsMenu("system_team", R.mipmap.ic_bage_ai, "Bage AI", () -> {
+            String uid = systemNoticeEntity != null && systemNoticeEntity.channel != null
+                    ? systemNoticeEntity.channel.channelID
+                    : WKSystemAccount.system_team;
+            WKIMUtils.getInstance().startChatActivity(new ChatViewMenu(requireActivity(), uid, WKChannelType.PERSONAL, 0, true));
+        }));
+        return list;
     }
 
 }

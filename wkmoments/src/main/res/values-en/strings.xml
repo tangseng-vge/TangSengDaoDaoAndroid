@@ -1,5 +1,7 @@
 <resources>
     <string name="str_moments">Moments</string>
+    <string name="str_moment_title">Moment</string>
+    <string name="str_moment_chat">Message</string>
     <string name="str_praise"> Like </string>
     <string name="str_reply">Comment</string>
     <string name="str_update_moments_bg">Set album cover</string>

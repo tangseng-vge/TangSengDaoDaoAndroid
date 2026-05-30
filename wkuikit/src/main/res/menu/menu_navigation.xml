@@ -1,20 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:id="@+id/i_chat"
-        android:checked="true"
-        android:title="" />
+        android:id="@+id/i_contacts"
+        android:icon="@drawable/tab_item_icon_contacts"
+        android:title="@string/tab_text_contacts" />
 
     <item
-        android:id="@+id/i_contacts"
-        android:title="" />
+        android:id="@+id/i_discover"
+        android:icon="@drawable/tab_item_icon_discover"
+        android:title="@string/tab_text_discover" />
 
-<!--    <item-->
-<!--        android:id="@+id/i_workplace"-->
-<!--        android:title="" />-->
+    <item
+        android:id="@+id/i_chat"
+        android:icon="@drawable/tab_item_icon_chat"
+        android:checked="true"
+        android:title="@string/tab_text_chat" />
 
     <item
         android:id="@+id/i_my"
-        android:title="" />
+        android:icon="@drawable/tab_item_icon_me"
+        android:title="@string/tab_text_me" />
 
 </menu>

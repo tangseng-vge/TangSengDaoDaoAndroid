@@ -6,6 +6,7 @@ import static android.view.View.VISIBLE;
 import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.Context;
+import android.os.Build;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.graphics.RectF;
@@ -464,12 +465,31 @@ public class WKDialogUtils {
         showScreenPopup(view, location, list, null);
     }
 
+    /**
+     * 在锚点正下方弹出，菜单右边缘与锚点右边缘对齐，不遮挡锚点图标。
+     */
+    public synchronized void showScreenPopupBelow(View anchor, List<PopupMenuItem> list) {
+        showScreenPopupBelow(anchor, list, 1);
+    }
+
+    /**
+     * @param yOffsetDp 菜单与锚点底部的垂直间距（dp）
+     */
+    public synchronized void showScreenPopupBelow(View anchor, List<PopupMenuItem> list, int yOffsetDp) {
+        showScreenPopup(anchor, null, list, null, true, yOffsetDp);
+    }
+
     public interface IScreenPopupDismiss {
         void onDismiss();
     }
 
     @SuppressLint("ClickableViewAccessibility")
     public synchronized void showScreenPopup(View view, float[] location, List<PopupMenuItem> list, final IScreenPopupDismiss iScreenPopupDismiss) {
+        showScreenPopup(view, location, list, iScreenPopupDismiss, false, 0);
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private synchronized void showScreenPopup(View view, float[] location, List<PopupMenuItem> list, final IScreenPopupDismiss iScreenPopupDismiss, boolean belowAnchor, int yOffsetDp) {
         ActionBarPopupWindow.ActionBarPopupWindowLayout popupLayout = new ActionBarPopupWindow.ActionBarPopupWindowLayout(view.getContext(), R.mipmap.popup_fixed_alert, 0) {
             @Override
             public boolean dispatchKeyEvent(KeyEvent event) {
@@ -563,11 +583,26 @@ public class WKDialogUtils {
                 return;
             }
             scrimPopupWindow.startAnimation();
-            scrimPopupWindow.showAtLocation(view, Gravity.TOP | Gravity.START, Math.round(location[0]), Math.round(location[1]));
+            if (belowAnchor) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    scrimPopupWindow.setOverlapAnchor(false);
+                }
+                int popupW = popupLayout.getMeasuredWidth();
+                int anchorW = view.getWidth();
+                int xoff = anchorW - popupW;
+                int yoff = AndroidUtilities.dp(yOffsetDp);
+                scrimPopupWindow.showAsDropDown(view, xoff, yoff);
+            } else {
+                scrimPopupWindow.showAtLocation(view, Gravity.TOP | Gravity.START, Math.round(location[0]), Math.round(location[1]));
+            }
 //            scrimPopupWindow.dimBehind();
         };
 
-        showMenu.run();
+        if (belowAnchor && view.getWidth() == 0) {
+            view.post(showMenu);
+        } else {
+            showMenu.run();
+        }
     }
 
 

@@ -282,6 +282,7 @@ public class ChatActivity extends SwipeBackActivity implements IConversationCont
         isUploadReadMsg = true;
         chatPanelManager.initRefreshListener();
         EndpointManager.getInstance().invoke("start_screen_shot", this);
+        EndpointManager.getInstance().invoke("set_chat_bg", new SetChatBgMenu(channelId, channelType, wkVBinding.ivBg, wkVBinding.rootView, wkVBinding.blurView));
 
         Object addSecurityModule = EndpointManager.getInstance().invoke("add_security_module", null);
         if (addSecurityModule instanceof Boolean) {
@@ -310,6 +311,9 @@ public class ChatActivity extends SwipeBackActivity implements IConversationCont
                         if (visible && height > 0) {
                             WKConstants.setKeyboardHeight(height);
                         }
+                        if (visible && chatPanelManager != null) {
+                            chatPanelManager.hideChatFunctionIfKeyboardVisible();
+                        }
                     })
                     //可选
                     .addPanelChangeListener(new OnPanelChangeListener() {
@@ -318,10 +322,14 @@ public class ChatActivity extends SwipeBackActivity implements IConversationCont
                         public void onKeyboard() {
                             chatPanelManager.resetToolBar();
                             SoftKeyboardUtils.getInstance().requestFocus(wkVBinding.editText);
+                            chatPanelManager.hideChatFunctionIfKeyboardVisible();
                         }
 
                         @Override
                         public void onNone() {
+                            if (chatPanelManager != null) {
+                                chatPanelManager.resetToolBar();
+                            }
                         }
 
                         @Override
@@ -331,14 +339,19 @@ public class ChatActivity extends SwipeBackActivity implements IConversationCont
 
                         @Override
                         public void onPanelSizeChange(IPanelView panelView, boolean portrait, int oldWidth, int oldHeight, int width, int height) {
-
+                            if (chatPanelManager != null) {
+                                chatPanelManager.onPanelSizeChange(panelView, width, height);
+                            }
                         }
                     }).addContentScrollMeasurer(new ContentScrollMeasurer() {
                         @Override
                         public int getScrollDistance(int i) {
                             View bottomView = findViewById(R.id.bottomView);
                             View followView = findViewById(R.id.followScrollView);
-                            return i - (bottomView.getTop() - followView.getBottom());
+                            int panelHeight = chatPanelManager != null
+                                    ? chatPanelManager.getEffectivePanelScrollHeight(i)
+                                    : i;
+                            return panelHeight - (bottomView.getTop() - followView.getBottom());
                         }
 
                         @Override
@@ -378,7 +391,10 @@ public class ChatActivity extends SwipeBackActivity implements IConversationCont
                     }).addContentScrollMeasurer(new ContentScrollMeasurer() {
                         @Override
                         public int getScrollDistance(int i) {
-                            return i - unfilledHeight;
+                            int panelHeight = chatPanelManager != null
+                                    ? chatPanelManager.getEffectivePanelScrollHeight(i)
+                                    : i;
+                            return panelHeight - unfilledHeight;
                         }
 
                         @Override
@@ -408,7 +424,7 @@ public class ChatActivity extends SwipeBackActivity implements IConversationCont
     }
 
     protected void initView() {
-        EndpointManager.getInstance().invoke("set_chat_bg", new SetChatBgMenu(channelId, channelType, wkVBinding.imageView, wkVBinding.rootView, wkVBinding.blurView));
+        EndpointManager.getInstance().invoke("set_chat_bg", new SetChatBgMenu(channelId, channelType, wkVBinding.ivBg, wkVBinding.rootView, wkVBinding.blurView));
         Object pinnedLayoutView = EndpointManager.getInstance().invoke("get_pinned_message_view", this);
         if (pinnedLayoutView instanceof View) {
             wkVBinding.pinnedLayout.addView((View) pinnedLayoutView);
@@ -559,6 +575,17 @@ public class ChatActivity extends SwipeBackActivity implements IConversationCont
             startActivity(intent);
         });
 
+        SingleClickUtil.onSingleClick(wkVBinding.topLayout.ivMoreChat, v -> {
+            WKChannelMember member = WKIM.getInstance().getChannelMembersManager().getMember(channelId, channelType, loginUID);
+
+            if ((member != null && member.isDeleted == 1) || channelType == WKChannelType.CUSTOMER_SERVICE)
+                return;
+//              SoftKeyboardUtils.getInstance().hideInput(this, wkVBinding.toolbarView.editText);
+            Intent intent = new Intent(ChatActivity.this, channelType == WKChannelType.GROUP ? GroupDetailActivity.class : ChatPersonalActivity.class);
+            intent.putExtra("channelId", channelId);
+            startActivity(intent);
+        });
+
         wkVBinding.recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
@@ -663,7 +690,7 @@ public class ChatActivity extends SwipeBackActivity implements IConversationCont
                         }
                     }
                 }
-                EndpointManager.getInstance().invoke("set_chat_bg", new SetChatBgMenu(channelId, channelType, wkVBinding.imageView, wkVBinding.rootView, wkVBinding.blurView));
+                EndpointManager.getInstance().invoke("set_chat_bg", new SetChatBgMenu(channelId, channelType, wkVBinding.ivBg, wkVBinding.rootView, wkVBinding.blurView));
             } else {
                 for (int i = 0, size = chatAdapter.getData().size(); i < size; i++) {
                     if (TextUtils.isEmpty(chatAdapter.getData().get(i).wkMsg.fromUID)) continue;
@@ -1540,13 +1567,19 @@ public class ChatActivity extends SwipeBackActivity implements IConversationCont
     }
 
     private void showChannelName(WKChannel channel) {
+        String showName;
         if (channelId.equals(WKSystemAccount.system_team)) {
+            showName = getString(R.string.wk_system_notice);
             wkVBinding.topLayout.titleCenterTv.setText(R.string.wk_system_notice);
         } else if (channelId.equals(WKSystemAccount.system_file_helper)) {
+            showName = getString(R.string.wk_file_helper);
             wkVBinding.topLayout.titleCenterTv.setText(R.string.wk_file_helper);
         } else {
-            String showName = TextUtils.isEmpty(channel.channelRemark) ? channel.channelName : channel.channelRemark;
+            showName = TextUtils.isEmpty(channel.channelRemark) ? channel.channelName : channel.channelRemark;
             wkVBinding.topLayout.titleCenterTv.setText(showName);
+        }
+        if (chatPanelManager != null) {
+            chatPanelManager.updateEditHint(showName);
         }
     }
 
@@ -1808,8 +1841,12 @@ public class ChatActivity extends SwipeBackActivity implements IConversationCont
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
-        if (ev.getAction() == MotionEvent.ACTION_DOWN)
+        if (ev.getAction() == MotionEvent.ACTION_DOWN) {
             EndpointManager.getInstance().invoke("chat_activity_touch", null);
+            if (chatPanelManager != null) {
+                chatPanelManager.dismissChatFunctionOnOutsideTouch(ev);
+            }
+        }
         return super.dispatchTouchEvent(ev);
     }
 

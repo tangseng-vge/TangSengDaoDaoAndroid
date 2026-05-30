@@ -1,22 +1,16 @@
 package com.chat.advanced.ui
 
-import android.graphics.BitmapFactory
 import android.graphics.Color
-import android.graphics.Shader
-import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.GradientDrawable
 import android.text.TextUtils
 import android.view.View
 import android.widget.TextView
 import androidx.core.content.ContextCompat
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.DataSource
-import com.bumptech.glide.load.engine.GlideException
-import com.bumptech.glide.request.RequestListener
-import com.bumptech.glide.request.target.Target
 import com.chat.advanced.R
+import com.chat.base.R as BaseR
 import com.chat.advanced.databinding.ActPreviewChatBgLayoutBinding
 import com.chat.advanced.entity.ChatBgKeys
+import com.chat.advanced.utils.ChatBgBlurHelper
 import com.chat.base.base.WKBaseActivity
 import com.chat.base.config.WKApiConfig
 import com.chat.base.config.WKConfig
@@ -33,6 +27,8 @@ import com.chat.base.utils.AndroidUtilities
 import com.chat.base.utils.WKFileUtils
 import com.chat.base.utils.WKTimeUtils
 import com.chat.base.utils.SvgHelper
+import com.chat.base.net.ud.WKDownloader
+import com.chat.base.net.ud.WKProgressManager
 import com.chat.base.utils.singleclick.SingleClickUtil
 import com.xinbida.wukongim.WKIM
 import java.io.File
@@ -44,10 +40,15 @@ class PreviewChatBgActivity : WKBaseActivity<ActPreviewChatBgLayoutBinding>() {
 
     //    private var colorIndex: Int = 0
     private lateinit var url: String
+    private var cover: String = ""
     private var lightColors: String = ""
     private var darkColors: String = ""
     private var isSvg: Int = 0
     private var isLocal: Int = 0
+    private var cachePath: String = ""
+    private var downloadTag: String = ""
+    private var previewReady: Boolean = false
+
     override fun getViewBinding(): ActPreviewChatBgLayoutBinding {
         return ActPreviewChatBgLayoutBinding.inflate(layoutInflater)
     }
@@ -57,16 +58,17 @@ class PreviewChatBgActivity : WKBaseActivity<ActPreviewChatBgLayoutBinding>() {
     }
 
     override fun initPresenter() {
-        url = intent.getStringExtra("url").toString()
-        channelID = intent.getStringExtra("channelID").toString()
+        url = intent.getStringExtra("url") ?: ""
+        cover = intent.getStringExtra("cover") ?: ""
+        channelID = intent.getStringExtra("channelID") ?: ""
         channelType = intent.getByteExtra("channelType", 0)
-//        colorIndex = intent.getIntExtra("index", 0)
         isSvg = intent.getIntExtra("isSvg", 0)
         if (isSvg == 1) {
-            lightColors = intent.getStringExtra("lightColors").toString()
-            darkColors = intent.getStringExtra("darkColors").toString()
+            lightColors = intent.getStringExtra("lightColors") ?: ""
+            darkColors = intent.getStringExtra("darkColors") ?: ""
         }
         if (intent.hasExtra("isLocal")) isLocal = intent.getIntExtra("isLocal", 0)
+        cachePath = if (isLocal == 0) ChatBgKeys.cacheFilePath(url) else url
     }
 
     private var gradientAngle = 45
@@ -100,6 +102,7 @@ class PreviewChatBgActivity : WKBaseActivity<ActPreviewChatBgLayoutBinding>() {
         wkVBinding.rotateView.visibility = if (isSvg == 1) View.VISIBLE else View.GONE
         wkVBinding.blurredLayout.visibility = if (isSvg == 1) View.GONE else View.VISIBLE
         if (TextUtils.isEmpty(url)) wkVBinding.blurredLayout.visibility = View.GONE
+        else wkVBinding.blurredLayout.visibility = View.VISIBLE
 
         if (TextUtils.isEmpty(channelID)) {
 //            val userInfoEntity = WKConfig.getInstance().userInfo
@@ -183,88 +186,169 @@ class PreviewChatBgActivity : WKBaseActivity<ActPreviewChatBgLayoutBinding>() {
         )
 
         wkVBinding.progress.setSize(50)
-        wkVBinding.loading.visibility = View.VISIBLE
-        val path: String = if (isLocal == 0) {
-            WKConstants.chatBgCacheDir + url.replace("/", "_")
-        } else {
-            url
-        }
-        val file = File(path)
-        if (file.exists()) {
-            wkVBinding.saveTV.isEnabled = true
-            if (isSvg == 1) {
-                val isDark = Theme.isDark()
-//                val color1 =
-//                    if (isDark) Theme.defaultColorsDark[colorIndex][0] else Theme.defaultColorsLight[colorIndex][0]
-//                val color2 =
-//                    if (isDark) Theme.defaultColorsDark[colorIndex][1] else Theme.defaultColorsLight[colorIndex][1]
-//                val color3 =
-//                    if (isDark) Theme.defaultColorsDark[colorIndex][2] else Theme.defaultColorsLight[colorIndex][2]
-//                val color4 =
-//                    if (isDark) Theme.defaultColorsDark[colorIndex][3] else Theme.defaultColorsLight[colorIndex][3]
-                val colors = if (isDark) darkColors.split(",") else lightColors.split(",")
-                val color1 = Color.parseColor("#" + colors[0])
-                val color2 = Color.parseColor("#" + colors[1])
-                val color3 = Color.parseColor("#" + colors[2])
-                val color4 = Color.parseColor("#" + colors[3])
-                val orientation = Theme.getGradientOrientation(gradientAngle)
-                val drawable = GradientDrawable(
-                    orientation,
-                    intArrayOf(color1, color2, color3, color4)
-                )
-                wkVBinding.parentView.background = drawable
+        updateSaveButtonState()
+        loadBackgroundPreview()
+    }
 
-                val pco = AndroidUtilities.getPatternColor(
-                    color1,
-                    color2,
-                    color3,
-                    color4
-                )
-                val svgDrawable = SvgHelper.getBitmap(
-                    file,
-                    AndroidUtilities.getScreenWidth(),
-                    AndroidUtilities.getScreenHeight(),
-                    pco
-                )
-                wkVBinding.imageView.setImageBitmap(svgDrawable)
-            } else {
-//                val bd = getChatBg(file.absolutePath)
-//                wkVBinding.imageView.setImageDrawable(bd)
-                GlideUtils.getInstance().showImg(this, file.absolutePath, wkVBinding.imageView)
+    private fun updateSaveButtonState() {
+        val canSave = when {
+            TextUtils.isEmpty(url) -> true
+            isLocal == 1 -> File(url).exists()
+            else -> previewReady
+        }
+        wkVBinding.saveTV.isEnabled = canSave
+        wkVBinding.saveTV.alpha = if (canSave) 1f else 0.5f
+    }
+
+    private fun showPreviewLoading(show: Boolean) {
+        wkVBinding.loading.visibility = if (show) View.VISIBLE else View.GONE
+    }
+
+    private fun loadBackgroundPreview() {
+        if (TextUtils.isEmpty(url)) {
+            showPreviewLoading(false)
+            return
+        }
+        val file = File(cachePath)
+        if (file.exists() && file.length() > 0) {
+            previewReady = true
+            showPreviewLoading(false)
+            updateSaveButtonState()
+            displayBackgroundFromFile(file)
+            return
+        }
+        if (isLocal == 1) {
+            previewReady = File(url).exists()
+            showPreviewLoading(false)
+            if (!previewReady) showToast(BaseR.string.download_err)
+            updateSaveButtonState()
+            if (previewReady) displayBackgroundFromFile(File(url))
+            return
+        }
+        downloadBackground()
+    }
+
+    private fun previewImageUrl(): String {
+        val path = if (!TextUtils.isEmpty(cover)) cover else url
+        return WKApiConfig.getShowUrl(path)
+    }
+
+    private fun showImmediatePreview() {
+        if (isSvg == 1) {
+            displaySvgGradientOnly()
+        } else if (!TextUtils.isEmpty(url) || !TextUtils.isEmpty(cover)) {
+            GlideUtils.getInstance().showImg(this, previewImageUrl(), wkVBinding.imageView)
+        }
+    }
+
+    private fun displaySvgGradientOnly() {
+        val colors = gradientColors() ?: return
+        val orientation = Theme.getGradientOrientation(gradientAngle)
+        wkVBinding.parentView.background = GradientDrawable(orientation, colors)
+        wkVBinding.imageView.visibility =
+            if (wkVBinding.patternCB.isChecked) View.VISIBLE else View.GONE
+    }
+
+    private fun downloadBackground() {
+        val downloadUrl = WKApiConfig.getShowUrl(url)
+        if (TextUtils.isEmpty(downloadUrl)) {
+            onBackgroundDownloadFailed()
+            return
+        }
+        previewReady = false
+        updateSaveButtonState()
+        showPreviewLoading(true)
+        showImmediatePreview()
+        File(cachePath).parentFile?.mkdirs()
+        downloadTag = downloadUrl
+        WKDownloader.instance.download(
+            downloadUrl,
+            cachePath,
+            object : WKProgressManager.IProgress {
+                override fun onProgress(tag: Any?, progress: Int) {}
+
+                override fun onSuccess(tag: Any?, path: String?) {
+                    if (isFinishing || isDestroyed) return
+                    val file = File(cachePath)
+                    if (file.exists() && file.length() > 0) {
+                        onBackgroundDownloadSuccess()
+                    } else {
+                        onBackgroundDownloadFailed()
+                    }
+                }
+
+                override fun onFail(tag: Any?, msg: String?) {
+                    onBackgroundDownloadFailed()
+                }
             }
-            wkVBinding.loading.visibility = View.GONE
-        } else {
-            wkVBinding.saveTV.isEnabled = false
-            Glide.with(this)
-                .downloadOnly()
-                .load(WKApiConfig.getShowUrl(url))
-                .listener(object : RequestListener<File?> {
-                    override fun onLoadFailed(
-                        e: GlideException?,
-                        model: Any?,
-                        target: Target<File?>,
-                        isFirstResource: Boolean
-                    ): Boolean {
-                        return false
-                    }
+        )
+    }
 
-                    override fun onResourceReady(
-                        resource: File,
-                        model: Any,
-                        target: Target<File?>?,
-                        dataSource: DataSource,
-                        isFirstResource: Boolean
-                    ): Boolean {
-                        if (resource.exists()) {
-                            WKFileUtils.getInstance()
-                                .fileCopy(resource.absolutePath, file.absolutePath)
-                            initView()
-                        }
-                        return false
-                    }
-                })
-                .preload()
+    private fun onBackgroundDownloadSuccess() {
+        if (isFinishing || isDestroyed) return
+        previewReady = true
+        showPreviewLoading(false)
+        updateSaveButtonState()
+        if (isSvg == 1) {
+            displayBackgroundFromFile(File(cachePath))
         }
+    }
+
+    private fun onBackgroundDownloadFailed() {
+        if (isFinishing || isDestroyed) return
+        previewReady = false
+        showPreviewLoading(false)
+        updateSaveButtonState()
+        showToast(BaseR.string.download_err)
+    }
+
+    private fun copyToCache(sourcePath: String, destPath: String): Boolean {
+        val destFile = File(destPath)
+        destFile.parentFile?.mkdirs()
+        WKFileUtils.getInstance().fileCopy(sourcePath, destPath)
+        return destFile.exists() && destFile.length() > 0
+    }
+
+    private fun displayBackgroundFromFile(file: File) {
+        if (isSvg == 1) {
+            val colors = gradientColors() ?: return
+            displaySvgGradientOnly()
+            val (color1, color2, color3, color4) = colors
+            val pco = AndroidUtilities.getPatternColor(color1, color2, color3, color4)
+            val svgDrawable = SvgHelper.getBitmap(
+                file,
+                AndroidUtilities.getScreenWidth(),
+                AndroidUtilities.getScreenHeight(),
+                pco
+            )
+            wkVBinding.imageView.setImageBitmap(svgDrawable)
+        } else {
+            GlideUtils.getInstance().showImg(this, file.absolutePath, wkVBinding.imageView)
+        }
+    }
+
+    private fun gradientColors(): IntArray? {
+        val colorStr = if (Theme.isDark()) darkColors else lightColors
+        if (TextUtils.isEmpty(colorStr)) return null
+        val parts = colorStr.split(",")
+        if (parts.size < 4) return null
+        return try {
+            intArrayOf(
+                Color.parseColor("#" + parts[0]),
+                Color.parseColor("#" + parts[1]),
+                Color.parseColor("#" + parts[2]),
+                Color.parseColor("#" + parts[3])
+            )
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    override fun onDestroy() {
+        if (!TextUtils.isEmpty(downloadTag)) {
+            WKDownloader.instance.pauseDownload(downloadTag)
+        }
+        super.onDestroy()
     }
 
     var rotation = 0f
@@ -291,6 +375,10 @@ class PreviewChatBgActivity : WKBaseActivity<ActPreviewChatBgLayoutBinding>() {
         }
 
         SingleClickUtil.onSingleClick(wkVBinding.saveTV) {
+            if (!wkVBinding.saveTV.isEnabled) {
+                showToast(BaseR.string.download_err)
+                return@onSingleClick
+            }
             var savePath = url
             if (isLocal == 1) {
                 val uid = WKConfig.getInstance().uid
@@ -302,10 +390,55 @@ class PreviewChatBgActivity : WKBaseActivity<ActPreviewChatBgLayoutBinding>() {
                 val localPath = WKConstants.chatBgCacheDir + savePath
                 val file = File(localPath)
                 if (file.exists()) file.delete()
-                WKFileUtils.getInstance().fileCopy(url, localPath)
+                if (!copyToCache(url, localPath)) {
+                    showToast(BaseR.string.download_err)
+                    return@onSingleClick
+                }
             }
-            saveChatBG(savePath, isSvg, if (wkVBinding.blurredCB.isChecked) 1 else 0)
+            val isBlurred = if (wkVBinding.blurredCB.isChecked) 1 else 0
+            if (isBlurred == 1 && isSvg == 0) {
+                wkVBinding.blurView.post {
+                    persistBlurredWallpaper(savePath, isBlurred)
+                }
+            } else {
+                if (isSvg == 0) {
+                    ChatBgBlurHelper.deleteBlurredCache(savePath)
+                }
+                saveChatBG(savePath, isSvg, isBlurred)
+            }
         }
+    }
+
+    private fun originalCachePath(savePath: String): String {
+        return if (isLocal == 1) {
+            WKConstants.chatBgCacheDir + savePath
+        } else {
+            ChatBgKeys.cacheFilePath(savePath)
+        }
+    }
+
+    private fun persistBlurredWallpaper(savePath: String, isBlurred: Int) {
+        val blurredPath = ChatBgKeys.blurredCacheFilePath(savePath)
+        val captured = ChatBgBlurHelper.captureWallpaperBitmap(
+            wkVBinding.imageView,
+            wkVBinding.blurView
+        )
+        val saved = if (captured != null) {
+            val result = ChatBgBlurHelper.saveBitmap(blurredPath, captured)
+            captured.recycle()
+            result
+        } else {
+            ChatBgBlurHelper.createBlurredCacheFromFile(
+                this,
+                originalCachePath(savePath),
+                blurredPath
+            )
+        }
+        if (!saved) {
+            showToast(BaseR.string.download_err)
+            return
+        }
+        saveChatBG(savePath, isSvg, isBlurred)
     }
 
     private fun changeColor() {
@@ -313,24 +446,12 @@ class PreviewChatBgActivity : WKBaseActivity<ActPreviewChatBgLayoutBinding>() {
         while (gradientAngle >= 360) {
             gradientAngle -= 360
         }
-        val colors = if (Theme.isDark()) darkColors.split(",") else lightColors.split(",")
-        val color1 = Color.parseColor("#" + colors[0])
-        val color2 = Color.parseColor("#" + colors[1])
-        val color3 = Color.parseColor("#" + colors[2])
-        val color4 = Color.parseColor("#" + colors[3])
-
+        val colors = gradientColors() ?: return
         val orientation = Theme.getGradientOrientation(gradientAngle)
-        val drawable = GradientDrawable(
+        wkVBinding.parentView.background = GradientDrawable(
             orientation,
-            intArrayOf(color1, color2, color3, color4)
+            colors
         )
-
-//        val orientation = Theme.getGradientOrientation(gradientAngle)
-//        val drawable = GradientDrawable(
-//            orientation,
-//            Theme.defaultColorsDark[colorIndex]
-//        )
-        wkVBinding.parentView.background = drawable
     }
 
     private fun saveChatBG(url: String, isSvg: Int, isBlurred: Int) {
@@ -366,12 +487,13 @@ class PreviewChatBgActivity : WKBaseActivity<ActPreviewChatBgLayoutBinding>() {
                 lightColors
             )
             WKSharedPreferencesUtil.getInstance().putSPWithUID(
-                ChatBgKeys.chatBgColorLight,
+                ChatBgKeys.chatBgColorDark,
                 darkColors
             )
             setResult(RESULT_OK)
         } else {
             saveChannelChatBG(url, isSvg, isBlurred, if (TextUtils.isEmpty(url)) 1 else 0)
+            setResult(RESULT_OK)
         }
         showToast(R.string.save_success)
         finish()
@@ -398,11 +520,4 @@ class PreviewChatBgActivity : WKBaseActivity<ActPreviewChatBgLayoutBinding>() {
         }
     }
 
-    private fun getChatBg(path: String): BitmapDrawable {
-        val bitmap = BitmapFactory.decodeFile(path)
-        val drawable = BitmapDrawable(this.resources, bitmap)
-        drawable.setTileModeXY(Shader.TileMode.REPEAT, Shader.TileMode.REPEAT)
-        drawable.setDither(true)
-        return drawable
-    }
 }

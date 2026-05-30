@@ -62,6 +62,11 @@ public class WKMultiLanguageUtil {
 
     }
 
+    /** 当前应用应使用的 Locale（与设置页 / AppCompat 一致）。 */
+    public Locale resolveLocale() {
+        return getLanguageLocale();
+    }
+
     //如果不是英文、简体中文、繁体中文，默认返回简体中文
     private Locale getLanguageLocale() {
         if (mContext == null || mContext.get() == null) return getSysLocale();
