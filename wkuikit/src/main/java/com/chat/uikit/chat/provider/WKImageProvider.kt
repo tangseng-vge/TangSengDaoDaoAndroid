@@ -36,6 +36,8 @@ import com.chat.base.utils.WKTimeUtils
 import com.chat.base.utils.WKToastUtils
 import com.chat.base.views.CircularProgressView
 import com.chat.base.views.CustomImageViewerPopup.IImgPopupMenu
+import com.chat.base.views.CustomImageViewerPopup
+import com.chat.base.msgmodel.WKChatImageContent
 import com.chat.base.views.blurview.ShapeBlurView
 import com.chat.uikit.R
 import com.google.android.material.snackbar.Snackbar
@@ -170,7 +172,7 @@ class WKImageProvider : WKChatBaseProvider() {
                 uiChatMsgItemEntity,
                 adapterPosition,
                 imageView,
-                getShowURL(uiChatMsgItemEntity)
+                getPreviewURL(uiChatMsgItemEntity.wkMsg)
             )
         }
     }
@@ -186,8 +188,10 @@ class WKImageProvider : WKChatBaseProvider() {
         val imgList: MutableList<ImageView?> = ArrayList()
         val showImgList: MutableList<WKMsg> = ArrayList()
         val tempImgList: MutableList<Any?> = ArrayList()
+        val originalImgList: MutableList<Any?> = ArrayList()
         if (flame == 1) {
             tempImgList.add(uri)
+            originalImgList.add(uri)
             imgList.add(imageView)
         } else
             run {
@@ -196,7 +200,7 @@ class WKImageProvider : WKChatBaseProvider() {
                 while (i < size) {
                     if (list[i].wkMsg != null && list[i].wkMsg.type == WKContentType.WK_IMAGE && list[i].wkMsg.remoteExtra.revoke == 0 && list[i].wkMsg.isDeleted == 0 && list[i].wkMsg.flame == 0
                     ) {
-                        val showUrl: String = getShowURL(list[i])
+                        val showUrl: String = getPreviewURL(list[i].wkMsg)
                         showImgList.add(list[i].wkMsg)
                         val itemView =
                             getAdapter()!!.recyclerView.layoutManager!!.findViewByPosition(i)
@@ -207,6 +211,7 @@ class WKImageProvider : WKChatBaseProvider() {
                         } else imgList.add(null)
                         if (!TextUtils.isEmpty(showUrl)) {
                             tempImgList.add(showUrl)
+                            originalImgList.add(getOriginalURL(list[i].wkMsg))
                         }
                     }
                     i++
@@ -286,6 +291,9 @@ class WKImageProvider : WKChatBaseProvider() {
                     WKIM.getInstance().cmdManager.removeCmdListener("show_chat_img")
                 }
             })
+        if (popupView is CustomImageViewerPopup) {
+            popupView.setOriginalUrls(originalImgList)
+        }
         WKIM.getInstance().cmdManager.addCmdListener(
             "show_chat_img"
         ) { cmd: WKCMD ->
@@ -366,16 +374,36 @@ class WKImageProvider : WKChatBaseProvider() {
 
     private fun getShowURL(uiChatMsgItemEntity: WKUIChatMsgItemEntity): String {
         val imgMsgModel = uiChatMsgItemEntity.wkMsg.baseContentMsgModel as WKImageContent
+        if (!TextUtils.isEmpty(imgMsgModel.url)) {
+            return WKApiConfig.getShowUrl(imgMsgModel.url)
+        }
         if (!TextUtils.isEmpty(imgMsgModel.localPath)) {
             val file = File(imgMsgModel.localPath)
             if (file.exists() && file.length() > 0L) {
                 return file.absolutePath
             }
         }
-        if (!TextUtils.isEmpty(imgMsgModel.url)) {
-            return WKApiConfig.getShowUrl(imgMsgModel.url)
-        }
         return ""
+    }
+
+    private fun getPreviewURL(msg: WKMsg): String {
+        val content = msg.baseContentMsgModel as WKImageContent
+        if (content is WKChatImageContent && !TextUtils.isEmpty(content.previewUrl)) {
+            return WKApiConfig.getShowUrl(content.previewUrl)
+        }
+        if (!TextUtils.isEmpty(content.localPath)) {
+            val file = File(content.localPath)
+            if (file.exists() && file.length() > 0L) return file.absolutePath
+        }
+        return if (!TextUtils.isEmpty(content.url)) WKApiConfig.getShowUrl(content.url) else ""
+    }
+
+    private fun getOriginalURL(msg: WKMsg): String {
+        val content = msg.baseContentMsgModel as WKImageContent
+        if (content is WKChatImageContent && !TextUtils.isEmpty(content.originalUrl)) {
+            return WKApiConfig.getShowUrl(content.originalUrl)
+        }
+        return getPreviewURL(msg)
     }
 
     override fun resetCellListener(

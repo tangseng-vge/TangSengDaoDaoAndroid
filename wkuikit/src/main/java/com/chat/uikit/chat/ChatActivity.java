@@ -125,6 +125,7 @@ import com.xinbida.wukongim.interfaces.IGetOrSyncHistoryMsgBack;
 import com.xinbida.wukongim.message.type.WKConnectStatus;
 import com.xinbida.wukongim.message.type.WKSendMsgResult;
 import com.xinbida.wukongim.msgmodel.WKImageContent;
+import com.chat.base.msgmodel.WKChatImageContent;
 import com.xinbida.wukongim.msgmodel.WKMessageContent;
 import com.xinbida.wukongim.msgmodel.WKMsgEntity;
 import com.xinbida.wukongim.msgmodel.WKReply;
@@ -2361,7 +2362,7 @@ public class ChatActivity extends SwipeBackActivity implements IConversationCont
         if (result.getData() != null && result.getResultCode() == Activity.RESULT_OK) {
             String path = result.getData().getStringExtra("path");
             if (!TextUtils.isEmpty(path)) {
-                sendMsg(new WKImageContent(path));
+                sendMsg(new WKChatImageContent(path));
             }
         }
     });

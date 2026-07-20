@@ -30,6 +30,7 @@ import com.chat.video.search.SearchChatVideoActivity;
 import com.chat.video.search.remote.SearchActivity;
 import com.xinbida.wukongim.message.type.WKMsgContentType;
 import com.xinbida.wukongim.msgmodel.WKImageContent;
+import com.chat.base.msgmodel.WKChatImageContent;
 import com.xinbida.wukongim.msgmodel.WKVideoContent;
 
 /**
@@ -168,7 +169,7 @@ public class WKVideoApplication {
             }
         } else {
             if (iConversationContext != null) {
-                iConversationContext.sendMessage(new WKImageContent(path));
+                iConversationContext.sendMessage(new WKChatImageContent(path));
                 iConversationContext = null;
             }
         }
@@ -288,4 +289,3 @@ public class WKVideoApplication {
 
     }
 }
-

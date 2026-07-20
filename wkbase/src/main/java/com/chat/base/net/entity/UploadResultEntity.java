@@ -6,5 +6,9 @@ package com.chat.base.net.entity;
  */
 public class UploadResultEntity {
     public String path;
+    public String thumb_path;
+    public String preview_path;
+    public String original_path;
+    public long original_size;
 
 }

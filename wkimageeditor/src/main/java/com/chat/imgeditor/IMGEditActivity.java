@@ -28,6 +28,7 @@ import com.google.android.material.snackbar.Snackbar;
 import com.xinbida.wukongim.WKIM;
 import com.xinbida.wukongim.entity.WKChannel;
 import com.xinbida.wukongim.msgmodel.WKImageContent;
+import com.chat.base.msgmodel.WKChatImageContent;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -239,7 +240,7 @@ public class IMGEditActivity extends IMGEditBaseActivity {
     private void showBottomDialog(String filePath, Bitmap bitmap) {
         List<BottomSheetItem> list = new ArrayList<>();
         list.add(new BottomSheetItem(getString(R.string.forward), R.mipmap.msg_forward, () -> {
-            WKImageContent imageContent = new WKImageContent();
+            WKImageContent imageContent = new WKChatImageContent();
             imageContent.localPath = filePath;
             imageContent.width = bitmap.getWidth();
             imageContent.height = bitmap.getHeight();

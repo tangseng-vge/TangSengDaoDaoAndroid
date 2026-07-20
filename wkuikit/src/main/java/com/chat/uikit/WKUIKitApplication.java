@@ -114,6 +114,7 @@ import com.xinbida.wukongim.entity.WKChannel;
 import com.xinbida.wukongim.entity.WKChannelType;
 import com.xinbida.wukongim.entity.WKMsg;
 import com.xinbida.wukongim.msgmodel.WKImageContent;
+import com.chat.base.msgmodel.WKChatImageContent;
 import com.xinbida.wukongim.msgmodel.WKMessageContent;
 import com.xinbida.wukongim.msgmodel.WKTextContent;
 import com.xinbida.wukongim.msgmodel.WKVideoContent;
@@ -206,6 +207,9 @@ public class WKUIKitApplication {
     private void initKitModuleListener() {
         // 注册消息model到sdk
         WKIM.getInstance().getMsgManager().registerContentMsg(WKCardContent.class);
+
+        // Override the SDK's image decoder while keeping the standard image type.
+        WKChatImageContent.registerDecoder();
 
 
         WKIM.getInstance().getMsgManager().registerContentMsg(WKMultiForwardContent.class);
@@ -629,7 +633,7 @@ public class WKUIKitApplication {
                                             return;
                                         }
                                     }
-                                    WKImageContent imageContent = new WKImageContent(path);
+                                    WKImageContent imageContent = new WKChatImageContent(path);
                                     iConversationContext.sendMessage(imageContent);
 
                                 }

@@ -42,7 +42,7 @@ public class WKUploader extends WKBaseModel {
             @Override
             public void onSuccess(UploadResultEntity result) {
                 if (iUploadBack != null ) {
-                    iUploadBack.onSuccess(result.path);
+                    iUploadBack.onSuccess(result);
                 }
             }
 
@@ -56,11 +56,16 @@ public class WKUploader extends WKBaseModel {
     }
 
     public void getUploadFileUrl(String channelID, byte channelType, String localPath, final IGetUploadFileUrl iGetUploadFileUrl) {
+        getUploadFileUrl(channelID, channelType, localPath, false, iGetUploadFileUrl);
+    }
+
+    public void getUploadFileUrl(String channelID, byte channelType, String localPath, boolean imageVariants, final IGetUploadFileUrl iGetUploadFileUrl) {
         File f = new File(localPath);
         String tempFileName = f.getName();
         String prefix = tempFileName.substring(tempFileName.lastIndexOf(".") + 1);
         String path = "/" + channelType + "/" + channelID + "/" + WKTimeUtils.getInstance().getCurrentMills() + "." + prefix;
-        request(createService(ApiService.class).getUploadFileUrl(WKApiConfig.baseUrl + "file/upload?type=chat&path=" + path), new IRequestResultListener<UploadFileUrl>() {
+        String variants = imageVariants ? "&image_variants=1" : "";
+        request(createService(ApiService.class).getUploadFileUrl(WKApiConfig.baseUrl + "file/upload?type=chat&path=" + path + variants), new IRequestResultListener<UploadFileUrl>() {
             @Override
             public void onSuccess(UploadFileUrl result) {
                 iGetUploadFileUrl.onResult(result.url, path);
@@ -80,6 +85,10 @@ public class WKUploader extends WKBaseModel {
 
     public interface IUploadBack {
         void onSuccess(String url);
+
+        default void onSuccess(UploadResultEntity result) {
+            onSuccess(result.path);
+        }
 
         void onError();
     }

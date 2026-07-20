@@ -13,6 +13,7 @@ import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -52,6 +53,8 @@ public class CustomImageViewerPopup extends ImageViewerPopupView {
     List<ImagePopupBottomSheetItem> list;
     private final WKMsg msg;
     private final int flame;
+    private List<Object> originalUrls;
+    private TextView originalButton;
 
     public CustomImageViewerPopup(@NonNull Context context, int flame, WKMsg msg, List<ImagePopupBottomSheetItem> list, IImgPopupMenu iImgPopupMenu) {
         super(context);
@@ -72,6 +75,15 @@ public class CustomImageViewerPopup extends ImageViewerPopupView {
     protected void onCreate() {
         super.onCreate();
         ImageView imgMoreIv = findViewById(R.id.imgMoreIv);
+        originalButton = findViewById(R.id.loadOriginalTv);
+        originalButton.setOnClickListener(v -> loadOriginal());
+        pager.addOnPageChangeListener(new androidx.viewpager.widget.ViewPager.SimpleOnPageChangeListener() {
+            @Override
+            public void onPageSelected(int position) {
+                updateOriginalButton(position);
+            }
+        });
+        updateOriginalButton(pager.getCurrentItem());
         imgMoreIv.setVisibility(flame == 0 ? VISIBLE : GONE);
         imgMoreIv.setOnClickListener(view -> showLongClickDialog(pager.getCurrentItem(), urls.get(pager.getCurrentItem())));
         if (list != null) {
@@ -105,6 +117,35 @@ public class CustomImageViewerPopup extends ImageViewerPopupView {
                 dismiss();
             }
         });
+    }
+
+    public void setOriginalUrls(List<Object> originalUrls) {
+        this.originalUrls = originalUrls;
+        if (originalButton != null) updateOriginalButton(pager.getCurrentItem());
+    }
+
+    private void updateOriginalButton(int position) {
+        if (originalButton == null) return;
+        boolean show = flame == 0 && originalUrls != null && position >= 0 && position < originalUrls.size()
+                && originalUrls.get(position) != null && !String.valueOf(originalUrls.get(position)).equals(String.valueOf(urls.get(position)));
+        originalButton.setVisibility(show ? VISIBLE : GONE);
+        originalButton.setEnabled(true);
+        originalButton.setText(R.string.view_original_image);
+    }
+
+    private void loadOriginal() {
+        int position = pager.getCurrentItem();
+        if (originalUrls == null || position < 0 || position >= originalUrls.size()) return;
+        Object original = originalUrls.get(position);
+        if (original == null) return;
+        originalButton.setEnabled(false);
+        originalButton.setText(R.string.loading_original_image);
+        urls.set(position, original);
+        androidx.viewpager.widget.PagerAdapter adapter = pager.getAdapter();
+        pager.setAdapter(null);
+        pager.setAdapter(adapter);
+        pager.setCurrentItem(position, false);
+        originalButton.setText(R.string.original_image_loaded);
     }
 //    public class MyPhotoViewAdapter extends PagerAdapter {
 //        @Override

@@ -7,6 +7,8 @@ import com.chat.base.endpoint.EndpointSID;
 import com.chat.base.endpoint.entity.WKSendMsgMenu;
 import com.chat.base.msgitem.WKContentType;
 import com.chat.base.net.ud.WKUploader;
+import com.chat.base.net.entity.UploadResultEntity;
+import com.chat.base.msgmodel.WKChatImageContent;
 import com.xinbida.wukongim.WKIM;
 import com.xinbida.wukongim.entity.WKChannel;
 import com.xinbida.wukongim.entity.WKMsg;
@@ -84,12 +86,24 @@ public class WKSendMsgUtils {
                 listener.onUploadResult(true, contentMsgModel);
             } else {
                 if (!TextUtils.isEmpty(contentMsgModel.localPath)) {
-                    WKUploader.getInstance().getUploadFileUrl(msg.channelID, msg.channelType, contentMsgModel.localPath, (url, filePath) -> {
+                    WKUploader.getInstance().getUploadFileUrl(msg.channelID, msg.channelType, contentMsgModel.localPath, msg.type == WKContentType.WK_IMAGE, (url, filePath) -> {
                         if (!TextUtils.isEmpty(url)) {
                             WKUploader.getInstance().upload(url, contentMsgModel.localPath, msg.clientSeq, new WKUploader.IUploadBack() {
                                 @Override
                                 public void onSuccess(String url) {
                                     contentMsgModel.url = url;
+                                    listener.onUploadResult(true, contentMsgModel);
+                                }
+
+                                @Override
+                                public void onSuccess(UploadResultEntity result) {
+                                    contentMsgModel.url = result.path;
+                                    if (contentMsgModel instanceof WKChatImageContent) {
+                                        WKChatImageContent image = (WKChatImageContent) contentMsgModel;
+                                        image.previewUrl = result.preview_path == null ? result.path : result.preview_path;
+                                        image.originalUrl = result.original_path == null ? image.previewUrl : result.original_path;
+                                        image.originalSize = result.original_size;
+                                    }
                                     listener.onUploadResult(true, contentMsgModel);
                                 }
 
