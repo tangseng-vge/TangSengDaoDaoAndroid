@@ -38,6 +38,7 @@ import com.lxj.xpopup.util.XPopupUtils;
 import com.xinbida.wukongim.WKIM;
 import com.xinbida.wukongim.entity.WKMsg;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,6 +56,8 @@ public class CustomImageViewerPopup extends ImageViewerPopupView {
     private final int flame;
     private List<Object> originalUrls;
     private TextView originalButton;
+    private CustomTarget<File> originalDownloadTarget;
+    private int loadingOriginalPosition = -1;
 
     public CustomImageViewerPopup(@NonNull Context context, int flame, WKMsg msg, List<ImagePopupBottomSheetItem> list, IImgPopupMenu iImgPopupMenu) {
         super(context);
@@ -126,11 +129,12 @@ public class CustomImageViewerPopup extends ImageViewerPopupView {
 
     private void updateOriginalButton(int position) {
         if (originalButton == null) return;
-        boolean show = flame == 0 && originalUrls != null && position >= 0 && position < originalUrls.size()
+        boolean show = flame == 0 && originalUrls != null && position >= 0 && position < originalUrls.size() && position < urls.size()
                 && originalUrls.get(position) != null && !String.valueOf(originalUrls.get(position)).equals(String.valueOf(urls.get(position)));
         originalButton.setVisibility(show ? VISIBLE : GONE);
-        originalButton.setEnabled(true);
-        originalButton.setText(R.string.view_original_image);
+        boolean loading = show && position == loadingOriginalPosition;
+        originalButton.setEnabled(!loading);
+        originalButton.setText(loading ? R.string.loading_original_image : R.string.view_original_image);
     }
 
     private void loadOriginal() {
@@ -138,14 +142,54 @@ public class CustomImageViewerPopup extends ImageViewerPopupView {
         if (originalUrls == null || position < 0 || position >= originalUrls.size()) return;
         Object original = originalUrls.get(position);
         if (original == null) return;
+        if (originalDownloadTarget != null) {
+            Glide.with(context).clear(originalDownloadTarget);
+        }
+        loadingOriginalPosition = position;
         originalButton.setEnabled(false);
         originalButton.setText(R.string.loading_original_image);
-        urls.set(position, original);
+        originalDownloadTarget = new CustomTarget<File>(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL) {
+            @Override
+            public void onResourceReady(@NonNull File resource, @Nullable Transition<? super File> transition) {
+                if (position < 0 || position >= urls.size() || originalUrls == null || position >= originalUrls.size()) {
+                    loadingOriginalPosition = -1;
+                    updateOriginalButton(pager.getCurrentItem());
+                    return;
+                }
+                // Point both lists at the fully downloaded local file. This
+                // prevents a stale preview request from replacing the original
+                // and lets the tiled image loader read the source at full size.
+                urls.set(position, resource);
+                originalUrls.set(position, resource);
+                loadingOriginalPosition = -1;
+                reloadImage(position);
+                updateOriginalButton(pager.getCurrentItem());
+            }
+
+            @Override
+            public void onLoadFailed(@Nullable Drawable errorDrawable) {
+                loadingOriginalPosition = -1;
+                updateOriginalButton(pager.getCurrentItem());
+                WKToastUtils.getInstance().showToastNormal(context.getString(R.string.load_original_image_failed));
+            }
+
+            @Override
+            public void onLoadCleared(@Nullable Drawable placeholder) {
+                if (loadingOriginalPosition == position) {
+                    loadingOriginalPosition = -1;
+                    updateOriginalButton(pager.getCurrentItem());
+                }
+            }
+        };
+        Glide.with(context).downloadOnly().load(original).into(originalDownloadTarget);
+    }
+
+    private void reloadImage(int position) {
         androidx.viewpager.widget.PagerAdapter adapter = pager.getAdapter();
+        if (adapter == null) return;
         pager.setAdapter(null);
         pager.setAdapter(adapter);
         pager.setCurrentItem(position, false);
-        originalButton.setText(R.string.original_image_loaded);
     }
 //    public class MyPhotoViewAdapter extends PagerAdapter {
 //        @Override
@@ -257,6 +301,10 @@ public class CustomImageViewerPopup extends ImageViewerPopupView {
 
     @Override
     public void dismiss() {
+        if (originalDownloadTarget != null) {
+            Glide.with(context).clear(originalDownloadTarget);
+            originalDownloadTarget = null;
+        }
         super.dismiss();
         WKIM.getInstance().getMsgManager().removeDeleteMsgListener("view_img");
         if (msg != null && msg.flame == 1) {

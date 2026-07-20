@@ -628,7 +628,10 @@ public class WKDialogUtils {
         //自定义的ImageViewer弹窗需要自己手动设置相应的属性，必须设置的有srcView，url和imageLoader。
         viewerPopup.setSrcView(imageView, index);
         viewerPopup.setImageUrls(tempImgList);
-        viewerPopup.setXPopupImageLoader(new SmartGlideImageLoader());
+        // Use tiled decoding for the full-screen viewer. The default loader
+        // downsamples images larger than twice the screen size into a Bitmap,
+        // which makes high-resolution originals look blurry when zoomed.
+        viewerPopup.setXPopupImageLoader(new SmartGlideImageLoader(true, 0));
         viewerPopup.isShowIndicator(true);//是否显示页码指示器
         viewerPopup.isShowPlaceholder(true);//是否显示白色占位块
         viewerPopup.isShowSaveButton(false);//是否显示保存按钮
