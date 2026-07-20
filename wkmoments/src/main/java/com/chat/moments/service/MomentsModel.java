@@ -14,6 +14,7 @@ import com.chat.base.utils.WKTimeUtils;
 import com.chat.moments.WKMomentsApplication;
 import com.chat.moments.R;
 import com.chat.moments.entity.MomentSetting;
+import com.chat.moments.entity.MomentImage;
 import com.chat.moments.entity.Moments;
 import com.chat.moments.entity.MomentsType;
 import com.chat.moments.entity.Comment;
@@ -156,12 +157,13 @@ public class MomentsModel extends WKBaseModel {
         });
     }
 
-    public void publish(int type, String address, String longitude, String latitude, List<String> remindUids, List<String> uids, String video_path, String video_cover_path, List<String> imgs, String text, final ICommonListener iCommonListener) {
+    public void publish(int type, String address, String longitude, String latitude, List<String> remindUids, List<String> uids, String video_path, String video_cover_path, List<String> imgs, List<MomentImage> images, String text, final ICommonListener iCommonListener) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("video_path", video_path);
         jsonObject.put("video_cover_path", video_cover_path);
         jsonObject.put("text", text);
         jsonObject.put("imgs", imgs);
+        jsonObject.put("images", images);
         jsonObject.put("address", address);
         jsonObject.put("longitude", longitude);
         jsonObject.put("latitude", latitude);
@@ -311,6 +313,21 @@ public class MomentsModel extends WKBaseModel {
 
     private List<Moments> resetData(List<Moments> result) {
         for (int i = 0, size = result.size(); i < size; i++) {
+            Moments moment = result.get(i);
+            if (WKReader.isEmpty(moment.images) && WKReader.isNotEmpty(moment.imgs)) {
+                moment.images = new ArrayList<>();
+                for (String url : moment.imgs) {
+                    moment.images.add(new MomentImage(url, url, url));
+                }
+            } else if (WKReader.isNotEmpty(moment.images)) {
+                for (int imageIndex = 0; imageIndex < moment.images.size(); imageIndex++) {
+                    MomentImage image = moment.images.get(imageIndex);
+                    String fallback = WKReader.isNotEmpty(moment.imgs) && imageIndex < moment.imgs.size() ? moment.imgs.get(imageIndex) : "";
+                    if (TextUtils.isEmpty(image.url)) image.url = fallback;
+                    if (TextUtils.isEmpty(image.preview_url)) image.preview_url = image.url;
+                    if (TextUtils.isEmpty(image.original_url)) image.original_url = image.preview_url;
+                }
+            }
             if (TextUtils.isEmpty(result.get(i).video_path)) {
                 if (WKReader.isEmpty(result.get(i).imgs)) {
                     result.get(i).itemType = MomentsType.single_text;

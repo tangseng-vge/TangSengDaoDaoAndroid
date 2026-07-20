@@ -1,6 +1,5 @@
 package com.chat.moments.service;
 
-import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
 import com.chat.base.base.WKBaseModel;
@@ -33,24 +32,28 @@ public class MomentFileUpload extends WKBaseModel {
     }
 
     public void getMomentFileUploadUrl(String localPath, final IGetUploadFileUrl iGetUploadFileUrl) {
-        getMomentUploadUrl(localPath, iGetUploadFileUrl);
+        getMomentUploadUrl(localPath, false, iGetUploadFileUrl);
     }
 
-    private void getMomentUploadUrl(String localPath, final IGetUploadFileUrl iGetUploadFileUrl) {
+    public void getMomentFileUploadUrl(String localPath, boolean imageVariants, final IGetUploadFileUrl iGetUploadFileUrl) {
+        getMomentUploadUrl(localPath, imageVariants, iGetUploadFileUrl);
+    }
+
+    private void getMomentUploadUrl(String localPath, boolean imageVariants, final IGetUploadFileUrl iGetUploadFileUrl) {
         File f = new File(localPath);
         String tempFileName = f.getName();
         String prefix = tempFileName.substring(tempFileName.lastIndexOf(".") + 1);
-        Bitmap bitmap = BitmapFactory.decodeFile(localPath);
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(localPath, options);
         if (!WKMediaFileUtils.getInstance().isVideoFileType(localPath)) {
             prefix = "png";
         }
-        int w = 0, h = 0;
-        if (bitmap != null) {
-            w = bitmap.getWidth();
-            h = bitmap.getHeight();
-        }
+        int w = Math.max(options.outWidth, 0);
+        int h = Math.max(options.outHeight, 0);
         String path = "/" + WKConfig.getInstance().getUid() + "/" + WKTimeUtils.getInstance().getCurrentMills() + "." + prefix + "@" + w + "x" + h;
-        request(createService(ApiService.class).getUploadFileUrl(WKApiConfig.baseUrl + "file/upload?type=moment&path=" + path), new IRequestResultListener<UploadFileUrl>() {
+        String variants = imageVariants ? "&image_variants=1" : "";
+        request(createService(ApiService.class).getUploadFileUrl(WKApiConfig.baseUrl + "file/upload?type=moment&path=" + path + variants), new IRequestResultListener<UploadFileUrl>() {
             @Override
             public void onSuccess(UploadFileUrl result) {
                 iGetUploadFileUrl.onResult(result.url, path);

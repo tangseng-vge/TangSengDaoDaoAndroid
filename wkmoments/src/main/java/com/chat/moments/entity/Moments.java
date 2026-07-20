@@ -17,6 +17,7 @@ public class Moments implements MultiItemEntity {
     public String video_path;//视频地址
     public String video_cover_path;//视频封面地址
     public List<String> imgs;
+    public List<MomentImage> images;
     public String text;
     public String created_at;
     public String showDate;//显示时间

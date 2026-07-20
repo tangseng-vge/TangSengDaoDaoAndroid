@@ -67,6 +67,7 @@ import com.chat.moments.adapter.GridImgAdapter;
 import com.chat.moments.adapter.SelectUserAdapter;
 import com.chat.moments.databinding.ActPublishMomentsLayoutBinding;
 import com.chat.moments.entity.ImgEntity;
+import com.chat.moments.entity.MomentImage;
 import com.chat.moments.entity.MomentsFileUploadStatus;
 import com.chat.moments.entity.MomentsRange;
 import com.chat.moments.entity.MomentsType;
@@ -83,6 +84,7 @@ import com.lxj.xpopup.XPopup;
 import com.lxj.xpopup.util.SmartGlideImageLoader;
 import com.xinbida.wukongim.entity.WKChannel;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -200,12 +202,17 @@ public class PublishMomentsActivity extends WKBaseActivity<ActPublishMomentsLayo
         }
         String vidoeCoverUrl = "", videoUrl = "";
         List<String> imgs = new ArrayList<>();
+        List<MomentImage> images = new ArrayList<>();
         if (publishFiles.size() == 1 && publishFiles.get(0).fileType == 2) {
             vidoeCoverUrl = publishFiles.get(0).coverUrl;
             videoUrl = publishFiles.get(0).url;
         } else {
             for (int i = 0; i < publishFiles.size(); i++) {
-                imgs.add(publishFiles.get(i).url);
+                ImgEntity image = publishFiles.get(i);
+                imgs.add(image.url);
+                images.add(new MomentImage(image.url,
+                        TextUtils.isEmpty(image.previewUrl) ? image.url : image.previewUrl,
+                        TextUtils.isEmpty(image.originalUrl) ? (TextUtils.isEmpty(image.previewUrl) ? image.url : image.previewUrl) : image.originalUrl));
             }
         }
         loadingPopup.show();
@@ -229,7 +236,7 @@ public class PublishMomentsActivity extends WKBaseActivity<ActPublishMomentsLayo
                 remindUids.add(channel.channelID);
             }
         }
-        MomentsModel.getInstance().publish(visibleRangeType, entity == null ? "" : entity.title, entity == null ? "" : String.valueOf(entity.longitude), entity == null ? "" : String.valueOf(entity.latitude), remindUids, uidList, videoUrl, vidoeCoverUrl, imgs, content, (code, msg) -> {
+        MomentsModel.getInstance().publish(visibleRangeType, entity == null ? "" : entity.title, entity == null ? "" : String.valueOf(entity.longitude), entity == null ? "" : String.valueOf(entity.latitude), remindUids, uidList, videoUrl, vidoeCoverUrl, imgs, images, content, (code, msg) -> {
             if (code == HttpResponseCode.success) {
                 setResult(RESULT_OK);
                 loadingPopup.dismiss();
@@ -621,20 +628,42 @@ public class PublishMomentsActivity extends WKBaseActivity<ActPublishMomentsLayo
 
     private void uploadFile(ImgEntity entity) {
         checkBtnStatus();
-        MomentFileUpload.getInstance().getMomentFileUploadUrl(entity.path, (url, path) -> {
+        String sourcePath = entity.path;
+        if (entity.fileType == 1 && !TextUtils.isEmpty(entity.originalPath)
+                && new File(entity.originalPath).isFile()) {
+            sourcePath = entity.originalPath;
+        }
+        final String uploadPath = sourcePath;
+        MomentFileUpload.getInstance().getMomentFileUploadUrl(uploadPath, entity.fileType == 1, (url, path) -> {
             if (!TextUtils.isEmpty(url)) {
-                WKUploader.getInstance().upload(url, entity.path, entity.key, new WKUploader.IUploadBack() {
+                WKUploader.getInstance().upload(url, uploadPath, entity.key, new WKUploader.IUploadBack() {
                     @Override
                     public void onSuccess(String url) {
+                        completeImageUpload(entity, url, url, url);
+                    }
+
+                    @Override
+                    public void onSuccess(com.chat.base.net.entity.UploadResultEntity result) {
+                        String low = TextUtils.isEmpty(result.thumb_path) ? result.path : result.thumb_path;
+                        String preview = TextUtils.isEmpty(result.preview_path) ? low : result.preview_path;
+                        String original = TextUtils.isEmpty(result.original_path) ? preview : result.original_path;
+                        completeImageUpload(entity, low, preview, original);
+                    }
+
+                    private void completeImageUpload(ImgEntity entity, String url, String previewUrl, String originalUrl) {
                         isVideoUploaded = true;
                         if (adapter.getData().size() == 1) {
                             checkBtnStatus();
                         }
                         entity.url = url;
+                        entity.previewUrl = previewUrl;
+                        entity.originalUrl = originalUrl;
                         for (int i = 0, size = adapter.getData().size(); i < size; i++) {
                             if (!TextUtils.isEmpty(entity.key) && !TextUtils.isEmpty(adapter.getData().get(i).key) && adapter.getData().get(i).key.equals(entity.key)) {
                                 adapter.getData().get(i).uploadStatus = MomentsFileUploadStatus.success;
                                 adapter.getData().get(i).url = entity.url;
+                                adapter.getData().get(i).previewUrl = entity.previewUrl;
+                                adapter.getData().get(i).originalUrl = entity.originalUrl;
                                 adapter.getData().get(i).progress = 100;
                                 adapter.getData().get(i).coverUrl = entity.coverUrl;
                                 adapter.notifyItemChanged(i);
@@ -785,7 +814,9 @@ public class PublishMomentsActivity extends WKBaseActivity<ActPublishMomentsLayo
                         WKLogUtils.e("Image path is empty, skipping");
                         continue;
                     }
-                    list.add(new ImgEntity(path, 1));
+                    ImgEntity image = new ImgEntity(path, 1);
+                    image.originalPath = TextUtils.isEmpty(paths.get(i).originalPath) ? path : paths.get(i).originalPath;
+                    list.add(image);
                 }
                 if (list.isEmpty()) {
                     WKLogUtils.e("No valid images after filtering, returning");

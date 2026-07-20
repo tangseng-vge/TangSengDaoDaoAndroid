@@ -315,6 +315,7 @@ public class GlideUtils {
                             } else {
                                 chooseResult.model = ChooseResultModel.image;
                                 chooseResult.path = path;
+                                chooseResult.originalPath = media.isCut() ? media.getCutPath() : (media.isToSandboxPath() ? media.getSandboxPath() : media.getRealPath());
                                 // 检查图片路径是否是 content URI，如果是则转换
                                 if (PictureMimeType.isContent(chooseResult.path)) {
                                     String realPath = getRealPathFromUri(activity, Uri.parse(chooseResult.path));
@@ -330,6 +331,17 @@ public class GlideUtils {
                                             WKLogUtils.e("Image path conversion failed, using original: " + chooseResult.path);
                                         }
                                     }
+                                }
+                                if (!TextUtils.isEmpty(chooseResult.originalPath) && PictureMimeType.isContent(chooseResult.originalPath)) {
+                                    String originalRealPath = getRealPathFromUri(activity, Uri.parse(chooseResult.originalPath));
+                                    if (!TextUtils.isEmpty(originalRealPath)) {
+                                        chooseResult.originalPath = originalRealPath;
+                                    } else {
+                                        chooseResult.originalPath = chooseResult.path;
+                                    }
+                                }
+                                if (TextUtils.isEmpty(chooseResult.originalPath)) {
+                                    chooseResult.originalPath = chooseResult.path;
                                 }
                                 // 验证路径是否有效
                                 if (TextUtils.isEmpty(chooseResult.path)) {

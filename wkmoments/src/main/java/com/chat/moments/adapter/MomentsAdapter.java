@@ -50,10 +50,12 @@ import com.chat.base.utils.WKReader;
 import com.chat.base.utils.WKToastUtils;
 import com.chat.base.utils.singleclick.SingleClickUtil;
 import com.chat.base.views.FullyGridLayoutManager;
+import com.chat.base.views.CustomImageViewerPopup;
 import com.chat.moments.R;
 import com.chat.moments.WKMomentsApplication;
 import com.chat.moments.activities.PrivacyUserActivity;
 import com.chat.moments.entity.Moments;
+import com.chat.moments.entity.MomentImage;
 import com.chat.moments.entity.MomentsReply;
 import com.chat.moments.entity.MomentsType;
 import com.chat.moments.service.MomentsModel;
@@ -242,7 +244,7 @@ public class MomentsAdapter extends BaseMultiItemQuickAdapter<Moments, BaseViewH
                         imgList.add(baseViewHolder.getView(R.id.imageView));
                         List<String> imgClickList = new ArrayList<>();
                         imgClickList.add(moments.imgs.get(0));
-                        showImg(imgClickList, imgList, moments.imgs.get(0), baseViewHolder.getView(R.id.imageView), moments.moment_no, moments.publisher, moments.publisher_name);
+                        showImg(moments, imgList, 0, baseViewHolder.getView(R.id.imageView), moments.moment_no, moments.publisher, moments.publisher_name);
                     });
                     if (moments.imgs.get(0).contains("@") && moments.imgs.get(0).contains("x")) {
                         String url = moments.imgs.get(0).replaceAll(".png", "");
@@ -274,7 +276,7 @@ public class MomentsAdapter extends BaseMultiItemQuickAdapter<Moments, BaseViewH
                                 FilterImageView imageView1 = (FilterImageView) imgAdapter.getViewByPosition(i, R.id.imageView);
                                 imgList.add(imageView1);
                             }
-                            showImg(moments.imgs, imgList, url, recyclerView.getChildAt(position).findViewById(R.id.imageView), moments.moment_no, moments.publisher, moments.publisher_name);
+                            showImg(moments, imgList, position, recyclerView.getChildAt(position).findViewById(R.id.imageView), moments.moment_no, moments.publisher, moments.publisher_name);
                         }
                     });
                 }
@@ -306,27 +308,30 @@ public class MomentsAdapter extends BaseMultiItemQuickAdapter<Moments, BaseViewH
     }
 
 
-    private void showImg(List<String> list, List<ImageView> imgList, String uri, ImageView imageView, String unique_key, String author_uid, String author_name) {
+    private void showImg(Moments moments, List<ImageView> imgList, int index, ImageView imageView, String unique_key, String author_uid, String author_name) {
         //查看大图
         List<Object> tempImgList = new ArrayList<>();
-        for (int i = 0, size = list.size(); i < size; i++) {
-            tempImgList.add(WKApiConfig.getShowUrl(list.get(i)));
-        }
-        int index = 0;
-        for (int i = 0; i < tempImgList.size(); i++) {
-            if (tempImgList.get(i).equals(WKApiConfig.getShowUrl(uri))) {
-                index = i;
-                break;
+        List<Object> originalImgList = new ArrayList<>();
+        for (int i = 0, size = moments.imgs.size(); i < size; i++) {
+            String preview = moments.imgs.get(i);
+            String original = preview;
+            if (WKReader.isNotEmpty(moments.images) && i < moments.images.size()) {
+                MomentImage image = moments.images.get(i);
+                if (!TextUtils.isEmpty(image.preview_url)) preview = image.preview_url;
+                if (!TextUtils.isEmpty(image.original_url)) original = image.original_url;
             }
+            tempImgList.add(WKApiConfig.getShowUrl(preview));
+            originalImgList.add(WKApiConfig.getShowUrl(original));
         }
         List<ImagePopupBottomSheetItem> list1 = new ArrayList<>();
         list1.add(new ImagePopupBottomSheetItem(getContext().getString(R.string.forward), R.mipmap.msg_forward, position -> {
-            String path = list.get(position);
+            String path = moments.imgs.get(position);
             forwardImg(path);
         }));
-        list1.add(new ImagePopupBottomSheetItem(getContext().getString(R.string.favorite), R.mipmap.msg_fave, position -> collect(2, unique_key, author_uid, author_name, list.get(position))));
+        list1.add(new ImagePopupBottomSheetItem(getContext().getString(R.string.favorite), R.mipmap.msg_fave, position -> collect(2, unique_key, author_uid, author_name, moments.imgs.get(position))));
 
-        WKDialogUtils.getInstance().showImagePopup(getContext(), tempImgList, imgList, imageView, index, list1, null, null);
+        CustomImageViewerPopup popup = (CustomImageViewerPopup) WKDialogUtils.getInstance().showImagePopup(getContext(), tempImgList, imgList, imageView, index, list1, null, null);
+        popup.setOriginalUrls(originalImgList);
 
     }
 
