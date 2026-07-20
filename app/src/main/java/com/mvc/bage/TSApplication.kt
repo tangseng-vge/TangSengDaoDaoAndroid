@@ -264,29 +264,18 @@ class TSApplication : MultiDexApplication() {
                             EndpointManager.getInstance()
                                 .invoke("chow_check_lock_screen_pwd", null)
                         }, 1000)
-                        // 只有在 disconnect 为 true 时才重新连接（表示之前可能断开了）
-                        // 如果 disconnect 为 false，说明连接应该一直保持，不需要重新连接
-                        WKIMUtils.getInstance().initIMListener()
-                        WKUIKitApplication.getInstance().startChat()
-                    } else {
-                        // disconnect 为 false 时，只重新初始化监听器，不重新连接
-                        WKIMUtils.getInstance().initIMListener()
                     }
+                    // connection() 本身是幂等的。回到前台时始终校验连接，不能用相册/相机使用的
+                    // disconnect 标志代替 IM 的真实连接状态。
+                    WKIMUtils.getInstance().initIMListener()
+                    WKUIKitApplication.getInstance().startChat()
                     UserModel.getInstance().getOnlineUsers()
 
                 }
             }
 
             override fun onBack() {
-                val result = EndpointManager.getInstance().invoke("rtc_is_calling", null)
-                var isCalling = false
-                if (result != null) {
-                    isCalling = result as Boolean
-                }
-                if (WKBaseApplication.getInstance().disconnect && !isCalling) {
-//                    WKUIKitApplication.getInstance().stopConn()
-                }
-//                WKIMUtils.getInstance().removeListener()
+                // IM 由前台服务在后台继续保活，这里不主动断开连接。
                 WKSharedPreferencesUtil.getInstance()
                     .putLong("lock_start_time", WKTimeUtils.getInstance().currentSeconds)
 

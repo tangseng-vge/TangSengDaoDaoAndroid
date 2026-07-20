@@ -2,6 +2,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_REMOTE_MESSAGING" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <uses-permission android:name="android.permission.VIBRATE" />
@@ -75,6 +76,11 @@
         <service
             android:name="com.chat.uikit.AliveJobService"
             android:permission="android.permission.BIND_JOB_SERVICE" />
+        <service
+            android:name="com.chat.uikit.WKIMKeepAliveService"
+            android:exported="false"
+            android:foregroundServiceType="remoteMessaging"
+            android:stopWithTask="false" />
 
     </application>
 </manifest>

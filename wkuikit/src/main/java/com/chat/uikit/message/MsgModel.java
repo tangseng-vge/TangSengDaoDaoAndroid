@@ -55,6 +55,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 2019-11-24 14:18
@@ -261,13 +262,21 @@ public class MsgModel extends WKBaseModel {
     }
 
     public void getChatIp(IChatIp iChatIp) {
-        request(createService(MsgService.class).getImIp(WKConfig.getInstance().getUid()), new IRequestResultListener<>() {
+        // SDK 的连接地址等待窗口是 6 秒，这个请求必须更早结束并在所有分支回调，
+        // 否则 SDK 会一直停留在“正在连接”状态并反复重置。
+        request(createService(MsgService.class)
+                .getImIp(WKConfig.getInstance().getUid())
+                .timeout(5, TimeUnit.SECONDS), new IRequestResultListener<>() {
             @Override
             public void onSuccess(Ipentity result) {
                 if (result != null && !TextUtils.isEmpty(result.tcp_addr)) {
                     String[] strings = result.tcp_addr.split(":");
-                    iChatIp.onResult(HttpResponseCode.success, strings[0], strings[1]);
+                    if (strings.length == 2 && !TextUtils.isEmpty(strings[0]) && !TextUtils.isEmpty(strings[1])) {
+                        iChatIp.onResult(HttpResponseCode.success, strings[0], strings[1]);
+                        return;
+                    }
                 }
+                iChatIp.onResult(-1, "", "0");
             }
 
             @Override

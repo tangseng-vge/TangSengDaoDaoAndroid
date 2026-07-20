@@ -1,4 +1,6 @@
 <resources>
+    <string name="im_keep_alive_channel_name">Message connection service</string>
+    <string name="im_keep_alive_notification">Keeping messages connected in real time</string>
     <string name="sync_msg">Receiving…</string>
     <string name="connecting">Connecting</string>
     <string name="not_connected">Not Connected</string>
@@ -316,4 +318,3 @@
     <string name="update_label_new_password">New Password</string>
     <string name="update_label_confirm_password">Confirm password</string>
 </resources>
-

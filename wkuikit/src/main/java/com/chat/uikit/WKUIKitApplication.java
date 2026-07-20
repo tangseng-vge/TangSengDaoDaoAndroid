@@ -195,6 +195,7 @@ public class WKUIKitApplication {
     public void startChat() {
         if (!TextUtils.isEmpty(WKConfig.getInstance().getToken())) {
             Log.e("去连接", "-->");
+            WKIMKeepAliveService.start(mContext.get());
             WKIM.getInstance().getConnectionManager().connection();
         }
     }
@@ -564,6 +565,7 @@ public class WKUIKitApplication {
 
     public void exitLogin(int from) {
         MsgModel.getInstance().stopTimer();
+        WKIMKeepAliveService.stop(mContext.get());
         EndpointManager.getInstance().invoke("wk_logout", null);
         WKConfig.getInstance().clearInfo();
         WKIM.getInstance().getConnectionManager().disconnect(true);
