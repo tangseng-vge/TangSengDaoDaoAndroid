@@ -68,24 +68,6 @@ class TSApplication : MultiDexApplication() {
 
         instance = this  // 保存实例引用
 
-        // 检查是否是进程重启，如果是则清理可能残留的状态
-        if (isProcessRestarted()) {
-            Log.d("TSApplication", "检测到进程重启，清理残留状态")
-            // 清理EndpointManager中的重复菜单项
-            EndpointManager.getInstance().clearAll()
-            isApiInitialized = false
-        }
-
-        // 只初始化基础组件
-
-        // 检查本地是否已缓存API地址
-//        val cachedApiUrl = WKSharedPreferencesUtil.getInstance().getSP(KEY_API_URL)
-//        if (!TextUtils.isEmpty(cachedApiUrl)) {
-//            // 如果有缓存的API地址，可以立即初始化API依赖组件
-//            initApiDependentComponents(cachedApiUrl)
-//        }
-        // 否则，等待SplashActivity获取API地址后再初始化
-
         // 优先初始化Bugly，确保异常处理器在CrashHandler之前设置
         CrashReport.initCrashReport(applicationContext, BUGLY_ID, false)
         
@@ -95,7 +77,19 @@ class TSApplication : MultiDexApplication() {
             if (defaultProcess) {
                 initBasicComponents()
                 val cachedApiUrl = WKSharedPreferencesUtil.getInstance().getSP(KEY_API_URL)
-                initApi(cachedApiUrl);
+                val apiUrl = if (cachedApiUrl.isNullOrBlank()) DEFAULT_API_URL else cachedApiUrl
+                val needShowAgreement = WKSharedPreferencesUtil.getInstance()
+                    .getBoolean("show_agreement_dialog")
+
+                // Android 可能在后台回收进程却保留 Activity 任务栈。此时回到应用
+                // 会直接恢复 TabActivity，不会先经过 SplashActivity，因此必须在
+                // Application.onCreate() 中恢复 IM、数据库和业务监听器。
+                if (!needShowAgreement) {
+                    initApiDependentComponents(apiUrl)
+                } else {
+                    // 隐私协议同意前不初始化业务模块，但保证协议页 URL 可用。
+                    initApi(apiUrl)
+                }
             }
         }
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
@@ -123,27 +117,13 @@ class TSApplication : MultiDexApplication() {
         })
     }
 
-
-    // 检测是否是进程被杀死后重启
-    private fun isProcessRestarted(): Boolean {
-        // 可以通过SharedPreferences存储一个标记和时间戳
-        val sp = getSharedPreferences("app_state", Context.MODE_PRIVATE)
-        val lastTimestamp = sp.getLong("last_running_timestamp", 0)
-        val currentTime = System.currentTimeMillis()
-
-        // 更新时间戳
-        sp.edit().putLong("last_running_timestamp", currentTime).apply()
-
-        // 如果上次记录时间与当前时间差距过大，说明应用被杀死过
-        return lastTimestamp > 0 && (currentTime - lastTimestamp > 30000) // 30秒是示例阈值
-    }
-
-    fun ensureInitialized(context: Context) {
+    fun ensureInitialized() {
         if (!isApiInitialized) {
             // 重新初始化必要组件
             initBasicComponents()
             // 获取保存的API URL
-            val apiUrl = WKSharedPreferencesUtil.getInstance().getSP(KEY_API_URL) ?: DEFAULT_API_URL
+            val cachedApiUrl = WKSharedPreferencesUtil.getInstance().getSP(KEY_API_URL)
+            val apiUrl = if (cachedApiUrl.isNullOrBlank()) DEFAULT_API_URL else cachedApiUrl
             initApiDependentComponents(apiUrl)
         }
     }

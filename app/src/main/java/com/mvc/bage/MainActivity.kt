@@ -50,6 +50,11 @@ class MainActivity : WKBaseActivity<ActivityMainBinding>() {
     override fun initView() {
         super.initView()
         Log.d("AppFlow", "[MainActivity] initView called")
+        // WKBaseActivity 会在 MainActivity.onCreate() 返回前调用 initView()。
+        // 未初始化时由 onCreate() 统一跳转 SplashActivity，避免提前进入空数据页。
+        if (!TSApplication.getInstance().isApiInitialized()) {
+            return
+        }
         val isShowDialog: Boolean =
             WKSharedPreferencesUtil.getInstance().getBoolean("show_agreement_dialog")
         Log.d("AppFlow", "[MainActivity] show_agreement_dialog: $isShowDialog")
