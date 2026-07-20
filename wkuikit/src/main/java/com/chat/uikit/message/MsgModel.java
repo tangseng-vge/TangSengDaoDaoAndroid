@@ -290,6 +290,63 @@ public class MsgModel extends WKBaseModel {
         void onResult(int code, String ip, String port);
     }
 
+    public void favoriteMessage(WKMsg msg, boolean favorite, ICommonListener listener) {
+        if (msg == null || msg.type != WKMsgContentType.WK_TEXT
+                || TextUtils.isEmpty(msg.messageID) || msg.messageSeq <= 0
+                || TextUtils.isEmpty(msg.channelID)) {
+            if (listener != null) listener.onResult(-1, "");
+            return;
+        }
+        favoriteMessage(msg.messageID, msg.messageSeq, msg.channelID, msg.channelType,
+                favorite, listener);
+    }
+
+    public void favoriteMessage(String messageID, int messageSeq, String channelID,
+                                byte channelType, boolean favorite, ICommonListener listener) {
+        JSONObject body = new JSONObject();
+        body.put("message_id", messageID);
+        body.put("message_seq", messageSeq);
+        body.put("channel_id", channelID);
+        body.put("channel_type", channelType);
+        request(favorite
+                        ? createService(MsgService.class).favoriteMessage(body)
+                        : createService(MsgService.class).unfavoriteMessage(body),
+                new IRequestResultListener<>() {
+                    @Override
+                    public void onSuccess(CommonResponse result) {
+                        if (listener != null) listener.onResult(HttpResponseCode.success,
+                                result == null ? "" : result.msg);
+                    }
+
+                    @Override
+                    public void onFail(int code, String msg) {
+                        if (listener != null) listener.onResult(code, msg);
+                    }
+                });
+    }
+
+    public void getFavoriteMessages(int pageIndex, int pageSize, IFavoriteMessages listener) {
+        JSONObject body = new JSONObject();
+        body.put("page_index", Math.max(1, pageIndex));
+        body.put("page_size", Math.min(100, Math.max(1, pageSize)));
+        request(createService(MsgService.class).favoriteMessages(body),
+                new IRequestResultListener<>() {
+                    @Override
+                    public void onSuccess(JSONObject result) {
+                        if (listener != null) listener.onResult(HttpResponseCode.success, "", result);
+                    }
+
+                    @Override
+                    public void onFail(int code, String msg) {
+                        if (listener != null) listener.onResult(code, msg, null);
+                    }
+                });
+    }
+
+    public interface IFavoriteMessages {
+        void onResult(int code, String msg, JSONObject result);
+    }
+
     public void typing(String channelID, byte channelType) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("channel_id", channelID);

@@ -58,6 +58,9 @@
 
         <activity android:name=".search.MailListActivity" />
         <activity android:name=".message.BackupRestoreMessageActivity" />
+        <activity android:name=".message.favorite.FavoriteMessageListActivity" />
+        <activity android:name=".message.mass.MassMessageSelectActivity" />
+        <activity android:name=".message.mass.MassMessageEditActivity" />
         <activity android:name=".setting.AppModulesActivity" />
         <activity android:name=".setting.ErrorLogsActivity" />
         <activity

@@ -1,4 +1,15 @@
 <resources>
+    <string name="my_reports">My Reports</string>
+    <string name="no_reports">No report records</string>
+    <string name="report_moment">Moment</string>
+    <string name="report_comment">Comment</string>
+    <string name="report_category">Category</string>
+    <string name="report_time">Reported at</string>
+    <string name="report_remark">Description</string>
+    <string name="report_content">Content</string>
+    <string name="moment_content">Moment</string>
+    <string name="comment_content">Comment</string>
+    <string name="no_content">No content</string>
     <string name="str_moments">Moments</string>
     <string name="str_moment_title">Moment</string>
     <string name="str_moment_chat">Message</string>

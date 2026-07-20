@@ -246,7 +246,6 @@ open class WKTextProvider : WKChatBaseProvider() {
                     }
 
                 }).setPopSpanCount(3) // 设置操作弹窗每行个数 default 5
-        mSelectableTextHelper = builder.build()
 //            .setPopStyle(
 //                R.drawable.shape_color_4c4c4c_radius_8 /*操作弹窗背*/, R.mipmap.ic_arrow /*箭头图片*/
 //            ) // 设置操作弹窗背景色、箭头图片
@@ -258,26 +257,18 @@ open class WKTextProvider : WKChatBaseProvider() {
                     override fun onClick() {
                         EndpointManager.getInstance().invoke("chat_activity_touch", null)
 
-                        if (!TextUtils.isEmpty(selectText)) {
-                            val mMsg = WKMsg()
-                            mMsg.type = WKContentType.WK_TEXT
-                            mMsg.baseContentMsgModel = WKTextContent(selectText)
-                            mMsg.from = uiChatMsgItemEntity.wkMsg.from
-                            mMsg.channelID = uiChatMsgItemEntity.wkMsg.channelID
-                            mMsg.channelType = uiChatMsgItemEntity.wkMsg.channelType
-                            if (uiChatMsgItemEntity.wkMsg.remoteExtra != null && uiChatMsgItemEntity.wkMsg.remoteExtra.contentEditMsgModel != null) {
-                                mMsg.remoteExtra.contentEditMsgModel = WKTextContent(selectText)
-                            }
-                            val chatAdapter = getAdapter() as ChatAdapter
-                            uiChatMsgItemEntity.wkMsg.baseContentMsgModel.content = selectText
-                            favoritePopupMenu.iPopupItemClick.onClick(
-                                mMsg,
-                                chatAdapter.conversationContext
-                            )
-                        }
+                        val chatAdapter = getAdapter() as ChatAdapter
+                        // 收藏的是服务器上的完整消息，不能用缺少 message_id/message_seq
+                        // 的局部选中文本构造临时消息。
+                        favoritePopupMenu.iPopupItemClick.onClick(
+                            uiChatMsgItemEntity.wkMsg,
+                            chatAdapter.conversationContext
+                        )
                     }
                 })
         }
+
+        mSelectableTextHelper = builder.build()
 
         mSelectableTextHelper!!.setSelectListener(object : SelectTextHelper.OnSelectListener {
             override fun onClick(v: View?, originalContent: String?) {

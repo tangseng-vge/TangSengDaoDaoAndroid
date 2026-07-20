@@ -53,6 +53,15 @@ public interface MsgService {
     @POST("message/typing")
     Observable<CommonResponse> typing(@Body JSONObject jsonObject);
 
+    @POST("message/favorite")
+    Observable<CommonResponse> favoriteMessage(@Body JSONObject jsonObject);
+
+    @HTTP(method = "DELETE", path = "message/favorite", hasBody = true)
+    Observable<CommonResponse> unfavoriteMessage(@Body JSONObject jsonObject);
+
+    @POST("message/favorites")
+    Observable<JSONObject> favoriteMessages(@Body JSONObject jsonObject);
+
     @POST("conversation/sync")
     Observable<WKSyncChat> syncChat(@Body JSONObject jsonObject);
 

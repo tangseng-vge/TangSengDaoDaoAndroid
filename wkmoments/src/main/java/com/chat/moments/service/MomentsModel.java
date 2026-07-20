@@ -91,6 +91,24 @@ public class MomentsModel extends WKBaseModel {
         void onResult(int code, String msg, List<Moments> list);
     }
 
+    public void myReports(String lang, int pageIndex, int pageSize, final IMyReports listener) {
+        request(createService(MomentsService.class).myReports(lang, pageIndex, pageSize), new IRequestResultListener<JSONObject>() {
+            @Override
+            public void onSuccess(JSONObject result) {
+                listener.onResult(HttpResponseCode.success, "", result);
+            }
+
+            @Override
+            public void onFail(int code, String msg) {
+                listener.onResult(code, msg, null);
+            }
+        });
+    }
+
+    public interface IMyReports {
+        void onResult(int code, String msg, JSONObject result);
+    }
+
 
     public void like(String moment_no, final ICommonListener iCommonListener) {
         request(createService(MomentsService.class).like(moment_no), new IRequestResultListener<CommonResponse>() {

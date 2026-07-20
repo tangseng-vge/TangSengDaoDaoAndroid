@@ -104,6 +104,9 @@ import com.chat.uikit.group.SavedGroupsActivity;
 import com.chat.uikit.group.WKAllMembersActivity;
 import com.chat.uikit.message.MsgModel;
 import com.chat.uikit.message.ProhibitWordModel;
+import com.chat.uikit.message.favorite.FavoriteMessageListActivity;
+import com.chat.uikit.message.mass.MassMessageSelectActivity;
+import com.chat.moments.activities.MyReportsActivity;
 import com.chat.uikit.search.AddFriendsActivity;
 import com.chat.uikit.setting.MsgNoticesSettingActivity;
 import com.chat.uikit.setting.SettingActivity;
@@ -255,18 +258,48 @@ public class WKUIKitApplication {
             return null;
         });
 
+        EndpointManager.getInstance().setMethod("favorite_item", object -> {
+            if (!(object instanceof WKMsg msg) || msg.type != WKContentType.WK_TEXT) return null;
+            return new ChatItemPopupMenu(com.chat.base.R.mipmap.msg_fave,
+                    getContext().getString(R.string.message_favorite), (favoriteMsg, conversationContext) ->
+                    MsgModel.getInstance().favoriteMessage(favoriteMsg, true, (code, message) -> {
+                        Context context = conversationContext.getChatActivity();
+                        if (code == HttpResponseCode.success) {
+                            WKToastUtils.getInstance().showToastNormal(context.getString(R.string.favorited));
+                        } else {
+                            WKToastUtils.getInstance().showToastFail(TextUtils.isEmpty(message)
+                                    ? context.getString(R.string.favorite_failed) : message);
+                        }
+                    }));
+        });
+
         //添加个人中心
-        EndpointManager.getInstance().setMethod("personal_center_currency", EndpointCategory.personalCenter, 2, object -> new PersonalInfoMenu(R.mipmap.icon_setting, EndpointLocaleHelper.getString(object, R.string.currency), () -> {
+        EndpointManager.getInstance().setMethod("personal_center_currency", EndpointCategory.personalCenter, 600, object -> new PersonalInfoMenu(R.mipmap.icon_setting, EndpointLocaleHelper.getString(object, R.string.currency), () -> {
             Intent intent = new Intent(mContext.get(),  SettingActivity.class);
             intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
             mContext.get().startActivity(intent);
         }));
-        EndpointManager.getInstance().setMethod("personal_center_new_msg_notice", EndpointCategory.personalCenter, 3, object -> new PersonalInfoMenu(R.mipmap.icon_notice, EndpointLocaleHelper.getString(object, R.string.new_msg_notice), () -> {
+        EndpointManager.getInstance().setMethod("personal_center_new_msg_notice", EndpointCategory.personalCenter, 800, object -> new PersonalInfoMenu(R.mipmap.icon_notice, EndpointLocaleHelper.getString(object, R.string.new_msg_notice), () -> {
             Intent intent = new Intent(mContext.get(), MsgNoticesSettingActivity.class);
             intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
             mContext.get().startActivity(intent);
         }));
-        EndpointManager.getInstance().setMethod("personal_center_web_login", EndpointCategory.personalCenter, 1000, object -> new PersonalInfoMenu(R.mipmap.icon_web_login, EndpointLocaleHelper.getString(object, R.string.web_login), () -> EndpointManager.getInstance().invoke("show_web_login_desc", mContext.get())));
+        EndpointManager.getInstance().setMethod("personal_center_mass_message", EndpointCategory.personalCenter, 700, object -> new PersonalInfoMenu(R.drawable.icon_mass_message, EndpointLocaleHelper.getString(object, R.string.mass_message), () -> {
+            Intent intent = new Intent(mContext.get(), MassMessageSelectActivity.class);
+            intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
+            mContext.get().startActivity(intent);
+        }));
+        EndpointManager.getInstance().setMethod("personal_center_favorite", EndpointCategory.personalCenter, 680, object -> new PersonalInfoMenu(R.drawable.icon_message_favorite, EndpointLocaleHelper.getString(object, R.string.message_favorite), () -> {
+            Intent intent = new Intent(mContext.get(), FavoriteMessageListActivity.class);
+            intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
+            mContext.get().startActivity(intent);
+        }));
+        EndpointManager.getInstance().setMethod("personal_center_my_reports", EndpointCategory.personalCenter, 660, object -> new PersonalInfoMenu(R.drawable.icon_my_report, EndpointLocaleHelper.getString(object, R.string.my_reports), () -> {
+            Intent intent = new Intent(mContext.get(), MyReportsActivity.class);
+            intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
+            mContext.get().startActivity(intent);
+        }));
+        EndpointManager.getInstance().setMethod("personal_center_web_login", EndpointCategory.personalCenter, 1800, object -> new PersonalInfoMenu(R.mipmap.icon_web_login, EndpointLocaleHelper.getString(object, R.string.web_login), () -> EndpointManager.getInstance().invoke("show_web_login_desc", mContext.get())));
 
         //添加通讯录
         EndpointManager.getInstance().setMethod(EndpointCategory.mailList + "_friends", EndpointCategory.mailList, 100, object -> new ContactsMenu("friend", R.mipmap.ic_new_friends, EndpointLocaleHelper.getString(object, R.string.new_friends), () -> {

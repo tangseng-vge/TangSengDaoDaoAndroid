@@ -33,6 +33,9 @@ public interface MomentsService {
     @GET("moments")
     Observable<List<Moments>> listByUid(@Query("page_index") int page_index, @Query("page_size") int page_size, @Query("uid") String uid);
 
+    @GET("moments/reports")
+    Observable<JSONObject> myReports(@Query("lang") String lang, @Query("page_index") int pageIndex, @Query("page_size") int pageSize);
+
     @PUT("moments/{moment_no}/like")
     Observable<CommonResponse> like(@Path("moment_no") String moment_no);
 

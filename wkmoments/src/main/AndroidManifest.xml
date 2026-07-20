@@ -11,5 +11,6 @@
         <activity android:name=".activities.MomentsMsgListActivity" />
         <activity android:name=".activities.PrivacyUserActivity" />
         <activity android:name=".activities.MomentSettingActivity" />
+        <activity android:name=".activities.MyReportsActivity" />
     </application>
 </manifest>

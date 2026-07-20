@@ -1,4 +1,15 @@
 <resources>
+    <string name="my_reports">我的举报</string>
+    <string name="no_reports">暂无举报记录</string>
+    <string name="report_moment">朋友圈</string>
+    <string name="report_comment">评论</string>
+    <string name="report_category">举报分类</string>
+    <string name="report_time">举报时间</string>
+    <string name="report_remark">说明</string>
+    <string name="report_content">内容</string>
+    <string name="moment_content">动态内容</string>
+    <string name="comment_content">评论内容</string>
+    <string name="no_content">无内容</string>
     <string name="str_moments">朋友圈</string>
     <string name="str_moment_title">Moment</string>
     <string name="str_moment_chat">发消息</string>
