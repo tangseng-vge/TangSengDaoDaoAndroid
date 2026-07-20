@@ -275,7 +275,9 @@ public class GlideUtils {
 //                .isZoomAnim(true)
 //                .isEnableCrop(false)
 //                .isCompress(true)
-                .isOriginalControl(isOriginalControl).setEditMediaInterceptListener((fragment, currentLocalMedia, requestCode) -> {
+                .isOriginalControl(isOriginalControl)
+                .isOriginalSkipCompress(true)
+                .setEditMediaInterceptListener((fragment, currentLocalMedia, requestCode) -> {
                     WKBaseApplication.getInstance().disconnect = true;
                     EndpointManager.getInstance().invoke("edit_img", new EditImgMenu(null, false, currentLocalMedia.getRealPath(), fragment, requestCode, (bitmap, path) -> {
 
