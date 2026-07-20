@@ -258,7 +258,7 @@ public class WKUIKitApplication {
             return null;
         });
 
-        EndpointManager.getInstance().setMethod("favorite_item", object -> {
+        EndpointManager.getInstance().setMethod("favorite_item", EndpointCategory.wkChatPopupItem, 80, object -> {
             if (!(object instanceof WKMsg msg) || msg.type != WKContentType.WK_TEXT) return null;
             return new ChatItemPopupMenu(com.chat.base.R.mipmap.msg_fave,
                     getContext().getString(R.string.message_favorite), (favoriteMsg, conversationContext) ->

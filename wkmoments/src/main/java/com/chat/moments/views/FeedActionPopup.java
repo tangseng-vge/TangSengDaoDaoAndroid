@@ -21,7 +21,8 @@ public class FeedActionPopup extends PopupWindow {
         void onClick(int type);
     }
 
-    public FeedActionPopup(final Context context, boolean isLiked, IClick clickListener) {
+    public FeedActionPopup(final Context context, boolean isLiked, boolean showModerationActions,
+                           IClick clickListener) {
         final View view = LayoutInflater.from(context).inflate(R.layout.pop_feed_action_layout, null, false);
         setAnimationStyle(R.style.FeedActionPopup_anim_style);
         setFocusable(true);
@@ -48,6 +49,23 @@ public class FeedActionPopup extends PopupWindow {
         view.findViewById(R.id.like).setOnClickListener(v -> {
             dismiss();
             clickListener.onClick(0);
+        });
+        View block = view.findViewById(R.id.block);
+        View blockDivider = view.findViewById(R.id.blockDivider);
+        View report = view.findViewById(R.id.report);
+        View reportDivider = view.findViewById(R.id.reportDivider);
+        int moderationVisibility = showModerationActions ? View.VISIBLE : View.GONE;
+        block.setVisibility(moderationVisibility);
+        blockDivider.setVisibility(moderationVisibility);
+        report.setVisibility(moderationVisibility);
+        reportDivider.setVisibility(moderationVisibility);
+        block.setOnClickListener(v -> {
+            dismiss();
+            clickListener.onClick(2);
+        });
+        report.setOnClickListener(v -> {
+            dismiss();
+            clickListener.onClick(3);
         });
     }
 

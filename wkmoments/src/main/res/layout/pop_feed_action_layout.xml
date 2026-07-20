@@ -87,6 +87,66 @@
                     android:textSize="@dimen/font_size_14" />
             </LinearLayout>
 
+            <View
+                android:id="@+id/blockDivider"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/homeColor" />
+
+            <LinearLayout
+                android:id="@+id/block"
+                android:layout_width="match_parent"
+                android:layout_height="35dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="12dp">
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
+                    android:layout_gravity="center_vertical"
+                    android:src="@mipmap/msg_user_remove"
+                    app:tint="@color/ps_color_grey" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="@string/block_user"
+                    android:textColor="@color/colorDark"
+                    android:textSize="@dimen/font_size_14" />
+            </LinearLayout>
+
+            <View
+                android:id="@+id/reportDivider"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/homeColor" />
+
+            <LinearLayout
+                android:id="@+id/report"
+                android:layout_width="match_parent"
+                android:layout_height="35dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="12dp">
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
+                    android:layout_gravity="center_vertical"
+                    android:src="@mipmap/icon_info"
+                    app:tint="@color/ps_color_grey" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="@string/report"
+                    android:textColor="@color/colorDark"
+                    android:textSize="@dimen/font_size_14" />
+            </LinearLayout>
+
         </LinearLayout>
 
     </com.google.android.material.card.MaterialCardView>

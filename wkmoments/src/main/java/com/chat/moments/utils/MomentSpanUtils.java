@@ -165,6 +165,8 @@ public class MomentSpanUtils {
                     richTextView.getLocationOnScreen(location);
                     iReplyItemClick.onClick(momentNo, reply, location[1] + richTextView.getMeasuredHeight());
                 }));
+                longClickList.add(new PopupMenuItem(context.getString(R.string.report), R.mipmap.icon_info,
+                        () -> iReplyItemClick.onReport(momentNo, reply)));
             }
             WKDialogUtils.getInstance().setViewLongClickPopup(richTextView, longClickList);
             //长按事件
@@ -205,6 +207,8 @@ public class MomentSpanUtils {
         void onClick(String momentNo, MomentsReply reply, int locationY);
 
         void onDelete(String momentNo, MomentsReply reply);
+
+        void onReport(String momentNo, MomentsReply reply);
     }
 
 }

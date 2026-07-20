@@ -10,6 +10,14 @@
     <string name="moment_content">动态内容</string>
     <string name="comment_content">评论内容</string>
     <string name="no_content">无内容</string>
+    <string name="block_user">拉黑</string>
+    <string name="block_user_tips">加入黑名单，你将不再收到对方的消息。</string>
+    <string name="block_success">已拉黑</string>
+    <string name="report">举报</string>
+    <string name="select_report_reason">请选择举报原因</string>
+    <string name="no_report_categories">暂无举报分类</string>
+    <string name="report_success">举报成功</string>
+    <string name="operation_failed">操作失败</string>
     <string name="str_moments">朋友圈</string>
     <string name="str_moment_title">Moment</string>
     <string name="str_moment_chat">发消息</string>

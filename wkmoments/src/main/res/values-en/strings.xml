@@ -10,6 +10,14 @@
     <string name="moment_content">Moment</string>
     <string name="comment_content">Comment</string>
     <string name="no_content">No content</string>
+    <string name="block_user">Block</string>
+    <string name="block_user_tips">Block this user? You will no longer receive messages from them.</string>
+    <string name="block_success">Blocked</string>
+    <string name="report">Report</string>
+    <string name="select_report_reason">Select a reason for reporting</string>
+    <string name="no_report_categories">No report categories available</string>
+    <string name="report_success">Reported successfully</string>
+    <string name="operation_failed">Operation failed</string>
     <string name="str_moments">Moments</string>
     <string name="str_moment_title">Moment</string>
     <string name="str_moment_chat">Message</string>

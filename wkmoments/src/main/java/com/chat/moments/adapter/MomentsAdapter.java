@@ -81,6 +81,7 @@ import java.util.regex.Matcher;
  */
 public class MomentsAdapter extends BaseMultiItemQuickAdapter<Moments, BaseViewHolder> {
     private IReplyClick iReplyClick;
+    private ICommentReportClick iCommentReportClick;
     private final boolean isDetail;
 
     public MomentsAdapter(boolean isDetail, @Nullable List<Moments> data) {
@@ -200,6 +201,13 @@ public class MomentsAdapter extends BaseMultiItemQuickAdapter<Moments, BaseViewH
                                 @Override
                                 public void onDelete(String momentNo, MomentsReply reply) {
                                     deleteReply(momentNo, reply.sid);
+                                }
+
+                                @Override
+                                public void onReport(String momentNo, MomentsReply reply) {
+                                    if (iCommentReportClick != null) {
+                                        iCommentReportClick.onReport(momentNo, reply);
+                                    }
                                 }
                             });
                 }
@@ -343,6 +351,14 @@ public class MomentsAdapter extends BaseMultiItemQuickAdapter<Moments, BaseViewH
         void onClick(String momentNo, MomentsReply reply, int locationY);
     }
 
+    public void setCommentReportClick(ICommentReportClick commentReportClick) {
+        this.iCommentReportClick = commentReportClick;
+    }
+
+    public interface ICommentReportClick {
+        void onReport(String momentNo, MomentsReply reply);
+    }
+
 
     private void collect(int type, String unique_key, String author_uid, String author_name, String content) {
         JSONObject jsonObject = new JSONObject();
@@ -405,6 +421,29 @@ public class MomentsAdapter extends BaseMultiItemQuickAdapter<Moments, BaseViewH
             contentTv.setText(spannableString);
         }
         contentTv.setMovementMethod(LinkMovementMethod.getInstance());
+        List<PopupMenuItem> commentMenus = new ArrayList<>();
+        commentMenus.add(new PopupMenuItem(getContext().getString(R.string.str_dynmaic_copy), R.mipmap.msg_copy, () -> {
+            ClipboardManager cm = (ClipboardManager) getContext().getSystemService(Context.CLIPBOARD_SERVICE);
+            ClipData clipData = ClipData.newPlainText("Label", momentsReply.content);
+            if (cm != null) cm.setPrimaryClip(clipData);
+            WKToastUtils.getInstance().showToastNormal(getContext().getString(R.string.copyed));
+        }));
+        if (TextUtils.equals(momentsReply.uid, WKConfig.getInstance().getUid())) {
+            commentMenus.add(new PopupMenuItem(getContext().getString(R.string.str_delete), R.mipmap.msg_delete, () ->
+                    WKDialogUtils.getInstance().showDialog(getContext(), getContext().getString(R.string.delete_comment_title), getContext().getString(R.string.str_moment_delete_reply), true, "", getContext().getString(R.string.base_delete), 0, ContextCompat.getColor(getContext(), R.color.red), index1 -> {
+                        if (index1 == 1) deleteReply(momentNo, momentsReply.sid);
+                    })));
+        } else {
+            commentMenus.add(new PopupMenuItem(getContext().getString(R.string.str_reply), R.mipmap.msg_reply, () -> {
+                int[] location = new int[2];
+                contentTv.getLocationOnScreen(location);
+                if (iReplyClick != null) iReplyClick.onClick(momentNo, momentsReply, location[1]);
+            }));
+            commentMenus.add(new PopupMenuItem(getContext().getString(R.string.report), R.mipmap.icon_info, () -> {
+                if (iCommentReportClick != null) iCommentReportClick.onReport(momentNo, momentsReply);
+            }));
+        }
+        WKDialogUtils.getInstance().setViewLongClickPopup(contentTv, commentMenus);
         view.setOnClickListener(view1 -> {
             if (momentsReply.uid.equals(WKConfig.getInstance().getUid())) {
                 WKDialogUtils.getInstance().showDialog(getContext(), getContext().getString(R.string.delete_comment_title), getContext().getString(R.string.str_moment_delete_reply), true, "", getContext().getString(R.string.base_delete), 0, ContextCompat.getColor(getContext(), R.color.red), index1 -> {
@@ -445,6 +484,48 @@ public class MomentsAdapter extends BaseMultiItemQuickAdapter<Moments, BaseViewH
             } else WKToastUtils.getInstance().showToastNormal(msg);
         });
 
+    }
+
+    public void removeReportedComment(String momentNo, String commentId) {
+        if (TextUtils.isEmpty(momentNo) || TextUtils.isEmpty(commentId)) return;
+        for (int i = 0; i < getData().size(); i++) {
+            Moments moment = getData().get(i);
+            if (!TextUtils.equals(moment.moment_no, momentNo) || WKReader.isEmpty(moment.comments)) continue;
+            for (int j = moment.comments.size() - 1; j >= 0; j--) {
+                if (TextUtils.equals(moment.comments.get(j).sid, commentId)) {
+                    moment.comments.remove(j);
+                    notifyItemChanged(i + getHeaderLayoutCount());
+                    return;
+                }
+            }
+        }
+    }
+
+    public void removeMoment(String momentNo) {
+        if (TextUtils.isEmpty(momentNo)) return;
+        for (int i = getData().size() - 1; i >= 0; i--) {
+            if (TextUtils.equals(getData().get(i).moment_no, momentNo)) {
+                removeAt(i);
+                showNoDataIfNeeded();
+                return;
+            }
+        }
+    }
+
+    public void removeMomentsByPublisher(String uid) {
+        if (TextUtils.isEmpty(uid)) return;
+        for (int i = getData().size() - 1; i >= 0; i--) {
+            if (TextUtils.equals(getData().get(i).publisher, uid)) {
+                removeAt(i);
+            }
+        }
+        showNoDataIfNeeded();
+    }
+
+    private void showNoDataIfNeeded() {
+        if (!isDetail && getData().isEmpty()) {
+            addData(new Moments());
+        }
     }
 
     private void forwardImg(String path) {

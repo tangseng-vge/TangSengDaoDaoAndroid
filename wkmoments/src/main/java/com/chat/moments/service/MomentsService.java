@@ -6,6 +6,8 @@ import com.chat.moments.entity.MomentSetting;
 import com.chat.moments.entity.Moments;
 import com.chat.moments.entity.Comment;
 import com.chat.moments.entity.MomentUploadUrl;
+import com.chat.moments.entity.ReportCategory;
+import com.chat.moments.entity.ReportResult;
 
 import java.util.List;
 
@@ -35,6 +37,18 @@ public interface MomentsService {
 
     @GET("moments/reports")
     Observable<JSONObject> myReports(@Query("lang") String lang, @Query("page_index") int pageIndex, @Query("page_size") int pageSize);
+
+    @GET("report/categories")
+    Observable<List<ReportCategory>> reportCategories(@Query("lang") String lang);
+
+    @POST("moments/{moment_no}/report")
+    Observable<ReportResult> reportMoment(@Path("moment_no") String momentNo, @Body JSONObject body);
+
+    @POST("moments/{moment_no}/comments/{id}/report")
+    Observable<ReportResult> reportComment(@Path("moment_no") String momentNo, @Path("id") String commentId, @Body JSONObject body);
+
+    @POST("user/blacklist/{uid}")
+    Observable<CommonResponse> blockUser(@Path("uid") String uid);
 
     @PUT("moments/{moment_no}/like")
     Observable<CommonResponse> like(@Path("moment_no") String moment_no);

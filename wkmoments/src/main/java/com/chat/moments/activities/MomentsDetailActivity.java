@@ -1,5 +1,6 @@
 package com.chat.moments.activities;
 
+import android.text.TextUtils;
 import android.widget.TextView;
 
 import androidx.core.content.ContextCompat;
@@ -20,6 +21,7 @@ import com.chat.moments.entity.MomentsPraise;
 import com.chat.moments.entity.MomentsReply;
 import com.chat.moments.service.MomentsModel;
 import com.chat.moments.utils.MomentSpanUtils;
+import com.chat.moments.utils.MomentModerationHelper;
 import com.chat.moments.views.FeedActionPopup;
 import com.chat.moments.views.FeedCommentDialog;
 
@@ -75,7 +77,8 @@ public class MomentsDetailActivity extends WKBaseActivity<ActMomentsDetailLayout
                             }
                         }
                     }
-                    FeedActionPopup feedActionPopup = new FeedActionPopup(this, isLiked, type -> {
+                    boolean showModerationActions = !TextUtils.equals(moments.publisher, WKConfig.getInstance().getUid());
+                    FeedActionPopup feedActionPopup = new FeedActionPopup(this, isLiked, showModerationActions, type -> {
                         if (type == 1) {
                             int[] location = new int[2];
                             view1.getLocationOnScreen(location);
@@ -83,6 +86,12 @@ public class MomentsDetailActivity extends WKBaseActivity<ActMomentsDetailLayout
                             replyMomentsReply = null;
                             showCommentDialog(getString(R.string.moments_reply));
 //                            wkVBinding.emojiPanelView.showEmojiPanel(getString(R.string.moments_reply));
+                        } else if (type == 2) {
+                            MomentModerationHelper.blockPublisher(this, moments, uid -> finish());
+                        } else if (type == 3) {
+                            MomentModerationHelper.reportMoment(this, moments, result -> {
+                                if (result != null && result.shouldRemoveContent()) finish();
+                            });
                         } else {
                             boolean isLike = true;
                             if (WKReader.isNotEmpty(moments.likes)) {
@@ -144,6 +153,13 @@ public class MomentsDetailActivity extends WKBaseActivity<ActMomentsDetailLayout
             showCommentDialog(String.format(getString(R.string.str_moments_reply_user), reply.name));
 //            wkVBinding.emojiPanelView.showEmojiPanel(String.format(getString(R.string.str_moments_reply_user), reply.name));
         }));
+        adapter.setCommentReportClick((reportedMomentNo, reply) ->
+                MomentModerationHelper.reportComment(this, reportedMomentNo, reply, result -> {
+                    if (result != null && result.shouldRemoveContent()) {
+                        String commentId = TextUtils.isEmpty(result.comment_id) ? reply.sid : result.comment_id;
+                        adapter.removeReportedComment(reportedMomentNo, commentId);
+                    }
+                }));
 //        wkVBinding.emojiPanelView.addOnInputResult(content -> MomentsModel.getInstance().comments(momentNo, content, replyMomentsReply == null ? "" : replyMomentsReply.sid, replyMomentsReply == null ? "" : replyMomentsReply.uid, replyMomentsReply == null ? "" : replyMomentsReply.name, (code, msg, commentID) -> {
 //            if (code == HttpResponseCode.success) {
 //

@@ -66,6 +66,7 @@ import com.chat.moments.service.MomentsContact;
 import com.chat.moments.service.MomentsModel;
 import com.chat.moments.service.MomentsPresenter;
 import com.chat.moments.utils.MomentSpanUtils;
+import com.chat.moments.utils.MomentModerationHelper;
 import com.chat.moments.views.FeedActionPopup;
 import com.chat.moments.views.FeedCommentDialog;
 import com.scwang.smart.refresh.layout.api.RefreshLayout;
@@ -384,6 +385,13 @@ public class MomentsActivity extends WKBaseActivity<ActMomentsLayoutBinding> imp
             showCommentDialog(String.format(getString(R.string.str_moments_reply_user), reply.name));
 //            wkVBinding.emojiPanelView.showEmojiPanel(String.format(getString(R.string.str_moments_reply_user), reply.name));
         }));
+        adapter.setCommentReportClick((momentNo, reply) ->
+                MomentModerationHelper.reportComment(this, momentNo, reply, result -> {
+                    if (result != null && result.shouldRemoveContent()) {
+                        String commentId = TextUtils.isEmpty(result.comment_id) ? reply.sid : result.comment_id;
+                        adapter.removeReportedComment(momentNo, commentId);
+                    }
+                }));
         adapter.addChildClickViewIds(R.id.contentStatusTv, R.id.moreIv, R.id.deleteTv, R.id.avatarIv,R.id.tvMore);
         adapter.setOnItemChildClickListener((adapter1, view1, position) -> {
             Moments moments = (Moments) adapter1.getItem(position);
@@ -404,7 +412,8 @@ public class MomentsActivity extends WKBaseActivity<ActMomentsLayoutBinding> imp
                         }
                     }
 
-                    FeedActionPopup feedActionPopup = new FeedActionPopup(this, isLiked, type -> {
+                    boolean showModerationActions = !TextUtils.equals(moments.publisher, WKConfig.getInstance().getUid());
+                    FeedActionPopup feedActionPopup = new FeedActionPopup(this, isLiked, showModerationActions, type -> {
                         if (type == 1) {
                             int[] location = new int[2];
                             view1.getLocationOnScreen(location);
@@ -413,6 +422,17 @@ public class MomentsActivity extends WKBaseActivity<ActMomentsLayoutBinding> imp
                             replyMomentsReply = null;
                             showCommentDialog(getString(R.string.moments_reply));
                             //  wkVBinding.emojiPanelView.showEmojiPanel(getString(R.string.moments_reply));
+                        } else if (type == 2) {
+                            MomentModerationHelper.blockPublisher(this, moments,
+                                    adapter::removeMomentsByPublisher);
+                        } else if (type == 3) {
+                            MomentModerationHelper.reportMoment(this, moments, result -> {
+                                if (result != null && result.shouldRemoveContent()) {
+                                    String removeMomentNo = TextUtils.isEmpty(result.moment_no)
+                                            ? moments.moment_no : result.moment_no;
+                                    adapter.removeMoment(removeMomentNo);
+                                }
+                            });
                         } else {
                             boolean isLike = true;
                             if (WKReader.isNotEmpty(moments.likes)) {

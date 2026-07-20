@@ -4,6 +4,7 @@ import android.text.TextUtils;
 
 import com.alibaba.fastjson.JSONObject;
 import com.chat.base.base.WKBaseModel;
+import com.chat.base.common.WKCommonModel;
 import com.chat.base.config.WKConfig;
 import com.chat.base.net.HttpResponseCode;
 import com.chat.base.net.ICommonListener;
@@ -19,6 +20,8 @@ import com.chat.moments.entity.Moments;
 import com.chat.moments.entity.MomentsType;
 import com.chat.moments.entity.Comment;
 import com.chat.moments.entity.MomentUploadUrl;
+import com.chat.moments.entity.ReportCategory;
+import com.chat.moments.entity.ReportResult;
 import com.chat.moments.utils.MomentSpanUtils;
 import com.xinbida.wukongim.WKIM;
 import com.xinbida.wukongim.entity.WKChannel;
@@ -107,6 +110,81 @@ public class MomentsModel extends WKBaseModel {
 
     public interface IMyReports {
         void onResult(int code, String msg, JSONObject result);
+    }
+
+    public void reportCategories(String lang, final IReportCategories listener) {
+        request(createService(MomentsService.class).reportCategories(lang), new IRequestResultListener<List<ReportCategory>>() {
+            @Override
+            public void onSuccess(List<ReportCategory> result) {
+                listener.onResult(HttpResponseCode.success, "", result);
+            }
+
+            @Override
+            public void onFail(int code, String msg) {
+                listener.onResult(code, msg, null);
+            }
+        });
+    }
+
+    public interface IReportCategories {
+        void onResult(int code, String msg, List<ReportCategory> categories);
+    }
+
+    public void reportMoment(String momentNo, String categoryNo, final IReportResult listener) {
+        request(createService(MomentsService.class).reportMoment(momentNo, createReportBody(categoryNo)),
+                new IRequestResultListener<ReportResult>() {
+                    @Override
+                    public void onSuccess(ReportResult result) {
+                        listener.onResult(HttpResponseCode.success, "", result);
+                    }
+
+                    @Override
+                    public void onFail(int code, String msg) {
+                        listener.onResult(code, msg, null);
+                    }
+                });
+    }
+
+    public void reportComment(String momentNo, String commentId, String categoryNo, final IReportResult listener) {
+        request(createService(MomentsService.class).reportComment(momentNo, commentId, createReportBody(categoryNo)),
+                new IRequestResultListener<ReportResult>() {
+                    @Override
+                    public void onSuccess(ReportResult result) {
+                        listener.onResult(HttpResponseCode.success, "", result);
+                    }
+
+                    @Override
+                    public void onFail(int code, String msg) {
+                        listener.onResult(code, msg, null);
+                    }
+                });
+    }
+
+    private JSONObject createReportBody(String categoryNo) {
+        JSONObject body = new JSONObject();
+        body.put("category_no", categoryNo);
+        body.put("imgs", new ArrayList<>());
+        body.put("remark", "");
+        return body;
+    }
+
+    public interface IReportResult {
+        void onResult(int code, String msg, ReportResult result);
+    }
+
+    public void blockUser(String uid, final ICommonListener listener) {
+        request(createService(MomentsService.class).blockUser(uid), new IRequestResultListener<CommonResponse>() {
+            @Override
+            public void onSuccess(CommonResponse result) {
+                WKCommonModel.getInstance().getChannel(uid, WKChannelType.PERSONAL, null);
+                listener.onResult(HttpResponseCode.success, result == null ? "" : result.msg);
+            }
+
+            @Override
+            public void onFail(int code, String msg) {
+                listener.onResult(code, msg);
+            }
+        });
     }
 
 
