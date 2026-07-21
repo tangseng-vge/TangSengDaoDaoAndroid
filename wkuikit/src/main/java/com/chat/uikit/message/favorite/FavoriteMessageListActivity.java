@@ -9,12 +9,17 @@ import androidx.annotation.NonNull;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.chat.base.base.WKBaseActivity;
+import com.chat.base.endpoint.EndpointManager;
+import com.chat.base.endpoint.EndpointSID;
+import com.chat.base.endpoint.entity.ChatViewMenu;
 import com.chat.base.net.HttpResponseCode;
 import com.chat.uikit.R;
 import com.chat.uikit.databinding.ActPersonalFeatureListBinding;
 import com.chat.uikit.message.MsgModel;
 import com.scwang.smart.refresh.layout.api.RefreshLayout;
 import com.scwang.smart.refresh.layout.listener.OnRefreshLoadMoreListener;
+import com.xinbida.wukongim.WKIM;
+import com.xinbida.wukongim.entity.WKMsg;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -73,6 +78,33 @@ public class FavoriteMessageListActivity extends WKBaseActivity<ActPersonalFeatu
                         }
                     });
         });
+        adapter.setOnItemClickListener((a, view, position) ->
+                showFavoriteInChat(adapter.getItem(position)));
+    }
+
+    private void showFavoriteInChat(FavoriteMessageRecord record) {
+        if (record == null || TextUtils.isEmpty(record.channelID)) {
+            return;
+        }
+        long orderSeq = 0;
+        if (record.messageSeq > 0) {
+            orderSeq = WKIM.getInstance().getMsgManager().getMessageOrderSeq(
+                    record.messageSeq, record.channelID, record.channelType);
+        }
+        if (orderSeq <= 0 && !TextUtils.isEmpty(record.messageID)) {
+            WKMsg message = WKIM.getInstance().getMsgManager()
+                    .getWithMessageID(record.messageID);
+            if (message != null) {
+                orderSeq = message.orderSeq;
+            }
+        }
+        if (orderSeq <= 0) {
+            showToast(R.string.message_unavailable);
+            return;
+        }
+        EndpointManager.getInstance().invoke(EndpointSID.chatView,
+                new ChatViewMenu(this, record.channelID, record.channelType,
+                        orderSeq, false));
     }
 
     @Override

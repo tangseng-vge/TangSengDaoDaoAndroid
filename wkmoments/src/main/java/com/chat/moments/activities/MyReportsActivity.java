@@ -1,6 +1,5 @@
 package com.chat.moments.activities;
 
-import android.content.Intent;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.TextView;
@@ -54,14 +53,6 @@ public class MyReportsActivity extends WKBaseActivity<ActMyReportsBinding> {
             loadReports();
         });
         wkVBinding.refreshLayout.setOnLoadMoreListener(refreshLayout -> loadReports());
-        adapter.setOnItemClickListener((baseQuickAdapter, view, position) -> {
-            MyReportRecord record = adapter.getItem(position);
-            if (!TextUtils.isEmpty(record.momentNo)) {
-                Intent intent = new Intent(this, MomentsDetailActivity.class);
-                intent.putExtra("momentNo", record.momentNo);
-                startActivity(intent);
-            }
-        });
     }
 
     @Override

@@ -45,7 +45,12 @@ public class FriendRefreshView extends ViewGroup implements OnDetectScrollListen
     //圆形指示器
     private ImageView mRainbowView;
     private ImageView momentBgIv;
+    private View momentTopLayout;
+    private View momentCenterView;
     private RecyclerView mContentView;
+    private boolean momentCoverMetricsReady;
+    private int momentCoverBaseHeight;
+    private int momentCenterBaseTopMargin;
 
     //控件宽，高
     private int sWidth;
@@ -213,7 +218,9 @@ public class FriendRefreshView extends ViewGroup implements OnDetectScrollListen
                         currentTop = top;
                     } else {
                         top = 0;
+                        currentTop = 0;
                     }
+                    updateMomentCoverForPull(currentTop);
                     if (centerRainbowMode && isRefreshing()) {
                         requestLayout();
                         return;
@@ -390,7 +397,9 @@ public class FriendRefreshView extends ViewGroup implements OnDetectScrollListen
         mHeadViw = LayoutInflater.from(getContext()).inflate(R.layout.list_head_layout, null);
         updateBgTv = mHeadViw.findViewById(R.id.updateBgTv);
         momentBgIv = mHeadViw.findViewById(R.id.momentBgIv);
-        mHeadViw.findViewById(R.id.topLayout).setOnClickListener(view -> {
+        momentTopLayout = mHeadViw.findViewById(R.id.topLayout);
+        momentCenterView = mHeadViw.findViewById(R.id.centerView);
+        momentTopLayout.setOnClickListener(view -> {
             //查看自己的朋友圈才能修改封面
             if (TextUtils.isEmpty(uid) || uid.equals(WKConfig.getInstance().getUid())) {
                 List<BottomSheetItem> list = new ArrayList<>();
@@ -421,6 +430,53 @@ public class FriendRefreshView extends ViewGroup implements OnDetectScrollListen
                 mDistanceY = scrollOffset;
             }
         });
+    }
+
+    /** 下拉时保持列表顶部不露底色，并按下拉距离拉伸朋友圈封面。 */
+    private void updateMomentCoverForPull(int pullDistance) {
+        if (momentBgIv == null || momentTopLayout == null
+                || momentCenterView == null || mContentView == null) {
+            return;
+        }
+        if (!momentCoverMetricsReady) {
+            ViewGroup.LayoutParams coverParams = momentTopLayout.getLayoutParams();
+            momentCoverBaseHeight = momentTopLayout.getHeight() > 0
+                    ? momentTopLayout.getHeight() : coverParams.height;
+            ViewGroup.LayoutParams centerParams = momentCenterView.getLayoutParams();
+            if (centerParams instanceof ViewGroup.MarginLayoutParams) {
+                momentCenterBaseTopMargin =
+                        ((ViewGroup.MarginLayoutParams) centerParams).topMargin;
+            }
+            if (momentCoverBaseHeight <= 0) {
+                return;
+            }
+            momentCoverMetricsReady = true;
+        }
+
+        int stretch = Math.max(0, pullDistance);
+        int coverHeight = momentCoverBaseHeight + stretch;
+        updateViewHeight(momentTopLayout, coverHeight);
+        updateViewHeight(momentBgIv, coverHeight);
+
+        ViewGroup.LayoutParams centerParams = momentCenterView.getLayoutParams();
+        if (centerParams instanceof ViewGroup.MarginLayoutParams) {
+            ViewGroup.MarginLayoutParams marginParams =
+                    (ViewGroup.MarginLayoutParams) centerParams;
+            marginParams.topMargin = momentCenterBaseTopMargin + stretch;
+            momentCenterView.setLayoutParams(marginParams);
+        }
+
+        // ViewDragHelper 仍使用真实位移判断刷新距离，视觉上由封面拉伸替代灰色空隙。
+        mContentView.setTranslationY(-stretch);
+    }
+
+    private void updateViewHeight(View view, int height) {
+        ViewGroup.LayoutParams params = view.getLayoutParams();
+        if (params.height == height) {
+            return;
+        }
+        params.height = height;
+        view.setLayoutParams(params);
     }
 
     public void setTitleActionVisibility(boolean showCamera, boolean showMsg) {

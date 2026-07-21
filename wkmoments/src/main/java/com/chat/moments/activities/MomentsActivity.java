@@ -8,6 +8,7 @@ import android.os.Build;
 import android.graphics.Color;
 import android.text.TextUtils;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -99,7 +100,9 @@ public class MomentsActivity extends WKBaseActivity<ActMomentsLayoutBinding> imp
     /** 仅 Discover/通讯录主入口（无 uid）时展示滚动折叠标题 */
     private boolean showTitleCenterTv;
 
-    private static final int HEADER_COVER_HEIGHT_DP = 240;
+    private static final float HEADER_COVER_HEIGHT_SCREEN_RATIO = 0.4f;
+    private static final int HEADER_PROFILE_TOP_OVERLAP_DP = 50;
+    private int headerCoverHeightPx;
     private int titleOverlayHeightPx;
     private int collapseStartPx;
     private int collapseRangePx;
@@ -147,6 +150,7 @@ public class MomentsActivity extends WKBaseActivity<ActMomentsLayoutBinding> imp
         recyclerView.setLayoutManager(mLinearLayoutManager);
         recyclerView.setNestedScrollingEnabled(true);
         View headerView = wkVBinding.wrapview.getmHeadViw();
+        applyHeaderCoverSize(headerView);
         adapter.addHeaderView(headerView);
         newMomentsLayout = headerView.findViewById(R.id.newMomentsLayout);
         FilterImageView avatarIv = headerView.findViewById(R.id.avatarIv);
@@ -232,10 +236,43 @@ public class MomentsActivity extends WKBaseActivity<ActMomentsLayoutBinding> imp
         if (titleOverlayHeightPx <= 0) {
             titleOverlayHeightPx = WKStatusBarUtils.getStatusBarHeight(this) + AndroidUtilities.dp(52);
         }
-        int coverHeightPx = AndroidUtilities.dp(HEADER_COVER_HEIGHT_DP);
+        int coverHeightPx = getHeaderCoverHeightPx();
         collapseStartPx = Math.max(AndroidUtilities.dp(16),
                 coverHeightPx - titleOverlayHeightPx + AndroidUtilities.dp(8));
         collapseRangePx = AndroidUtilities.dp(72);
+    }
+
+    private int getHeaderCoverHeightPx() {
+        if (headerCoverHeightPx <= 0) {
+            int screenHeight = AndroidUtilities.getScreenHeight();
+            headerCoverHeightPx = screenHeight > 0
+                    ? Math.round(screenHeight * HEADER_COVER_HEIGHT_SCREEN_RATIO)
+                    : AndroidUtilities.dp(240);
+        }
+        return headerCoverHeightPx;
+    }
+
+    /** 与 iOS 一致使用屏幕高度的 40%，并保持头像区域相对封面底部的位置。 */
+    private void applyHeaderCoverSize(@NonNull View headerView) {
+        int coverHeightPx = getHeaderCoverHeightPx();
+        updateViewHeight(headerView.findViewById(R.id.topLayout), coverHeightPx);
+        updateViewHeight(headerView.findViewById(R.id.momentBgIv), coverHeightPx);
+
+        View centerView = headerView.findViewById(R.id.centerView);
+        ViewGroup.LayoutParams layoutParams = centerView.getLayoutParams();
+        if (layoutParams instanceof ViewGroup.MarginLayoutParams) {
+            ViewGroup.MarginLayoutParams marginLayoutParams =
+                    (ViewGroup.MarginLayoutParams) layoutParams;
+            marginLayoutParams.topMargin = Math.max(0,
+                    coverHeightPx - AndroidUtilities.dp(HEADER_PROFILE_TOP_OVERLAP_DP));
+            centerView.setLayoutParams(marginLayoutParams);
+        }
+    }
+
+    private void updateViewHeight(@NonNull View view, int heightPx) {
+        ViewGroup.LayoutParams layoutParams = view.getLayoutParams();
+        layoutParams.height = heightPx;
+        view.setLayoutParams(layoutParams);
     }
 
     private void initMomentsScrollListener() {
