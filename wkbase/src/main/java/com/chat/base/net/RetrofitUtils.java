@@ -22,6 +22,7 @@ public class RetrofitUtils {
     }
 
     private Retrofit retrofit;
+    private Retrofit priorityRetrofit;
 
     public Retrofit getRetrofit() {
         if (retrofit == null) {
@@ -39,11 +40,31 @@ public class RetrofitUtils {
 
     public void resetRetrofit() {
         retrofit = null;
+        priorityRetrofit = null;
     }
 
 
     public <T> T createService(Class<T> service) {
         return getRetrofit().create(service);
+    }
+
+    private Retrofit getPriorityRetrofit() {
+        if (priorityRetrofit == null) {
+            synchronized (RetrofitUtils.class) {
+                if (priorityRetrofit == null) {
+                    priorityRetrofit = new Retrofit.Builder()
+                            .baseUrl(WKApiConfig.baseUrl)
+                            .client(OkHttpUtils.getInstance().getPriorityOkHttpClient())
+                            .addConverterFactory(FastJsonConverterFactory.Companion.create())
+                            .addCallAdapterFactory(RxJava3CallAdapterFactory.create()).build();
+                }
+            }
+        }
+        return priorityRetrofit;
+    }
+
+    public <T> T createPriorityService(Class<T> service) {
+        return getPriorityRetrofit().create(service);
     }
 
 }

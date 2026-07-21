@@ -14,6 +14,7 @@ import javax.net.ssl.X509TrustManager;
 import okhttp3.Cache;
 import okhttp3.CacheControl;
 import okhttp3.ConnectionPool;
+import okhttp3.Dispatcher;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -35,6 +36,7 @@ public class OkHttpUtils {
     }
 
     private OkHttpClient sOkHttpClient;
+    private OkHttpClient priorityOkHttpClient;
     //缓存天数
     private static final long CACHE_STALE_SEC = 60 * 60 * 24 * 2;
 
@@ -73,6 +75,26 @@ public class OkHttpUtils {
             }
         }
         return sOkHttpClient;
+    }
+
+    /**
+     * 历史消息同步使用独立调度器，避免首次登录的大量初始化接口占满同域名请求队列。
+     * 连接池和拦截器仍与主客户端共享，不会绕过公共鉴权参数。
+     */
+    public OkHttpClient getPriorityOkHttpClient() {
+        if (priorityOkHttpClient == null) {
+            synchronized (OkHttpUtils.class) {
+                if (priorityOkHttpClient == null) {
+                    Dispatcher dispatcher = new Dispatcher();
+                    dispatcher.setMaxRequests(8);
+                    dispatcher.setMaxRequestsPerHost(4);
+                    priorityOkHttpClient = getOkHttpClient().newBuilder()
+                            .dispatcher(dispatcher)
+                            .build();
+                }
+            }
+        }
+        return priorityOkHttpClient;
     }
 
     private final Interceptor mRewriteCacheControlInterceptor = chain -> {

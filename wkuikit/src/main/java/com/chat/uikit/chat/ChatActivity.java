@@ -189,6 +189,7 @@ public class ChatActivity extends SwipeBackActivity implements IConversationCont
     private ImageView callIV;
     //查询聊天数据偏移量
     private final int limit = 30;
+    private int initialMessageRequestGeneration = 0;
     private boolean isShowPinnedView = false;
     private boolean isShowCallingView = false;
     private boolean isTipMessage = false;
@@ -1108,6 +1109,7 @@ public class ChatActivity extends SwipeBackActivity implements IConversationCont
     }
 
     private void requestInitialMessages() {
+        final int requestGeneration = ++initialMessageRequestGeneration;
         lastPreviewMsgOrderSeq = 0;
         unreadStartMsgOrderSeq = 0;
         tipsOrderSeq = 0;
@@ -1150,7 +1152,30 @@ public class ChatActivity extends SwipeBackActivity implements IConversationCont
         if (aroundMsgSeq == 0 && intent.hasExtra("aroundMsgSeq")) {
             aroundMsgSeq = intent.getLongExtra("aroundMsgSeq", 0);
         }
-        getData(lastPreviewMsgOrderSeq == 0 ? 0 : 1, unreadStartMsgOrderSeq > 0, aroundMsgSeq, isScrollToEnd);
+        int pullMode = lastPreviewMsgOrderSeq == 0 ? 0 : 1;
+        boolean isLocateMessage = unreadStartMsgOrderSeq > 0 || lastPreviewMsgOrderSeq > 0
+                || tipsOrderSeq > 0 || aroundMsgSeq > 0;
+        if (isLocateMessage) {
+            getData(pullMode, unreadStartMsgOrderSeq > 0, aroundMsgSeq, isScrollToEnd);
+            return;
+        }
+
+        String requestChannelID = channelId;
+        byte requestChannelType = channelType;
+        // 首次登录时 SDK 已通过会话同步保存了最近 10 条消息。先纯本地显示，
+        // 再后台补齐 30 条首屏历史，避免 UI 被 /message/channel/sync 阻塞。
+        MsgModel.getInstance().getLocalChannelMessages(channelId, channelType, limit, localMessages -> {
+            if (requestGeneration != initialMessageRequestGeneration || isFinishing() || isDestroyed()
+                    || !TextUtils.equals(requestChannelID, channelId)
+                    || requestChannelType != channelType) {
+                return;
+            }
+            if (WKReader.isNotEmpty(localMessages)) {
+                showData(new ArrayList<>(localMessages), 0, true, true);
+            }
+            // 网络结果作为完整首屏重新设置，避免本地预览与补齐结果产生重复项。
+            getData(0, true, 0, true);
+        });
     }
 
     private void getChannelState() {

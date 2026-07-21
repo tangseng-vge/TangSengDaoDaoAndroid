@@ -1,5 +1,6 @@
 package com.chat.uikit.message;
 
+import android.database.Cursor;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
@@ -32,6 +33,8 @@ import com.chat.uikit.WKUIKitApplication;
 import com.chat.uikit.enity.SensitiveWords;
 import com.chat.uikit.enity.WKSyncReminder;
 import com.xinbida.wukongim.WKIM;
+import com.xinbida.wukongim.WKIMApplication;
+import com.xinbida.wukongim.db.WKDBColumns;
 import com.xinbida.wukongim.entity.WKChannel;
 import com.xinbida.wukongim.entity.WKChannelState;
 import com.xinbida.wukongim.entity.WKChannelType;
@@ -52,6 +55,7 @@ import com.xinbida.wukongim.message.type.WKSendMsgResult;
 import org.json.JSONException;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -470,7 +474,7 @@ public class MsgModel extends WKBaseModel {
         jsonObject.put("limit", limit);
         jsonObject.put("pull_mode", pullMode);
         jsonObject.put("device_uuid", WKConstants.getDeviceUUID());
-        request(createService(MsgService.class).syncChannelMsg(jsonObject), new IRequestResultListener<>() {
+        request(createPriorityService(MsgService.class).syncChannelMsg(jsonObject), new IRequestResultListener<>() {
             @Override
             public void onSuccess(WKSyncChannelMsg result) {
                 iSyncChannelMsgBack.onBack(result);
@@ -482,6 +486,68 @@ public class MsgModel extends WKBaseModel {
                 iSyncChannelMsgBack.onBack(null);
             }
         });
+    }
+
+    /**
+     * 只读取本地频道消息，不触发 SDK 的历史消息网络补齐。
+     * <p>
+     * SDK 的 getOrSyncHistoryMessages 在本地不足一页时会等网络同步完成才回调；
+     * 首次登录本地已有会话同步下来的最近消息时，先用这里把它们立即显示出来。
+     */
+    public void getLocalChannelMessages(String channelID, byte channelType, int limit,
+                                        ILocalChannelMessagesBack back) {
+        final int safeLimit = Math.max(1, Math.min(limit, 100));
+        new Thread(() -> {
+            List<WKMsg> result = new ArrayList<>();
+            List<String> messageIDs = new ArrayList<>();
+            List<String> clientMsgNos = new ArrayList<>();
+            String table = WKDBColumns.TABLE.message;
+            String sql = "SELECT " + WKDBColumns.WKMessageColumns.message_id + ","
+                    + WKDBColumns.WKMessageColumns.client_msg_no
+                    + " FROM " + table
+                    + " WHERE " + WKDBColumns.WKMessageColumns.channel_id + "=?"
+                    + " AND " + WKDBColumns.WKMessageColumns.channel_type + "=?"
+                    + " AND " + WKDBColumns.WKMessageColumns.type + "<>0"
+                    + " AND " + WKDBColumns.WKMessageColumns.type + "<>99"
+                    + " AND " + WKDBColumns.WKMessageColumns.is_deleted + "=0"
+                    + " ORDER BY " + WKDBColumns.WKMessageColumns.order_seq + " DESC"
+                    + " LIMIT " + safeLimit;
+            try (Cursor cursor = WKIMApplication.getInstance().getDbHelper()
+                    .rawQuery(sql, new Object[]{channelID, channelType})) {
+                if (cursor != null) {
+                    int messageIDIndex = cursor.getColumnIndex(WKDBColumns.WKMessageColumns.message_id);
+                    int clientMsgNoIndex = cursor.getColumnIndex(WKDBColumns.WKMessageColumns.client_msg_no);
+                    for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
+                        String messageID = cursor.getString(messageIDIndex);
+                        String clientMsgNo = cursor.getString(clientMsgNoIndex);
+                        if (!TextUtils.isEmpty(messageID)) {
+                            messageIDs.add(messageID);
+                        } else if (!TextUtils.isEmpty(clientMsgNo)) {
+                            clientMsgNos.add(clientMsgNo);
+                        }
+                    }
+                }
+                if (WKReader.isNotEmpty(messageIDs)) {
+                    result.addAll(WKIM.getInstance().getMsgManager().getWithMessageIDs(messageIDs));
+                }
+                for (String clientMsgNo : clientMsgNos) {
+                    WKMsg msg = WKIM.getInstance().getMsgManager().getWithClientMsgNO(clientMsgNo);
+                    if (msg != null) result.add(msg);
+                }
+                result.removeIf(msg -> msg == null || msg.isDeleted == 1
+                        || (msg.remoteExtra != null && msg.remoteExtra.isMutualDeleted == 1));
+                result.sort(Comparator.comparingLong(msg -> msg.orderSeq));
+            } catch (Throwable throwable) {
+                WKLogUtils.e("读取本地聊天记录失败：" + throwable.getMessage());
+                result.clear();
+            }
+            List<WKMsg> localMessages = result;
+            new Handler(Looper.getMainLooper()).post(() -> back.onBack(localMessages));
+        }, "local-channel-messages").start();
+    }
+
+    public interface ILocalChannelMessagesBack {
+        void onBack(List<WKMsg> messages);
     }
 
     /**

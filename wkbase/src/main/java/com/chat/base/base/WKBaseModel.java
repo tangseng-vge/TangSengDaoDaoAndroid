@@ -49,6 +49,10 @@ public class WKBaseModel {
         return RetrofitUtils.getInstance().createService(service);
     }
 
+    protected static <T> T createPriorityService(Class<T> service) {
+        return RetrofitUtils.getInstance().createPriorityService(service);
+    }
+
     private static <T> ObservableTransformer<T, T> handle() {
         return upstream -> upstream
                 .subscribeOn(Schedulers.io())
