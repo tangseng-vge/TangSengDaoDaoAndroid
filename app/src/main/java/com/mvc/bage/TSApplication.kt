@@ -26,6 +26,7 @@ import com.chat.base.config.WKConstants
 import com.chat.base.config.WKSharedPreferencesUtil
 import com.chat.base.endpoint.EndpointCategory
 import com.chat.base.endpoint.EndpointManager
+import com.chat.base.net.RetrofitUtils
 import com.chat.base.ui.Theme
 import com.chat.base.utils.ActManagerUtils
 import com.chat.base.utils.WKPlaySound
@@ -207,6 +208,34 @@ class TSApplication : MultiDexApplication() {
         addListener()
 
         isApiInitialized = true
+    }
+
+    /**
+     * 应用从 Splash 获取到远程配置后统一从这里应用。
+     *
+     * Application 为了兼容进程被系统回收后直接恢复 Activity，会先使用缓存地址
+     * 初始化业务组件。Splash 随后仍会拉取远程配置；如果地址发生变化，需要同时
+     * 更新 WKApiConfig 并丢弃绑定了旧 baseUrl 的 Retrofit 实例。
+     */
+    @Synchronized
+    fun applyRemoteApiUrl(apiUrl: String) {
+        val normalizedApiUrl = apiUrl.trim().trimEnd('/')
+        require(
+            normalizedApiUrl.startsWith("http://") ||
+                normalizedApiUrl.startsWith("https://")
+        ) { "无效的 API 地址" }
+
+        if (!isApiInitialized) {
+            initApiDependentComponents(normalizedApiUrl)
+            return
+        }
+
+        val expectedBaseUrl = "$normalizedApiUrl/v1/"
+        if (WKApiConfig.baseUrl != expectedBaseUrl) {
+            initApi(normalizedApiUrl)
+            RetrofitUtils.getInstance().resetRetrofit()
+            Log.i("RemoteConfig", "已应用新的远程 API 配置")
+        }
     }
 
 

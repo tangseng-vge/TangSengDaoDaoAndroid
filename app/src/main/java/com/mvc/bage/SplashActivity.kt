@@ -18,8 +18,6 @@ import com.chat.base.WKBaseApplication
 import com.chat.base.act.WKWebViewActivity
 import com.chat.base.config.WKApiConfig
 import com.chat.base.config.WKSharedPreferencesUtil
-import com.chat.base.endpoint.EndpointCategory
-import com.chat.base.endpoint.EndpointManager
 import com.chat.base.ui.components.AlertDialog
 import com.chat.base.ui.components.NormalClickableContent
 import com.chat.base.ui.components.NormalClickableSpan
@@ -31,6 +29,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.BufferedReader
+import java.io.IOException
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
@@ -74,22 +73,18 @@ public final class SplashActivity : AppCompatActivity() {
     }
 
     private fun proceedInit() {
-        // 使用单例方法获取TSApplication实例，而不是使用application属性转换
         val tsApp = TSApplication.getInstance()
 
-        // 如果API组件已初始化，直接进入主界面
-        if (tsApp.isApiInitialized()) {
-            startMainActivity()
-            return
-        }
-
-        // 否则，获取API地址
+        // 正常经过 Splash 的启动始终刷新远程配置。Application 中的提前初始化
+        // 只用于系统回收进程后直接恢复 Activity 时使用本地缓存兜底。
         if (isNetworkAvailable(this)) {
             getConfigAsync()
+        } else if (tsApp.isApiInitialized()) {
+            // 离线时继续使用 Application 已恢复的缓存地址。
+            startMainActivity()
         } else {
-            // 无网络情况下，尝试使用默认地址初始化
             tsApp.initApiDependentComponents(tsApp.DEFAULT_API_URL)
-            showErrorAndRetryOption(Exception("网络连接不可用，使用默认API地址"))
+            showErrorAndRetryOption()
         }
     }
 
@@ -158,27 +153,27 @@ public final class SplashActivity : AppCompatActivity() {
     fun getConfigAsync() {
         lifecycleScope.launch {
             try {
-                val configJson = withContext(Dispatchers.IO) {
+                val apiUrl = withContext(Dispatchers.IO) {
                     val ossUrl = "https://clean-nengyuan.oss-accelerate.aliyuncs.com/config1.json"
+                    Log.i("RemoteConfig", "开始获取启动配置")
                     getConfig(ossUrl)
                 }
 
-                // 从配置中解析API地址
-                val apiUrl = configJson
-
-                // 使用单例方法获取TSApplication实例
-                TSApplication.getInstance().initApiDependentComponents(apiUrl)
-
-                WKSharedPreferencesUtil.getInstance().putSP(KEY_API_URL,apiUrl)
+                TSApplication.getInstance().applyRemoteApiUrl(apiUrl)
+                WKSharedPreferencesUtil.getInstance().putSP(KEY_API_URL, apiUrl)
+                Log.i("RemoteConfig", "启动配置获取并应用成功")
 
                 // 进入主界面
                 startMainActivity()
             } catch (e: Exception) {
-                // 处理错误，尝试使用默认地址
-                TSApplication.getInstance().initApiDependentComponents(
-                    TSApplication.getInstance().DEFAULT_API_URL
-                )
-                showErrorAndRetryOption(e)
+                val tsApp = TSApplication.getInstance()
+                Log.e("RemoteConfig", "启动配置获取失败，使用本地配置", e)
+                if (tsApp.isApiInitialized()) {
+                    startMainActivity()
+                } else {
+                    tsApp.initApiDependentComponents(tsApp.DEFAULT_API_URL)
+                    showErrorAndRetryOption()
+                }
             }
         }
     }
@@ -199,57 +194,60 @@ public final class SplashActivity : AppCompatActivity() {
         finish()
     }
 
-     private fun getConfig(getUrl: String): String {
-        var jsValue = ""
-        if (isNetworkAvailable(WKBaseApplication.getInstance().getContext())) {
-            try {
-                val url = URL(getUrl)
-                val connection: HttpURLConnection = if (getUrl.startsWith("https")) {
-                    url.openConnection() as HttpsURLConnection
-                } else {
-                    url.openConnection() as HttpURLConnection
-                }
-
-                connection.connectTimeout = 10000
-                connection.readTimeout = 10000 // 设置读取超时为 3000 毫秒
-                connection.requestMethod = "GET"
-
-                val responseCode = connection.responseCode
-                if (responseCode == 200) {
-                    val inputStream = connection.inputStream
-                    val bufferedReader = BufferedReader(InputStreamReader(inputStream, "UTF-8"))
-                    val line = bufferedReader.readLine()
-
-                    bufferedReader.close()
-                    Log.i("LINE", line)
-                    jsValue = line
-                }
-                connection.disconnect()
-                val jsonObject = JSONObject(jsValue)
-                var configUrl = jsonObject.optString("config", "") // 第二个参数是默认值
-                var configJwUrl = jsonObject.optString("configJw", "")
-                var apiList = jsonObject.optString("apiList", "")
-                configUrl= JiamiUtil.decrypt(configUrl)
-                configJwUrl=JiamiUtil.decrypt(configJwUrl)
-                apiList = JiamiUtil.decrypt(apiList);
-
-
-                val ip = getDeviceIp(apiList)
-                val instance = IpSearch.getInstance(WKBaseApplication.getInstance().getContext())
-                val area = instance.getArea(ip)
-                if (area != "CN") {
-                    return configJwUrl;
-                } else {
-                    return configUrl;
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                return jsValue;
-            }
-        } else {
-            //fixme 网络异常
+    private fun getConfig(getUrl: String): String {
+        if (!isNetworkAvailable(WKBaseApplication.getInstance().getContext())) {
+            throw IOException("网络连接不可用")
         }
-        return jsValue
+
+        // 时间戳和 no-cache 请求头同时避免 HttpURLConnection、代理或 OSS 边缘节点
+        // 返回上一次启动缓存的配置对象。
+        val separator = if (getUrl.contains('?')) '&' else '?'
+        val requestUrl = "$getUrl${separator}_t=${System.currentTimeMillis()}"
+        val url = URL(requestUrl)
+        val connection = url.openConnection() as HttpURLConnection
+
+        try {
+            connection.connectTimeout = 10000
+            connection.readTimeout = 10000
+            connection.requestMethod = "GET"
+            connection.useCaches = false
+            connection.setRequestProperty("Cache-Control", "no-cache, no-store")
+            connection.setRequestProperty("Pragma", "no-cache")
+
+            val responseCode = connection.responseCode
+            if (responseCode != HttpURLConnection.HTTP_OK) {
+                throw IOException("获取启动配置失败，HTTP $responseCode")
+            }
+
+            val configJson = BufferedReader(
+                InputStreamReader(connection.inputStream, Charsets.UTF_8)
+            ).use { it.readText() }
+            if (configJson.isBlank()) {
+                throw IOException("启动配置内容为空")
+            }
+
+            val jsonObject = JSONObject(configJson)
+            val domesticApiUrl = JiamiUtil.decrypt(jsonObject.optString("config", ""))
+            val globalApiUrl = JiamiUtil.decrypt(jsonObject.optString("configJw", ""))
+            val apiList = JiamiUtil.decrypt(jsonObject.optString("apiList", ""))
+
+            val ip = getDeviceIp(apiList)
+            val instance = IpSearch.getInstance(WKBaseApplication.getInstance().getContext())
+            val selectedApiUrl = if (instance.getArea(ip) != "CN") {
+                globalApiUrl
+            } else {
+                domesticApiUrl
+            }.trim().trimEnd('/')
+
+            if (!selectedApiUrl.startsWith("http://") &&
+                !selectedApiUrl.startsWith("https://")
+            ) {
+                throw IOException("启动配置中的 API 地址无效")
+            }
+            return selectedApiUrl
+        } finally {
+            connection.disconnect()
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -474,22 +472,12 @@ public final class SplashActivity : AppCompatActivity() {
         return true
     }
 
-    private fun showErrorAndRetryOption(exception: Exception) {
+    private fun showErrorAndRetryOption() {
         // 显示错误对话框，提供重试按钮
         AlertDialog.Builder(this)
             .setTitle("网络错误")
             .setMessage("无法获取API配置，请检查网络连接后重试")
-            .setPositiveButton("重试") { _, _ -> 
-                // 清理可能存在的重复菜单项，然后重新获取配置
-                EndpointManager.getInstance().clearCategory(EndpointCategory.personalCenter)
-                EndpointManager.getInstance().clearCategory(EndpointCategory.mailList)
-                EndpointManager.getInstance().clearCategory(EndpointCategory.chatFunction)
-                EndpointManager.getInstance().clearCategory(EndpointCategory.tabMenus)
-                
-                // 重置API初始化状态
-                TSApplication.getInstance().resetApiInitialized()
-                
-                // 重新获取配置
+            .setPositiveButton("重试") { _, _ ->
                 getConfigAsync()
             }
             .setNegativeButton("退出") { _, _ -> finish() }
