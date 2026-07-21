@@ -106,6 +106,7 @@ public class MomentsActivity extends WKBaseActivity<ActMomentsLayoutBinding> imp
     private int titleOverlayHeightPx;
     private int collapseStartPx;
     private int collapseRangePx;
+    private int coverBackIconColor = Color.WHITE;
 
     @Override
     protected ActMomentsLayoutBinding getViewBinding() {
@@ -330,9 +331,8 @@ public class MomentsActivity extends WKBaseActivity<ActMomentsLayoutBinding> imp
     private void applyTitleBarForScroll(float collapseRatio) {
         float ratio = smoothStep(collapseRatio);
         boolean isDarkMode = Theme.getDarkModeStatus(this);
-        int iconFrom = ContextCompat.getColor(this, R.color.white);
         int iconTo = ContextCompat.getColor(this, isDarkMode ? R.color.white : R.color.black);
-        int iconColor = ColorUtils.blendARGB(iconFrom, iconTo, ratio);
+        int iconColor = ColorUtils.blendARGB(coverBackIconColor, iconTo, ratio);
 
         wkVBinding.titleView.setBackgroundColor(Color.TRANSPARENT);
         if (ratio <= 0.001f) {
@@ -353,9 +353,69 @@ public class MomentsActivity extends WKBaseActivity<ActMomentsLayoutBinding> imp
             }
         }
 
-//        applyTitleIconColor(wkVBinding.backIv, iconColor);
+        applyTitleIconColor(wkVBinding.backIv, iconColor);
         clearTitleIconTint(wkVBinding.cameraIv);
         clearTitleIconTint(wkVBinding.msgIv);
+    }
+
+    private void showMomentCover(@Nullable Bitmap bitmap) {
+        ImageView coverView = wkVBinding.wrapview.getMomentBgIv();
+        coverView.setImageBitmap(bitmap);
+        if (bitmap == null) {
+            coverBackIconColor = Color.WHITE;
+            applyTitleBarForScroll(computeTitleCollapseRatio());
+            return;
+        }
+        coverView.post(() -> {
+            coverBackIconColor = resolveCoverBackIconColor(bitmap, coverView);
+            applyTitleBarForScroll(computeTitleCollapseRatio());
+        });
+    }
+
+    /** 根据返回按钮下方的封面亮度，自动选择黑色或白色图标。 */
+    private int resolveCoverBackIconColor(@NonNull Bitmap bitmap,
+                                          @NonNull ImageView coverView) {
+        int viewWidth = coverView.getWidth();
+        int viewHeight = coverView.getHeight();
+        if (viewWidth <= 0 || viewHeight <= 0
+                || bitmap.getWidth() <= 0 || bitmap.getHeight() <= 0) {
+            return Color.WHITE;
+        }
+
+        int[] coverLocation = new int[2];
+        int[] backLocation = new int[2];
+        coverView.getLocationOnScreen(coverLocation);
+        wkVBinding.backIv.getLocationOnScreen(backLocation);
+        float targetX = backLocation[0] - coverLocation[0]
+                + wkVBinding.backIv.getWidth() / 2f;
+        float targetY = backLocation[1] - coverLocation[1]
+                + wkVBinding.backIv.getHeight() / 2f;
+
+        float scale = Math.max(viewWidth / (float) bitmap.getWidth(),
+                viewHeight / (float) bitmap.getHeight());
+        float offsetX = (viewWidth - bitmap.getWidth() * scale) / 2f;
+        float offsetY = (viewHeight - bitmap.getHeight() * scale) / 2f;
+        int sourceX = Math.round((targetX - offsetX) / scale);
+        int sourceY = Math.round((targetY - offsetY) / scale);
+        int radius = Math.max(2, Math.round(AndroidUtilities.dp(18) / scale));
+        int step = Math.max(1, radius / 6);
+
+        double luminance = 0d;
+        int sampleCount = 0;
+        for (int y = sourceY - radius; y <= sourceY + radius; y += step) {
+            if (y < 0 || y >= bitmap.getHeight()) continue;
+            for (int x = sourceX - radius; x <= sourceX + radius; x += step) {
+                if (x < 0 || x >= bitmap.getWidth()) continue;
+                int pixel = bitmap.getPixel(x, y);
+                if (Color.alpha(pixel) < 128) continue;
+                luminance += ColorUtils.calculateLuminance(pixel);
+                sampleCount++;
+            }
+        }
+        if (sampleCount == 0) {
+            return Color.WHITE;
+        }
+        return luminance / sampleCount >= 0.55d ? Color.BLACK : Color.WHITE;
     }
 
     private void applyTitleIconColor(ImageView icon, int color) {
@@ -701,7 +761,7 @@ public class MomentsActivity extends WKBaseActivity<ActMomentsLayoutBinding> imp
         String showUrl = WKSharedPreferencesUtil.getInstance().getSP(String.format("moment_bg_url_%s", tempUid));
         if (!TextUtils.isEmpty(showUrl)) {
             Bitmap bitmap = BitmapFactory.decodeFile(showUrl);
-            wkVBinding.wrapview.getMomentBgIv().setImageBitmap(bitmap);
+            showMomentCover(bitmap);
             //避免重复下载
             if (tempUid.equals(WKConfig.getInstance().getUid())) return;
         }
@@ -718,7 +778,7 @@ public class MomentsActivity extends WKBaseActivity<ActMomentsLayoutBinding> imp
             public void onSuccess(@Nullable Object tag, @Nullable String path) {
                 wkVBinding.wrapview.hideOrShowUpdateBgTv(false);
                 Bitmap bitmap = BitmapFactory.decodeFile(filePath);
-                wkVBinding.wrapview.getMomentBgIv().setImageBitmap(bitmap);
+                showMomentCover(bitmap);
                 WKSharedPreferencesUtil.getInstance().putSP(String.format("moment_bg_url_%s", finalTempUid), filePath);
 
             }
@@ -789,7 +849,7 @@ public class MomentsActivity extends WKBaseActivity<ActMomentsLayoutBinding> imp
                                     String filePath = WKFileUtils.getInstance().getNormalFileSavePath("moment") + "/" + WKConfig.getInstance().getUid() + "_" + WKTimeUtils.getInstance().getCurrentMills() + ".wk_png";
                                     WKFileUtils.getInstance().fileCopy(paths.get(0).path, filePath);
                                     Bitmap bitmap = BitmapFactory.decodeFile(filePath);
-                                    wkVBinding.wrapview.getMomentBgIv().setImageBitmap(bitmap);
+                                    showMomentCover(bitmap);
 
                                     WKSharedPreferencesUtil.getInstance().putSP(String.format("moment_bg_url_%s", WKConfig.getInstance().getUid()), filePath);
                                     getUserMomentBg();
