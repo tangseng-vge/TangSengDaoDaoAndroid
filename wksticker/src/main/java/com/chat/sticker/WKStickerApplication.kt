@@ -10,7 +10,6 @@ import android.view.View
 import android.view.View.GONE
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import android.widget.LinearLayout
 import androidx.core.content.ContextCompat
 import com.chat.base.WKBaseApplication
 import com.chat.base.config.WKConfig
@@ -617,9 +616,15 @@ class WKStickerApplication {
     }
 
     fun getStickerView(conversationContext: IConversationContext): View {
-        val parentView = LinearLayout(conversationContext.chatActivity)
+        val parentView = FrameLayout(conversationContext.chatActivity)
         val emojiView = EmojiView(conversationContext.chatActivity)
-        parentView.addView(emojiView)
+        parentView.addView(
+            emojiView,
+            FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        )
         return parentView
     }
 

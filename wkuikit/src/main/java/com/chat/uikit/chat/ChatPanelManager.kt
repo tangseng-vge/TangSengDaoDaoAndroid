@@ -96,6 +96,7 @@ import com.chat.uikit.robot.service.WKRobotModel
 import com.chat.uikit.user.UserDetailActivity
 import com.chat.uikit.utils.mentionDisplay
 import com.effective.android.panel.PanelSwitchHelper
+import com.effective.android.panel.utils.PanelUtil
 import com.effective.android.panel.view.panel.IPanelView
 import com.xinbida.wukongim.WKIM
 import com.xinbida.wukongim.entity.WKChannel
@@ -1192,16 +1193,24 @@ class ChatPanelManager(
 
     fun onPanelSizeChange(panelView: IPanelView?, width: Int, height: Int) {
         val heightPx = if (height > 0) height else defaultPanelHeightPx()
+        if (height > 0) {
+            // 首次安装还没有键盘高度缓存时，也保存 PanelSwitchHelper 实际采用的
+            // 面板高度。键盘真正弹出后，ChatActivity 会再更新为输入法实际高度。
+            WKConstants.setKeyboardHeight(height)
+        }
         effectivePanelHeight = heightPx
         applyPanelContainerStyle(heightPx)
     }
 
     private fun defaultPanelHeightPx(): Int {
-        val keyboardHeight = WKConstants.getKeyboardHeight()
-        return if (keyboardHeight > 0) {
-            keyboardHeight
+        // PanelSwitchHelper 自己负责面板与输入法高度同步。首次安装时它会返回
+        // 内置默认高度，键盘测量完成后返回真实高度；这里必须使用同一数据源，
+        // 不能再用屏幕高度的比例覆盖它。
+        val panelHeight = PanelUtil.getKeyBoardHeight(iConversationContext.chatActivity)
+        return if (panelHeight > 0) {
+            panelHeight
         } else {
-            AndroidUtilities.getScreenHeight() / 3
+            AndroidUtilities.dp(230f)
         }
     }
 
