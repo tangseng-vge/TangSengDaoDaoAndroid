@@ -34,6 +34,7 @@ import org.telegram.ui.Components.RLottieDrawable;
 import org.telegram.ui.Components.RLottieImageView;
 
 import java.io.File;
+import java.util.Locale;
 
 /**
  * 2021/8/10 20:42
@@ -86,9 +87,9 @@ public class StickerView extends FrameLayout implements WKProgressManager.IProgr
         this.size = size;
         StickerView.this.tag = WKApiConfig.getShowUrl(url);
 
-        if (url.endsWith(".png") || url.endsWith(".gif")) {
+        if (isRasterSticker(url)) {
             imageView.setTag(url);
-            loadAsGif(WKApiConfig.getShowUrl(url));
+            loadRasterImage(WKApiConfig.getShowUrl(url));
         } else {
             this.aXrLottieImageView.getLayoutParams().height = size;
             this.aXrLottieImageView.getLayoutParams().width = size;
@@ -132,7 +133,23 @@ public class StickerView extends FrameLayout implements WKProgressManager.IProgr
         }
     }
 
-    private void loadAsGif(String url) {
+    private boolean isRasterSticker(String url) {
+        if (TextUtils.isEmpty(url)) {
+            return false;
+        }
+        String lowerCaseUrl = url.toLowerCase(Locale.ROOT);
+        return lowerCaseUrl.contains(".gif")
+                || lowerCaseUrl.contains(".webp")
+                || lowerCaseUrl.contains(".png")
+                || lowerCaseUrl.contains(".jpg")
+                || lowerCaseUrl.contains(".jpeg");
+    }
+
+    private boolean isGifSticker(String url) {
+        return !TextUtils.isEmpty(url) && url.toLowerCase(Locale.ROOT).contains(".gif");
+    }
+
+    private void loadRasterImage(String url) {
 
         AndroidUtilities.runOnUIThread(() -> {
             ViewGroup.LayoutParams params = imageView.getLayoutParams();
@@ -143,17 +160,17 @@ public class StickerView extends FrameLayout implements WKProgressManager.IProgr
             imageView.setVisibility(View.VISIBLE);
             aXrLottieImageView.setVisibility(View.GONE);
 
-            if(url.endsWith(".png")){
-                Glide.with(context)
-                        .load(url)
-                        .skipMemoryCache(true)
-                        .into(imageView);
-            }else{
+            if (isGifSticker(url)) {
                 Glide.with(context)
                         .asGif()
                         .load(url)
                         .apply(GlideRequestOptions.getInstance().normalRequestOption())
-                        .skipMemoryCache(true)
+                        .into(imageView);
+            } else {
+                Glide.with(context)
+                        .load(url)
+                        .apply(GlideRequestOptions.getInstance().normalRequestOption())
+                        .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                         .into(imageView);
             }
 

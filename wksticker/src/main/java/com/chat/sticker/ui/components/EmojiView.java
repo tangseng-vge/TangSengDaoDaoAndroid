@@ -33,8 +33,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
-import com.bumptech.glide.Glide;
-import com.chat.base.config.WKApiConfig;
 import com.chat.base.config.WKSharedPreferencesUtil;
 import com.chat.base.emoji.EmojiColorPickerWindow;
 import com.chat.base.emoji.EmojiEntry;
@@ -42,7 +40,6 @@ import com.chat.base.emoji.EmojiManager;
 import com.chat.base.emoji.MoonUtil;
 import com.chat.base.endpoint.EndpointCategory;
 import com.chat.base.endpoint.EndpointManager;
-import com.chat.base.glide.GlideRequestOptions;
 import com.chat.base.msg.model.WKGifContent;
 import com.chat.base.ui.Theme;
 import com.chat.base.ui.components.CubicBezierInterpolator;
@@ -72,7 +69,6 @@ import com.chat.sticker.touch.OnMovePreviewListener;
 import com.chat.sticker.touch.SimpleMovePreviewListener;
 import com.chat.sticker.ui.StickerStoreActivity;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -362,7 +358,8 @@ public class EmojiView extends FrameLayout {
                 gifContent.url = stickerUI.getSticker().getPath();
                 gifContent.category = stickerUI.getSticker().getCategory();
                 gifContent.title = stickerUI.getSticker().getTitle();
-                gifContent.placeholder = stickerUI.getSticker().getPlaceholder();
+                // 位图表情使用客户端内置占位图，不在消息中携带服务端占位内容。
+                gifContent.placeholder = "";
                 gifContent.format = stickerUI.getSticker().getFormat();
                 WKStickerApplication.Companion.getInstance().sendMsg(gifContent);
 //                WKStickerApplication.Companion.getInstance().iConversationContext.sendMessage(gifContent);
@@ -812,19 +809,12 @@ public class EmojiView extends FrameLayout {
             }
         } else if (stickerUI.getItemType() == 2) {
             if (stickerUI.getSticker() != null) {
-                String localPath = new StickerModel().getLocalPath(stickerUI.getSticker().getPath());
-                File file = new File(localPath);
-                if (file.exists()) {
-                    Glide.with(context).asGif().load(file)
-                            .apply(GlideRequestOptions.getInstance().normalRequestOption())
-                            .into(stickerView.getImageView());
-                } else {
-                    Glide.with(context).asGif().load(WKApiConfig.getShowUrl(stickerUI.getSticker().getPath()))
-                            .apply(GlideRequestOptions.getInstance().normalRequestOption())
-                            .into(stickerView.getImageView());
-                }
-                stickerView.getImageView().getLayoutParams().width = AndroidUtilities.dp(150);
-                stickerView.getImageView().getLayoutParams().height = AndroidUtilities.dp(150);
+                stickerView.showSticker(
+                        stickerUI.getSticker().getPath(),
+                        stickerUI.getSticker().getPlaceholder(),
+                        AndroidUtilities.dp(150),
+                        true
+                );
             }
         }
         linearLayout.removeAllViews();

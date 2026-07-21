@@ -496,7 +496,8 @@ class WKStickerApplication {
                 gifContent.height = searchSticker.height
                 gifContent.width = searchSticker.width
                 gifContent.url = searchSticker.path
-                gifContent.format = "gif"
+                gifContent.format = searchSticker.format
+                gifContent.placeholder = ""
                 iConversationContext.sendMessage(gifContent)
             } else {
                 if (searchSticker.category == "emoji") {

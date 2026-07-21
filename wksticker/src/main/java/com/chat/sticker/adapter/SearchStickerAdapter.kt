@@ -39,7 +39,7 @@ class SearchStickerAdapter : BaseQuickAdapter<Sticker, BaseViewHolder>(R.layout.
             } else {
                 imageView.visibility = View.VISIBLE
                 stickerView.visibility = View.GONE
-                Glide.with(context).asGif().load(WKApiConfig.getShowUrl(item.path))
+                Glide.with(context).load(WKApiConfig.getShowUrl(item.path))
                         .apply(GlideRequestOptions.getInstance().normalRequestOption()).into(imageView)
             }
         }
