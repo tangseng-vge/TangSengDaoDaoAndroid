@@ -368,13 +368,16 @@ class WKStickerApplication {
             val conversationContext = `object` as IConversationContext
             //  iConversationContext = conversationContext
             contextWeakRefresh = WeakReference(conversationContext)
-            val view = getStickerView(conversationContext)
             ChatToolBarMenu(
                 "chat_toolbar_sticker",
                 R.mipmap.icon_chat_toolbar_sticker,
                 R.mipmap.icon_chat_toolbar_sticker,
-                view
+                null
             ) { _, _ ->
+            }.apply {
+                bottomViewProvider = ChatToolBarMenu.IChatToolBarViewProvider { context ->
+                    getStickerView(context)
+                }
             }
         }
 
@@ -398,11 +401,10 @@ class WKStickerApplication {
         }
         EndpointManager.getInstance().setMethod("initInputPanel") { `object` ->
             initPanelMenu = `object` as InitInputPanelMenu
-            initSearchStickerView(
-                initPanelMenu!!.bottomView,
-                initPanelMenu!!.frameLayout,
-                initPanelMenu!!.iConversationContext.get()!!
-            )
+            // 输入联想表情只在用户真正输入并触发搜索时创建，避免阻塞聊天首屏。
+            searchStickerRecyclerView = null
+            adapter = null
+            searchStickerMenu = null
         }
         EndpointManager.getInstance().setMethod("hide_search_chat_edit_view") {
             if (searchStickerRecyclerView?.visibility == View.VISIBLE) {
@@ -410,40 +412,51 @@ class WKStickerApplication {
             }
         }
 
-        EndpointManager.getInstance().setMethod("search_chat_edit_content") { `object` ->
+        EndpointManager.getInstance().setMethod("search_chat_edit_content") search@{ `object` ->
             this.searchStickerMenu = `object` as SearchChatEditStickerMenu
-            searchStickerRecyclerView?.scrollToPosition(0)
+            if (!ensureSearchStickerView()) {
+                return@search null
+            }
+            val currentSearchMenu = searchStickerMenu ?: return@search null
+            val currentRecyclerView = searchStickerRecyclerView ?: return@search null
+            val currentAdapter = adapter ?: return@search null
+            currentRecyclerView.scrollToPosition(0)
 
-            if (!TextUtils.isEmpty(searchStickerMenu!!.content)) {
+            if (!TextUtils.isEmpty(currentSearchMenu.content)) {
                 StickerModel().search(
-                    searchStickerMenu!!.content,
+                    currentSearchMenu.content,
                     1,
                     object : StickerModel.ISearchListener {
                         override fun onResult(code: Int, msg: String, list: List<Sticker>) {
+                            // 已切换会话时丢弃旧搜索结果，避免写入新会话的面板。
+                            if (searchStickerMenu !== currentSearchMenu ||
+                                searchStickerRecyclerView !== currentRecyclerView ||
+                                adapter !== currentAdapter
+                            ) return
                             if (list.isNotEmpty()) {
-                                adapter!!.setList(ArrayList())
+                                currentAdapter.setList(ArrayList())
                                 if (page == 1) {
-                                    adapter!!.setList(list)
+                                    currentAdapter.setList(list)
                                 } else {
-                                    adapter!!.addData(list)
+                                    currentAdapter.addData(list)
                                 }
                                 resetData()
-                                if (searchStickerRecyclerView?.visibility == GONE) {
+                                if (currentRecyclerView.visibility == GONE) {
                                     CommonAnim.getInstance()
-                                        .showBottom2Top(searchStickerRecyclerView)
+                                        .showBottom2Top(currentRecyclerView)
                                     var h = WKConstants.getKeyboardHeight()
                                     if (h == 0) {
                                         h = AndroidUtilities.dp(350f)
                                     }
-                                    adapter!!.headerLayout!!.layoutParams.height =
+                                    currentAdapter.headerLayout!!.layoutParams.height =
                                         AndroidUtilities.getScreenHeight() - h
-                                    searchStickerRecyclerView?.setHeaderViewY(adapter!!.headerLayout!!.layoutParams.height.toFloat())
+                                    currentRecyclerView.setHeaderViewY(currentAdapter.headerLayout!!.layoutParams.height.toFloat())
                                 }
                             }
                         }
                     })
             } else {
-                CommonAnim.getInstance().hideTop2Bottom(searchStickerRecyclerView)
+                CommonAnim.getInstance().hideTop2Bottom(currentRecyclerView)
             }
         }
     }
@@ -454,6 +467,19 @@ class WKStickerApplication {
     }
 
     private var contextWeakRefresh: WeakReference<IConversationContext>? = null
+
+    private fun ensureSearchStickerView(): Boolean {
+        if (searchStickerRecyclerView != null && adapter != null) return true
+        val panelMenu = initPanelMenu ?: return false
+        val conversationContext = panelMenu.iConversationContext.get() ?: return false
+        initSearchStickerView(
+            panelMenu.bottomView,
+            panelMenu.frameLayout,
+            conversationContext
+        )
+        return searchStickerRecyclerView != null && adapter != null
+    }
+
     private fun initSearchStickerView(
         bottomView: View,
         parentView: FrameLayout,

@@ -17,6 +17,7 @@ public class ChatToolBarMenu {
     public boolean isDisable;
 
     public IChatToolBarListener iChatToolBarListener;
+    public IChatToolBarViewProvider bottomViewProvider;
 
     public ChatToolBarMenu(String sid, int toolBarImageRecourseID, int toolBarImageSelectedRecourseID, View bottomView, IChatToolBarListener iChatToolBarListener) {
         this.sid = sid;
@@ -26,8 +27,19 @@ public class ChatToolBarMenu {
         this.iChatToolBarListener = iChatToolBarListener;
     }
 
+    public View getOrCreateBottomView(IConversationContext conversationContext) {
+        if (bottomView == null && bottomViewProvider != null) {
+            bottomView = bottomViewProvider.onCreate(conversationContext);
+        }
+        return bottomView;
+    }
+
     public interface IChatToolBarListener {
         void onChecked(boolean isSelected, IConversationContext iConversationContext);
+    }
+
+    public interface IChatToolBarViewProvider {
+        View onCreate(IConversationContext iConversationContext);
     }
 
 }

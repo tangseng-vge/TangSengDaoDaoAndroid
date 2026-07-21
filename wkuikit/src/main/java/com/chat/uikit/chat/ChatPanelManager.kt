@@ -2123,8 +2123,9 @@ class ChatPanelManager(
         position: Int,
         adapter1: WKChatToolBarAdapter
     ) {
+        val bottomView = mChatToolBarMenu.getOrCreateBottomView(iConversationContext)
         //存在点击显示的view
-        if (mChatToolBarMenu.bottomView != null) {
+        if (bottomView != null) {
             if (mChatToolBarMenu.isSelected) {
                 //已经选中就隐藏底部view弹起软键盘
                 mChatToolBarMenu.isSelected = false
@@ -2148,14 +2149,14 @@ class ChatPanelManager(
                 moreLayout.removeAllViews()
                 collapseChatFunctionPanel()
                 moreLayout.addView(
-                    mChatToolBarMenu.bottomView,
+                    bottomView,
                     LayoutHelper.createFrame(
                         LayoutHelper.MATCH_PARENT,
                         LayoutHelper.MATCH_PARENT.toFloat()
                     )
                 )
                 applyToolBarPanelHeight(mChatToolBarMenu)
-                mChatToolBarMenu.bottomView.startAnimation(
+                bottomView.startAnimation(
                     loadAnimation(
                         iConversationContext
                     )

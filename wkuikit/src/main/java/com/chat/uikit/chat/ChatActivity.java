@@ -271,6 +271,8 @@ public class ChatActivity extends SwipeBackActivity implements IConversationCont
         initParam();
         initView();
         initListener();
+        // 首屏消息查询先于输入面板初始化，首次安装时可并行等待网络同步。
+        requestInitialMessages();
         //initData();
         ActManagerUtils.getInstance().addActivity(this);
     }
@@ -978,6 +980,7 @@ public class ChatActivity extends SwipeBackActivity implements IConversationCont
         super.onNewIntent(intent);
         setIntent(intent);
         initParam();
+        requestInitialMessages();
         initData();
     }
 
@@ -990,7 +993,6 @@ public class ChatActivity extends SwipeBackActivity implements IConversationCont
         WKRobotModel.getInstance().syncRobotData(getChatChannelInfo());
         getChannelState();
 
-        chatAdapter.setList(new ArrayList<>());
         if (WKSystemAccount.isSystemAccount(channelId) || channelType == WKChannelType.CUSTOMER_SERVICE) {
             CommonAnim.getInstance().showOrHide(callIV, false, false);
         }
@@ -1076,23 +1078,8 @@ public class ChatActivity extends SwipeBackActivity implements IConversationCont
             }
         }
 
-
-        //定位消息
-        if (getIntent().hasExtra("lastPreviewMsgOrderSeq")) {
-            lastPreviewMsgOrderSeq = getIntent().getLongExtra("lastPreviewMsgOrderSeq", 0L);
-            isCanLoadMore = lastPreviewMsgOrderSeq > 0;
-        }
-        if (getIntent().hasExtra("keepOffsetY")) {
-            keepOffsetY = getIntent().getIntExtra("keepOffsetY", 0);
-        }
-        if (getIntent().hasExtra("redDot")) redDot = getIntent().getIntExtra("redDot", 0);
-        if (getIntent().hasExtra("tipsOrderSeq")) {
-            tipsOrderSeq = getIntent().getLongExtra("tipsOrderSeq", 0);
-        }
-        if (getIntent().hasExtra("unreadStartMsgOrderSeq")) {
-            unreadStartMsgOrderSeq = getIntent().getLongExtra("unreadStartMsgOrderSeq", 0);
-        }
-
+        reminderList.clear();
+        groupApproveList.clear();
         List<WKReminder> allReminder = WKIM.getInstance().getReminderManager().getReminders(channelId, channelType);
         if (WKReader.isNotEmpty(allReminder)) {
             for (WKReminder reminder : allReminder) {
@@ -1105,24 +1092,6 @@ public class ChatActivity extends SwipeBackActivity implements IConversationCont
                 }
             }
         }
-        // 先获取聊天数据
-        boolean isScrollToEnd = unreadStartMsgOrderSeq == 0 && lastPreviewMsgOrderSeq == 0;
-        long aroundMsgSeq = 0;
-        if (unreadStartMsgOrderSeq != 0) {
-            aroundMsgSeq = unreadStartMsgOrderSeq;
-            isCanLoadMore = true;
-        }
-        isUpdateRedDot = unreadStartMsgOrderSeq > 0;
-        if (lastPreviewMsgOrderSeq != 0) aroundMsgSeq = lastPreviewMsgOrderSeq;
-        if (tipsOrderSeq != 0) {
-            aroundMsgSeq = tipsOrderSeq;
-            isCanLoadMore = true;
-        }
-        if (aroundMsgSeq == 0 && getIntent().hasExtra("aroundMsgSeq")) {
-            aroundMsgSeq = getIntent().getLongExtra("aroundMsgSeq", 0);
-        }
-        getData(lastPreviewMsgOrderSeq == 0 ? 0 : 1, unreadStartMsgOrderSeq > 0, aroundMsgSeq, isScrollToEnd);
-
         //查询高光内容
         WKConversationMsgExtra extra = WKIM.getInstance().getConversationManager().getMsgExtraWithChannel(channelId, channelType);
         if (extra != null) {
@@ -1136,6 +1105,52 @@ public class ChatActivity extends SwipeBackActivity implements IConversationCont
             resetGroupApproveView();
         }, 150);
 
+    }
+
+    private void requestInitialMessages() {
+        lastPreviewMsgOrderSeq = 0;
+        unreadStartMsgOrderSeq = 0;
+        tipsOrderSeq = 0;
+        keepOffsetY = 0;
+        redDot = 0;
+        isCanLoadMore = false;
+        isCanRefresh = true;
+        isRefreshLoading = false;
+        isMoreLoading = false;
+        chatAdapter.setList(new ArrayList<>());
+
+        Intent intent = getIntent();
+        if (intent.hasExtra("lastPreviewMsgOrderSeq")) {
+            lastPreviewMsgOrderSeq = intent.getLongExtra("lastPreviewMsgOrderSeq", 0L);
+            isCanLoadMore = lastPreviewMsgOrderSeq > 0;
+        }
+        if (intent.hasExtra("keepOffsetY")) {
+            keepOffsetY = intent.getIntExtra("keepOffsetY", 0);
+        }
+        if (intent.hasExtra("redDot")) redDot = intent.getIntExtra("redDot", 0);
+        if (intent.hasExtra("tipsOrderSeq")) {
+            tipsOrderSeq = intent.getLongExtra("tipsOrderSeq", 0);
+        }
+        if (intent.hasExtra("unreadStartMsgOrderSeq")) {
+            unreadStartMsgOrderSeq = intent.getLongExtra("unreadStartMsgOrderSeq", 0);
+        }
+
+        boolean isScrollToEnd = unreadStartMsgOrderSeq == 0 && lastPreviewMsgOrderSeq == 0;
+        long aroundMsgSeq = 0;
+        if (unreadStartMsgOrderSeq != 0) {
+            aroundMsgSeq = unreadStartMsgOrderSeq;
+            isCanLoadMore = true;
+        }
+        isUpdateRedDot = unreadStartMsgOrderSeq > 0;
+        if (lastPreviewMsgOrderSeq != 0) aroundMsgSeq = lastPreviewMsgOrderSeq;
+        if (tipsOrderSeq != 0) {
+            aroundMsgSeq = tipsOrderSeq;
+            isCanLoadMore = true;
+        }
+        if (aroundMsgSeq == 0 && intent.hasExtra("aroundMsgSeq")) {
+            aroundMsgSeq = intent.getLongExtra("aroundMsgSeq", 0);
+        }
+        getData(lastPreviewMsgOrderSeq == 0 ? 0 : 1, unreadStartMsgOrderSeq > 0, aroundMsgSeq, isScrollToEnd);
     }
 
     private void getChannelState() {
