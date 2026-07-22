@@ -100,10 +100,21 @@ public class WKIMKeepAliveService extends Service {
     }
 
     private Notification createNotification() {
-        Intent launchIntent = getPackageManager().getLaunchIntentForPackage(getPackageName());
+        // 常驻通知不能使用 Launcher Intent：Launcher 指向 SplashActivity，会让已经初始化的
+        // 应用再次执行配置加载和启动流程。TabActivity 是登录后的任务栈根 Activity，singleTask
+        // 配合 CLEAR_TOP 会直接复用现有实例并回到主界面。
+        Intent launchIntent;
+        if (!TextUtils.isEmpty(WKConfig.getInstance().getToken())) {
+            launchIntent = new Intent(this, TabActivity.class);
+            launchIntent.setAction(getPackageName() + ".action.OPEN_MAIN_FROM_KEEP_ALIVE");
+        } else {
+            launchIntent = getPackageManager().getLaunchIntentForPackage(getPackageName());
+        }
         PendingIntent contentIntent = null;
         if (launchIntent != null) {
-            launchIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                    | Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             contentIntent = PendingIntent.getActivity(
                     this,
                     0,

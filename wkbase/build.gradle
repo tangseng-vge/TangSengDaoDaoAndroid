@@ -105,8 +105,8 @@ dependencies {
         exclude group: 'io.antmedia', module: 'rtmp-client'
     }
     api project(path: ':MyLibs:rlottie')
-    // 远程仓库
-    api 'com.github.WuKongIM:WuKongIMAndroidSDK:1.5.3'
+    // 使用纳入工程的悟空 IM 1.5.3 源码，便于维护 TLS 传输层。
+    api project(path: ':wkim')
     api 'com.tencent.bugly:crashreport:latest.release'
     // 16KB 对齐：悟空 SDK 1.5.3 已传递依赖 16KB 对齐的 net.zetetic:sqlcipher-android，
     // 不再手动引入已废弃且仅 4KB 对齐的 android-database-sqlcipher
