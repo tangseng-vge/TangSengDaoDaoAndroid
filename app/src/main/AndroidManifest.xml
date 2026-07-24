@@ -103,7 +103,7 @@
     </queries>
 
     <application
-        android:name=".TSApplication"
+        android:name=".BageApplication"
         android:allowBackup="true"
         android:hardwareAccelerated="true"
         android:icon="@mipmap/ic_logo"

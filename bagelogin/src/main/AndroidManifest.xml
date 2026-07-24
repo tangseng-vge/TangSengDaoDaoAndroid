@@ -1,0 +1,25 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application
+        android:allowBackup="true"
+        android:supportsRtl="true">
+        <activity android:name=".ui.LoginAuthActivity" />
+        <activity android:name=".ui.ChooseAreaCodeActivity"
+            android:windowSoftInputMode="adjustPan|stateHidden"/>
+        <activity
+            android:name=".ui.BageLoginActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name=".ui.BageRegisterActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name=".ui.BageWebLoginConfirmActivity"
+            android:launchMode="singleTask" />
+        <activity android:name=".ui.PerfectUserInfoActivity" />
+        <activity android:name=".ui.InputLoginAuthVerifCodeActivity" />
+        <activity android:name=".ui.BageResetLoginPwdActivity" />
+        <activity android:name=".ui.PCLoginViewActivity" />
+        <activity android:name=".ui.BageWebLoginActivity" />
+        <activity android:name="com.chat.login.ui.ThirdLoginActivity" />
+    </application>
+</manifest>

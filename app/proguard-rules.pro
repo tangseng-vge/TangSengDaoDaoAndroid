@@ -129,17 +129,17 @@
 
 
 #实体类不需要混淆[需要和网络交换的实体]
-#----------悟空 sdk 数据如果不需要sdk的实体参与网络数据交互就不需要混淆
--dontwarn com.xinbida.wukongim.**
--keep class com.xinbida.wukongim.**{*;}
+#----------Bage sdk 数据如果不需要sdk的实体参与网络数据交互就不需要混淆
+-dontwarn com.bage.im.**
+-keep class com.bage.im.**{*;}
 
 # 消息 item provider 通过 itemProvider.getClass().newInstance() 反射创建，
 # 必须保留其无参构造，并禁止 R8 类合并/重命名，否则 release 启动崩溃：
 # InstantiationException: ... has no zero argument constructor
--keep class * extends com.chat.base.msgitem.WKChatBaseProvider {
+-keep class * extends com.chat.base.msgitem.BageChatBaseProvider {
     public <init>();
 }
--keep class com.chat.base.msgitem.WKMsgItemViewManager { *; }
+-keep class com.chat.base.msgitem.BageMsgItemViewManager { *; }
 
 #数据库加密
 -keep,includedescriptorclasses class net.sqlcipher.** { *; }
@@ -200,9 +200,9 @@
 #----------社区------------------
 -keep class com.community.entity.** { *; }
 #----------用户名登录------------------
--keep class com.chat.wkusernamelogin.entity.**{*;}
+-keep class com.chat.bageusernamelogin.entity.**{*;}
 #----------web3------------------
--keep class com.chat.wkweb3.entity.**{*;}
+-keep class com.chat.bageweb3.entity.**{*;}
 #----------工作台------------------
 -keep class com.chat.workplace.entity.**{*;}
 #----------组织架构------------------
@@ -312,10 +312,10 @@
 -dontwarn com.tencent.bugly.**
 -keep public class com.tencent.bugly.**{*;}
 
--keep class com.xinbida.rtc.WKRTCApplication {*;}
--keep class com.xinbida.rtc.WKRTCCallType {*;}
--keep class com.xinbida.rtc.utils.WKRTCManager {*;}
--keep class com.xinbida.rtc.inters.** {*;}
+-keep class com.bage.rtc.BageRTCApplication {*;}
+-keep class com.bage.rtc.BageRTCCallType {*;}
+-keep class com.bage.rtc.utils.BageRTCManager {*;}
+-keep class com.bage.rtc.inters.** {*;}
 -keep class owt.** {*;}
 -keep class org.webrtc.** {*;}
 

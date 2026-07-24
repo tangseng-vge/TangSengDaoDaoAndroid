@@ -1,0 +1,70 @@
+package com.chat.base.net;
+
+import com.chat.base.config.BageApiConfig;
+
+import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava3.RxJava3CallAdapterFactory;
+
+/**
+ * 2020-07-17 14:52
+ * Retrofit管理
+ */
+public class RetrofitUtils {
+    private RetrofitUtils() {
+    }
+
+    private static class RetrofitUtilsBinder {
+        final static RetrofitUtils retrofit = new RetrofitUtils();
+    }
+
+    public static RetrofitUtils getInstance() {
+        return RetrofitUtilsBinder.retrofit;
+    }
+
+    private Retrofit retrofit;
+    private Retrofit priorityRetrofit;
+
+    public Retrofit getRetrofit() {
+        if (retrofit == null) {
+            synchronized (RetrofitUtils.class) {
+                retrofit = new Retrofit.Builder()
+                        .baseUrl(BageApiConfig.baseUrl)
+                        .client(OkHttpUtils.getInstance().getOkHttpClient())
+                        .addConverterFactory(FastJsonConverterFactory.Companion.create())
+                        .addCallAdapterFactory(RxJava3CallAdapterFactory.create()).build();
+            }
+            // GsonConverterFactory.create(new GsonBuilder().setLenient().create())
+        }
+        return retrofit;
+    }
+
+    public void resetRetrofit() {
+        retrofit = null;
+        priorityRetrofit = null;
+    }
+
+
+    public <T> T createService(Class<T> service) {
+        return getRetrofit().create(service);
+    }
+
+    private Retrofit getPriorityRetrofit() {
+        if (priorityRetrofit == null) {
+            synchronized (RetrofitUtils.class) {
+                if (priorityRetrofit == null) {
+                    priorityRetrofit = new Retrofit.Builder()
+                            .baseUrl(BageApiConfig.baseUrl)
+                            .client(OkHttpUtils.getInstance().getPriorityOkHttpClient())
+                            .addConverterFactory(FastJsonConverterFactory.Companion.create())
+                            .addCallAdapterFactory(RxJava3CallAdapterFactory.create()).build();
+                }
+            }
+        }
+        return priorityRetrofit;
+    }
+
+    public <T> T createPriorityService(Class<T> service) {
+        return getPriorityRetrofit().create(service);
+    }
+
+}

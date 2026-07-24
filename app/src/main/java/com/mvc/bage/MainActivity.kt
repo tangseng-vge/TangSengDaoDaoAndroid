@@ -8,30 +8,30 @@ import android.text.TextUtils
 import android.util.Log
 import android.view.View
 import androidx.core.content.ContextCompat
-import com.chat.base.WKBaseApplication
-import com.chat.base.base.WKBaseActivity
-import com.chat.base.config.WKApiConfig
-import com.chat.base.config.WKConfig
-import com.chat.base.config.WKSharedPreferencesUtil
+import com.chat.base.BageBaseApplication
+import com.chat.base.base.BageBaseActivity
+import com.chat.base.config.BageApiConfig
+import com.chat.base.config.BageConfig
+import com.chat.base.config.BageSharedPreferencesUtil
 import com.chat.base.ui.Theme
 import com.chat.base.ui.components.NormalClickableContent
 import com.chat.base.ui.components.NormalClickableSpan
-import com.chat.base.utils.WKDialogUtils
-import com.chat.base.utils.systembar.WKStatusBarUtils
+import com.chat.base.utils.BageDialogUtils
+import com.chat.base.utils.systembar.BageStatusBarUtils
 import com.chat.login.ui.PerfectUserInfoActivity
-import com.chat.login.ui.WKLoginActivity
+import com.chat.login.ui.BageLoginActivity
 import com.chat.uikit.TabActivity
 import com.mvc.bage.databinding.ActivityMainBinding
-import com.xinbida.wukongim.WKIM
+import com.bage.im.BageIM
 
-class MainActivity : WKBaseActivity<ActivityMainBinding>() {
+class MainActivity : BageBaseActivity<ActivityMainBinding>() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d("AppFlow", "[MainActivity] onCreate called")
 
         // 检查应用是否已正确初始化
-        if (!TSApplication.getInstance().isApiInitialized()) {
+        if (!BageApplication.getInstance().isApiInitialized()) {
             Log.d("AppFlow", "[MainActivity] API not initialized, redirecting to SplashActivity")
             // 如果未初始化，重定向到SplashActivity
             val intent = Intent(this, SplashActivity::class.java)
@@ -50,13 +50,13 @@ class MainActivity : WKBaseActivity<ActivityMainBinding>() {
     override fun initView() {
         super.initView()
         Log.d("AppFlow", "[MainActivity] initView called")
-        // WKBaseActivity 会在 MainActivity.onCreate() 返回前调用 initView()。
+        // BageBaseActivity 会在 MainActivity.onCreate() 返回前调用 initView()。
         // 未初始化时由 onCreate() 统一跳转 SplashActivity，避免提前进入空数据页。
-        if (!TSApplication.getInstance().isApiInitialized()) {
+        if (!BageApplication.getInstance().isApiInitialized()) {
             return
         }
         val isShowDialog: Boolean =
-            WKSharedPreferencesUtil.getInstance().getBoolean("show_agreement_dialog")
+            BageSharedPreferencesUtil.getInstance().getBoolean("show_agreement_dialog")
         Log.d("AppFlow", "[MainActivity] show_agreement_dialog: $isShowDialog")
         if (isShowDialog) {
             Log.d("AppFlow", "[MainActivity] Redirecting to SplashActivity for agreement")
@@ -74,23 +74,23 @@ class MainActivity : WKBaseActivity<ActivityMainBinding>() {
 
     private fun gotoApp() {
         Log.d("AppFlow", "[MainActivity] gotoApp called")
-        val token = WKConfig.getInstance().token
+        val token = BageConfig.getInstance().token
         Log.d("AppFlow", "[MainActivity] Token: ${if (token.isNullOrEmpty()) "empty" else "exists"}")
         
         if (!TextUtils.isEmpty(token)) {
-            val userInfo = WKConfig.getInstance().userInfo
+            val userInfo = BageConfig.getInstance().userInfo
             Log.d("AppFlow", "[MainActivity] User name: ${if (userInfo.name.isNullOrEmpty()) "empty" else "exists"}")
             
             if (TextUtils.isEmpty(userInfo.name)) {
                 Log.d("AppFlow", "[MainActivity] Starting PerfectUserInfoActivity")
                 startActivity(Intent(this@MainActivity, PerfectUserInfoActivity::class.java))
             } else {
-                val publicRSAKey: String = WKIM.getInstance().cmdManager.rsaPublicKey
+                val publicRSAKey: String = BageIM.getInstance().cmdManager.rsaPublicKey
                 Log.d("AppFlow", "[MainActivity] RSA Key: ${if (publicRSAKey.isNullOrEmpty()) "empty" else "exists"}")
                 
                 if (TextUtils.isEmpty(publicRSAKey)) {
-                    Log.d("AppFlow", "[MainActivity] Starting WKLoginActivity (no RSA key)")
-                    val intent = Intent(this@MainActivity, WKLoginActivity::class.java)
+                    Log.d("AppFlow", "[MainActivity] Starting BageLoginActivity (no RSA key)")
+                    val intent = Intent(this@MainActivity, BageLoginActivity::class.java)
                     intent.putExtra("from", getIntent().getIntExtra("from", 0))
                     startActivity(intent)
                 } else {
@@ -99,8 +99,8 @@ class MainActivity : WKBaseActivity<ActivityMainBinding>() {
                 }
             }
         } else {
-            Log.d("AppFlow", "[MainActivity] Starting WKLoginActivity (no token)")
-            val intent = Intent(this@MainActivity, WKLoginActivity::class.java)
+            Log.d("AppFlow", "[MainActivity] Starting BageLoginActivity (no token)")
+            val intent = Intent(this@MainActivity, BageLoginActivity::class.java)
             intent.putExtra("from", getIntent().getIntExtra("from", 0))
             startActivity(intent)
         }
@@ -121,7 +121,7 @@ class MainActivity : WKBaseActivity<ActivityMainBinding>() {
                 object : NormalClickableSpan.IClick {
                     override fun onClick(view: View) {
                         showWebView(
-                            WKApiConfig.baseWebUrl + "user_agreement.html"
+                            BageApiConfig.baseWebUrl + "user_agreement.html"
                         )
                     }
                 }), userAgreementIndex, userAgreementIndex + 6, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
@@ -134,13 +134,13 @@ class MainActivity : WKBaseActivity<ActivityMainBinding>() {
                 object : NormalClickableSpan.IClick {
                     override fun onClick(view: View) {
                         showWebView(
-                            WKApiConfig.baseWebUrl + "privacy_policy.html"
+                            BageApiConfig.baseWebUrl + "privacy_policy.html"
                         )
                     }
                 }), privacyPolicyIndex, privacyPolicyIndex + 6, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
         )
 
-        WKDialogUtils.getInstance().showDialog(
+        BageDialogUtils.getInstance().showDialog(
             this,
             getString(R.string.dialog_title),
             linkSpan,
@@ -151,11 +151,11 @@ class MainActivity : WKBaseActivity<ActivityMainBinding>() {
             0
         ) { index ->
             if (index == 1) {
-                WKSharedPreferencesUtil.getInstance()
+                BageSharedPreferencesUtil.getInstance()
                     .putBoolean("show_agreement_dialog", false)
-                WKBaseApplication.getInstance().init(
-                    WKBaseApplication.getInstance().packageName,
-                    WKBaseApplication.getInstance().application
+                BageBaseApplication.getInstance().init(
+                    BageBaseApplication.getInstance().packageName,
+                    BageBaseApplication.getInstance().application
                 )
                 // 协议在 MainActivity 不再处理，交给 SplashActivity 继续后续流程
                 val intent = Intent(this, SplashActivity::class.java)

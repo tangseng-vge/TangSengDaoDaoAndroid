@@ -1,0 +1,369 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/homeColor"
+    android:orientation="vertical">
+
+        <include layout="@layout/bage_title_bar_layout" />
+
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true">
+
+            <com.scwang.smart.refresh.layout.SmartRefreshLayout
+                android:id="@+id/refreshLayout"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                >
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginHorizontal="5dp"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:id="@+id/darkLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:visibility="gone"
+                        style="@style/layoutBg"
+
+                        >
+
+                        <TextView
+                            style="@style/leftTextView"
+                            android:layout_weight="1"
+                            android:text="@string/dark_night" />
+
+                        <TextView
+                            android:id="@+id/darkStatusTv"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            android:layout_marginEnd="10dp"
+                            android:layout_weight="1"
+                            android:gravity="end"
+                            android:text="@string/disabled"
+                            android:textColor="@color/color999" />
+
+                        <androidx.appcompat.widget.AppCompatImageView style="@style/arrow_right_iv" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/homeColor"/>
+
+                    <LinearLayout
+                        android:id="@+id/clearImgCacheLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        style="@style/layoutBg"
+                        >
+
+                        <TextView
+                            style="@style/leftTextView"
+                            android:layout_weight="1"
+                            android:text="@string/clear_img_cache" />
+
+                        <TextView
+                            android:id="@+id/imageCacheTv"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            android:layout_marginEnd="10dp"
+                            android:layout_weight="1"
+                            android:gravity="end"
+                            android:textColor="@color/color999" />
+
+                        <androidx.appcompat.widget.AppCompatImageView style="@style/arrow_right_iv" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="10dp"
+                        android:background="@color/homeColor" />
+
+                    <LinearLayout
+                        android:orientation="vertical"
+                        style="@style/layoutBg"
+                        >
+
+                        <LinearLayout
+                            android:id="@+id/languageLayout"
+                            android:layout_height="45dp"
+                            android:layout_width="match_parent">
+
+                            <TextView
+                                style="@style/leftTextView"
+                                android:layout_weight="1"
+                                android:text="@string/language" />
+
+
+                            <androidx.appcompat.widget.AppCompatImageView style="@style/arrow_right_iv" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="@color/homeColor"
+                            />
+
+                        <LinearLayout
+                            android:id="@+id/fontSizeLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="45dp"
+                            android:visibility="gone"
+                            >
+
+                            <TextView
+                                style="@style/leftTextView"
+                                android:layout_weight="1"
+                                android:text="@string/font_size" />
+
+
+                            <androidx.appcompat.widget.AppCompatImageView style="@style/arrow_right_iv" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/changeBgLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="45dp"
+                            >
+
+                            <TextView
+                                style="@style/leftTextView"
+                                android:layout_weight="1"
+                                android:text="@string/chat_bg" />
+
+
+                            <androidx.appcompat.widget.AppCompatImageView style="@style/arrow_right_iv" />
+                        </LinearLayout>
+
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/chatBgLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="10dp"
+                        android:background="@color/homeColor" />
+
+
+                    <LinearLayout
+                        android:id="@+id/msgBackupLayout"
+                        style="@style/layoutBg"
+                        android:visibility="gone">
+
+                        <TextView
+                            style="@style/leftTextView"
+                            android:layout_weight="1"
+                            android:text="@string/backup_message" />
+
+
+                        <androidx.appcompat.widget.AppCompatImageView style="@style/arrow_right_iv" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/msgRecoveryLayout"
+                        style="@style/layoutBg"
+                        android:visibility="gone">
+
+                        <TextView
+                            style="@style/leftTextView"
+                            android:layout_weight="1"
+                            android:text="@string/recovery_message" />
+
+
+                        <androidx.appcompat.widget.AppCompatImageView style="@style/arrow_right_iv" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="10dp"
+                        android:background="@color/homeColor"
+                        android:visibility="gone" />
+
+                    <LinearLayout
+                        android:id="@+id/clearChatMsgLayout"
+                        style="@style/layoutBg"
+                        android:visibility="gone">
+
+                        <TextView
+                            style="@style/leftTextView"
+                            android:layout_weight="1"
+                            android:text="@string/clear_msg" />
+
+                        <androidx.appcompat.widget.AppCompatImageView style="@style/arrow_right_iv" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/blackListLayout"
+                        style="@style/layoutBg"
+                        android:layout_height="50dp">
+
+                        <TextView
+                            style="@style/leftTextView"
+                            android:text="@string/black_list" />
+
+                        <androidx.appcompat.widget.AppCompatImageView style="@style/arrow_right_iv" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="10dp"
+                        android:background="@color/homeColor"
+                        android:visibility="gone"/>
+
+                    <LinearLayout
+                        android:id="@+id/moduleLayout"
+                        style="@style/layoutBg"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="10dp">
+
+                        <TextView
+                            style="@style/leftTextView"
+                            android:text="@string/choose_module" />
+
+                        <androidx.appcompat.widget.AppCompatImageView style="@style/arrow_right_iv" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="10dp"
+                        android:background="@color/homeColor"
+                        android:visibility="gone"/>
+
+                    <LinearLayout
+                        android:id="@+id/thirdShareLayout"
+                        style="@style/layoutBg"
+                        android:visibility="gone">
+
+                        <TextView
+                            style="@style/leftTextView"
+                            android:text="@string/third_party_sharing_list" />
+
+                        <androidx.appcompat.widget.AppCompatImageView style="@style/arrow_right_iv" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/errorLogLayout"
+                        style="@style/layoutBg"
+                        android:visibility="gone">
+
+                        <TextView
+                            style="@style/leftTextView"
+                            android:text="@string/error_data" />
+
+                        <androidx.appcompat.widget.AppCompatImageView style="@style/arrow_right_iv" />
+
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="10dp"
+                        android:background="@color/homeColor" />
+
+                    <LinearLayout
+                        android:orientation="vertical"
+                        style="@style/layoutBg"
+                        >
+
+                        <LinearLayout
+                            android:id="@+id/aboutLayout"
+                            android:layout_height="45dp"
+                            android:layout_width="match_parent"
+                            >
+
+                            <TextView
+                                style="@style/leftTextView"
+                                android:text="@string/about" />
+
+                            <TextView
+                                android:id="@+id/newVersionIv"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_vertical"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:gravity="end"
+                                android:textColor="@color/color999" />
+
+
+                            <androidx.appcompat.widget.AppCompatImageView style="@style/arrow_right_iv" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="@color/homeColor"
+                            />
+
+                        <LinearLayout
+                            android:id="@+id/llUserAgreement"
+                            android:layout_height="45dp"
+                            android:layout_width="match_parent"
+                            >
+
+                            <TextView
+                                style="@style/leftTextView"
+                                android:text="@string/kit_user_agreement" />
+
+
+                            <androidx.appcompat.widget.AppCompatImageView style="@style/arrow_right_iv" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="@color/homeColor"
+                            />
+                        <LinearLayout
+                            android:id="@+id/llPrivacy"
+                            android:layout_height="45dp"
+                            android:layout_width="match_parent"
+                            >
+
+                            <TextView
+                                style="@style/leftTextView"
+                                android:text="@string/kit_privacy_policy" />
+
+
+                            <androidx.appcompat.widget.AppCompatImageView style="@style/arrow_right_iv" />
+                        </LinearLayout>
+
+
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="10dp"
+                        android:background="@color/homeColor" />
+
+                    <TextView
+                        android:id="@+id/loginOutTv"
+                        style="@style/layoutBg"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:gravity="center"
+                        android:text="@string/login_out"
+                        android:textColor="@color/colorAccent"
+                        android:textSize="@dimen/font_size_16" />
+                </LinearLayout>
+
+            </com.scwang.smart.refresh.layout.SmartRefreshLayout>
+
+        </androidx.core.widget.NestedScrollView>
+
+</LinearLayout>

@@ -1,0 +1,29 @@
+package com.bage.im.entity;
+
+import androidx.annotation.NonNull;
+
+public class BageConversationMsgExtra {
+    public String channelID;
+    public byte channelType;
+    public long browseTo;
+    public long keepMessageSeq;
+    public int keepOffsetY;
+    public String draft;
+    public long version;
+    public long draftUpdatedAt;
+
+    @NonNull
+    @Override
+    public String toString() {
+        return "BageConversationMsgExtra{" +
+                "channelID='" + channelID + '\'' +
+                ", channelType=" + channelType +
+                ", browseTo=" + browseTo +
+                ", keepMessageSeq=" + keepMessageSeq +
+                ", keepOffsetY=" + keepOffsetY +
+                ", draft='" + draft + '\'' +
+                ", version=" + version +
+                ", draftUpdatedAt=" + draftUpdatedAt +
+                '}';
+    }
+}

@@ -14,16 +14,16 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import com.chat.base.WKBaseApplication
-import com.chat.base.act.WKWebViewActivity
-import com.chat.base.config.WKApiConfig
-import com.chat.base.config.WKSharedPreferencesUtil
+import com.chat.base.BageBaseApplication
+import com.chat.base.act.BageWebViewActivity
+import com.chat.base.config.BageApiConfig
+import com.chat.base.config.BageSharedPreferencesUtil
 import com.chat.base.ui.components.AlertDialog
 import com.chat.base.ui.components.NormalClickableContent
 import com.chat.base.ui.components.NormalClickableSpan
 import com.chat.base.utils.IpSearch
 import com.chat.base.utils.JiamiUtil
-import com.chat.base.utils.WKDialogUtils
+import com.chat.base.utils.BageDialogUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -64,7 +64,7 @@ public final class SplashActivity : AppCompatActivity() {
         setContentView(R.layout.splash_activity_with_animation)
 
         // 先检查隐私协议是否同意，未同意则先拦截，避免进入主页或跳过 getConfig
-        val needShowAgreement = WKSharedPreferencesUtil.getInstance().getBoolean("show_agreement_dialog")
+        val needShowAgreement = BageSharedPreferencesUtil.getInstance().getBoolean("show_agreement_dialog")
         if (needShowAgreement) {
             showAgreementAndThenProceed()
         } else {
@@ -73,17 +73,17 @@ public final class SplashActivity : AppCompatActivity() {
     }
 
     private fun proceedInit() {
-        val tsApp = TSApplication.getInstance()
+        val bageApp = BageApplication.getInstance()
 
         // 正常经过 Splash 的启动始终刷新远程配置。Application 中的提前初始化
         // 只用于系统回收进程后直接恢复 Activity 时使用本地缓存兜底。
         if (isNetworkAvailable(this)) {
             getConfigAsync()
-        } else if (tsApp.isApiInitialized()) {
+        } else if (bageApp.isApiInitialized()) {
             // 离线时继续使用 Application 已恢复的缓存地址。
             startMainActivity()
         } else {
-            tsApp.initApiDependentComponents(tsApp.DEFAULT_API_URL)
+            bageApp.initApiDependentComponents(bageApp.DEFAULT_API_URL)
             showErrorAndRetryOption()
         }
     }
@@ -101,7 +101,7 @@ public final class SplashActivity : AppCompatActivity() {
                 object : NormalClickableSpan.IClick {
                     override fun onClick(view: View) {
                         showWebView(
-                            WKApiConfig.baseWebUrl + "user_agreement.html"
+                            BageApiConfig.baseWebUrl + "user_agreement.html"
                         )
                     }
                 }), userAgreementIndex, userAgreementIndex + 6, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
@@ -114,13 +114,13 @@ public final class SplashActivity : AppCompatActivity() {
                 object : NormalClickableSpan.IClick {
                     override fun onClick(view: View) {
                         showWebView(
-                            WKApiConfig.baseWebUrl + "privacy_policy.html"
+                            BageApiConfig.baseWebUrl + "privacy_policy.html"
                         )
                     }
                 }), privacyPolicyIndex, privacyPolicyIndex + 6, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
         )
 
-        WKDialogUtils.getInstance().showDialog(
+        BageDialogUtils.getInstance().showDialog(
             this,
             getString(R.string.dialog_title),
             linkSpan,
@@ -131,11 +131,11 @@ public final class SplashActivity : AppCompatActivity() {
             0
         ) { index ->
             if (index == 1) {
-                WKSharedPreferencesUtil.getInstance()
+                BageSharedPreferencesUtil.getInstance()
                     .putBoolean("show_agreement_dialog", false)
-                WKBaseApplication.getInstance().init(
-                    WKBaseApplication.getInstance().packageName,
-                    WKBaseApplication.getInstance().application
+                BageBaseApplication.getInstance().init(
+                    BageBaseApplication.getInstance().packageName,
+                    BageBaseApplication.getInstance().application
                 )
                 proceedInit()
             } else {
@@ -145,7 +145,7 @@ public final class SplashActivity : AppCompatActivity() {
     }
 
     private fun showWebView(url: String) {
-        val intent = Intent(this, WKWebViewActivity::class.java)
+        val intent = Intent(this, BageWebViewActivity::class.java)
         intent.putExtra("url", url)
         startActivity(intent)
     }
@@ -159,19 +159,19 @@ public final class SplashActivity : AppCompatActivity() {
                     getConfig(ossUrl)
                 }
 
-                TSApplication.getInstance().applyRemoteApiUrl(apiUrl)
-                WKSharedPreferencesUtil.getInstance().putSP(KEY_API_URL, apiUrl)
+                BageApplication.getInstance().applyRemoteApiUrl(apiUrl)
+                BageSharedPreferencesUtil.getInstance().putSP(KEY_API_URL, apiUrl)
                 Log.i("RemoteConfig", "启动配置获取并应用成功")
 
                 // 进入主界面
                 startMainActivity()
             } catch (e: Exception) {
-                val tsApp = TSApplication.getInstance()
+                val bageApp = BageApplication.getInstance()
                 Log.e("RemoteConfig", "启动配置获取失败，使用本地配置", e)
-                if (tsApp.isApiInitialized()) {
+                if (bageApp.isApiInitialized()) {
                     startMainActivity()
                 } else {
-                    tsApp.initApiDependentComponents(tsApp.DEFAULT_API_URL)
+                    bageApp.initApiDependentComponents(bageApp.DEFAULT_API_URL)
                     showErrorAndRetryOption()
                 }
             }
@@ -195,7 +195,7 @@ public final class SplashActivity : AppCompatActivity() {
     }
 
     private fun getConfig(getUrl: String): String {
-        if (!isNetworkAvailable(WKBaseApplication.getInstance().getContext())) {
+        if (!isNetworkAvailable(BageBaseApplication.getInstance().getContext())) {
             throw IOException("网络连接不可用")
         }
 
@@ -232,7 +232,7 @@ public final class SplashActivity : AppCompatActivity() {
             val apiList = JiamiUtil.decrypt(jsonObject.optString("apiList", ""))
 
             val ip = getDeviceIp(apiList)
-            val instance = IpSearch.getInstance(WKBaseApplication.getInstance().getContext())
+            val instance = IpSearch.getInstance(BageBaseApplication.getInstance().getContext())
             val selectedApiUrl = if (instance.getArea(ip) != "CN") {
                 globalApiUrl
             } else {
@@ -280,7 +280,7 @@ public final class SplashActivity : AppCompatActivity() {
             val split = ipapi.split(",".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
             if (split.size > 0) {
                 ipApis = split
-                Log.d("TSApplication", "使用OSS返回的API列表，共" + ipApis.size + "个API")
+                Log.d("BageApplication", "使用OSS返回的API列表，共" + ipApis.size + "个API")
             }
         }
         if(ipApis.size == 0){
@@ -321,20 +321,20 @@ public final class SplashActivity : AppCompatActivity() {
 
                     val ip = parseIpFromResponse(api, response)
                     if (isValidIpAddress(ip)) {
-                        Log.d("TSApplication", "成功从 $api 获取到 IP: $ip")
+                        Log.d("BageApplication", "成功从 $api 获取到 IP: $ip")
                         return ip
                     } else {
-                        Log.w("TSApplication", "从 $api 获取的响应不是有效IP: $response")
+                        Log.w("BageApplication", "从 $api 获取的响应不是有效IP: $response")
                     }
                 }
                 connection.disconnect()
             } catch (e: Exception) {
-                Log.e("TSApplication", "从 $api 获取 IP 失败: ${e.message}")
+                Log.e("BageApplication", "从 $api 获取 IP 失败: ${e.message}")
                 // 继续尝试下一个 API
             }
         }
 
-        Log.e("TSApplication", "无法从任何 API 获取 IP 地址")
+        Log.e("BageApplication", "无法从任何 API 获取 IP 地址")
         return "" // 如果所有 API 都失败，返回空字符串
     }
 
@@ -343,7 +343,7 @@ public final class SplashActivity : AppCompatActivity() {
      */
     private fun parseIpFromResponse(api: String, response: String): String {
         return try {
-            Log.d("TSApplication", "解析API $api 的响应: $response")
+            Log.d("BageApplication", "解析API $api 的响应: $response")
             
             // 首先尝试直接提取IP地址（适用于大多数API）
             val ipPattern = "\\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b".toRegex()
@@ -363,10 +363,10 @@ public final class SplashActivity : AppCompatActivity() {
                     try {
                         val jsonObject = JSONObject(response)
                         val ip = jsonObject.getString("ip")
-                        Log.d("TSApplication", "太平洋API解析结果: $ip")
+                        Log.d("BageApplication", "太平洋API解析结果: $ip")
                         ip
                     } catch (e: Exception) {
-                        Log.w("TSApplication", "太平洋API JSON解析失败: ${e.message}")
+                        Log.w("BageApplication", "太平洋API JSON解析失败: ${e.message}")
                         ""
                     }
                 }
@@ -374,7 +374,7 @@ public final class SplashActivity : AppCompatActivity() {
                 // 检查是否包含HTML标签（说明返回了HTML页面）
                 response.contains("<html", ignoreCase = true) || 
                 response.contains("<!DOCTYPE", ignoreCase = true) -> {
-                    Log.w("TSApplication", "API $api 返回了HTML页面而不是IP地址")
+                    Log.w("BageApplication", "API $api 返回了HTML页面而不是IP地址")
                     ""
                 }
                 
@@ -388,13 +388,13 @@ public final class SplashActivity : AppCompatActivity() {
                             if (jsonObject.has(field)) {
                                 val ip = jsonObject.getString(field)
                                 if (isValidIpAddress(ip)) {
-                                    Log.d("TSApplication", "JSON API解析结果: $ip")
+                                    Log.d("BageApplication", "JSON API解析结果: $ip")
                                     return ip
                                 }
                             }
                         }
                     } catch (e: Exception) {
-                        Log.w("TSApplication", "解析JSON失败: ${e.message}")
+                        Log.w("BageApplication", "解析JSON失败: ${e.message}")
                     }
                     ""
                 }
@@ -402,12 +402,12 @@ public final class SplashActivity : AppCompatActivity() {
                 // 默认情况：直接返回响应内容
                 else -> {
                     val result = response.trim()
-                    Log.d("TSApplication", "默认解析结果: $result")
+                    Log.d("BageApplication", "默认解析结果: $result")
                     result
                 }
             }
         } catch (e: Exception) {
-            Log.e("TSApplication", "解析API响应失败: ${e.message}")
+            Log.e("BageApplication", "解析API响应失败: ${e.message}")
             ""
         }
     }
@@ -443,7 +443,7 @@ public final class SplashActivity : AppCompatActivity() {
         
         // 检查是否是无效IP
         if (invalidIps.contains(ip)) {
-            Log.w("TSApplication", "检测到无效IP地址: $ip")
+            Log.w("BageApplication", "检测到无效IP地址: $ip")
             return false
         }
         
@@ -454,17 +454,17 @@ public final class SplashActivity : AppCompatActivity() {
         when {
             // 10.0.0.0/8
             firstOctet == 10 -> {
-                Log.w("TSApplication", "检测到私有地址段 10.x.x.x: $ip")
+                Log.w("BageApplication", "检测到私有地址段 10.x.x.x: $ip")
                 return false
             }
             // 172.16.0.0/12
             firstOctet == 172 && secondOctet in 16..31 -> {
-                Log.w("TSApplication", "检测到私有地址段 172.16-31.x.x: $ip")
+                Log.w("BageApplication", "检测到私有地址段 172.16-31.x.x: $ip")
                 return false
             }
             // 192.168.0.0/16
             firstOctet == 192 && secondOctet == 168 -> {
-                Log.w("TSApplication", "检测到私有地址段 192.168.x.x: $ip")
+                Log.w("BageApplication", "检测到私有地址段 192.168.x.x: $ip")
                 return false
             }
         }
