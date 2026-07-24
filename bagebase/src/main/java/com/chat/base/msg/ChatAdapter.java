@@ -172,15 +172,11 @@ public class ChatAdapter extends BaseProviderMultiAdapter<BageUIChatMsgItemEntit
 
     //获取最后一条消息是否为正在输入
     public boolean lastMsgIsTyping() {
-        boolean isTyping = false;
-        for (int i = getData().size() - 1; i >= 0; i--) {
-            if (getData().get(i).bageMsg != null && getData().get(i).bageMsg.type == BageContentType.typing) {
-                isTyping = true;
-                break;
-            }
+        if (BageReader.isEmpty(getData())) {
+            return false;
         }
-
-        return isTyping;
+        BageMsg lastMsg = getData().get(getData().size() - 1).bageMsg;
+        return lastMsg != null && lastMsg.type == BageContentType.typing;
     }
 
     public long getEndMsgOrderSeq() {

@@ -134,8 +134,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
@@ -1248,6 +1250,7 @@ public class ChatActivity extends SwipeBackActivity implements IConversationCont
 
     // 获取聊天记录
     private void getData(int pullMode, boolean isSetNewData, long aroundMsgOrderSeq, boolean isScrollToEnd) {
+        final Set<String> messageKeysBeforeRequest = getCurrentMessageKeys();
         boolean contain = false;
         long oldestOrderSeq;
         if (pullMode == 1) {
@@ -1300,6 +1303,9 @@ public class ChatActivity extends SwipeBackActivity implements IConversationCont
                         tempList.add(msg);
                     }
                 }
+                if (isSetNewData) {
+                    mergeMessagesCreatedDuringRefresh(tempList, messageKeysBeforeRequest);
+                }
                 showData(tempList, pullMode, isSetNewData, isScrollToEnd);
                 bageVBinding.chatUnreadLayout.progress.setVisibility(View.GONE);
                 bageVBinding.chatUnreadLayout.msgDownIv.setVisibility(View.VISIBLE);
@@ -1319,6 +1325,87 @@ public class ChatActivity extends SwipeBackActivity implements IConversationCont
         });
 
 
+    }
+
+    private Set<String> getCurrentMessageKeys() {
+        Set<String> keys = new HashSet<>();
+        if (chatAdapter == null || BageReader.isEmpty(chatAdapter.getData())) {
+            return keys;
+        }
+        for (BageUIChatMsgItemEntity item : chatAdapter.getData()) {
+            if (item != null) {
+                addMessageKeys(keys, item.bageMsg);
+            }
+        }
+        return keys;
+    }
+
+    private void mergeMessagesCreatedDuringRefresh(List<BageMsg> result, Set<String> messageKeysBeforeRequest) {
+        if (chatAdapter == null || BageReader.isEmpty(chatAdapter.getData())) {
+            return;
+        }
+        Set<String> resultKeys = new HashSet<>();
+        for (BageMsg msg : result) {
+            addMessageKeys(resultKeys, msg);
+        }
+        for (BageUIChatMsgItemEntity item : chatAdapter.getData()) {
+            BageMsg msg = item == null ? null : item.bageMsg;
+            if (!isPersistentChatMessage(msg) || containsMessage(resultKeys, msg)) {
+                continue;
+            }
+            boolean createdDuringRefresh = !containsMessage(messageKeysBeforeRequest, msg);
+            boolean pendingOutgoing = TextUtils.equals(loginUID, msg.fromUID)
+                    && (msg.messageSeq == 0 || msg.status != BageSendMsgResult.send_success);
+            if (createdDuringRefresh || pendingOutgoing) {
+                insertMessageByOrderSeq(result, msg);
+                addMessageKeys(resultKeys, msg);
+            }
+        }
+    }
+
+    private boolean isPersistentChatMessage(BageMsg msg) {
+        return msg != null
+                && msg.clientSeq > 0
+                && msg.isDeleted == 0
+                && msg.header != null
+                && !msg.header.noPersist
+                && !BageContentType.isLocalMsg(msg.type)
+                && !BageContentType.isSystemMsg(msg.type);
+    }
+
+    private void insertMessageByOrderSeq(List<BageMsg> list, BageMsg msg) {
+        int insertPosition = list.size();
+        for (int i = 0; i < list.size(); i++) {
+            if (list.get(i).orderSeq > msg.orderSeq) {
+                insertPosition = i;
+                break;
+            }
+        }
+        list.add(insertPosition, msg);
+    }
+
+    private boolean containsMessage(Set<String> keys, BageMsg msg) {
+        if (msg == null) {
+            return false;
+        }
+        return (!TextUtils.isEmpty(msg.clientMsgNO) && keys.contains("client:" + msg.clientMsgNO))
+                || (!TextUtils.isEmpty(msg.messageID) && keys.contains("message:" + msg.messageID))
+                || (msg.clientSeq > 0 && keys.contains("seq:" + msg.clientSeq));
+    }
+
+    private void addMessageKeys(Set<String> keys, BageMsg msg) {
+        if (msg == null) {
+            return;
+        }
+        if (!TextUtils.isEmpty(msg.clientMsgNO)) {
+            keys.add("client:" + msg.clientMsgNO);
+        }
+        if (!TextUtils.isEmpty(msg.messageID)) {
+            keys.add("message:" + msg.messageID);
+        }
+        if (msg.clientSeq > 0) {
+            keys.add("seq:" + msg.clientSeq);
+        }
     }
 
     /**
@@ -2430,27 +2517,28 @@ public class ChatActivity extends SwipeBackActivity implements IConversationCont
             if (msg.orderSeq > maxMsgOrderSeq) {
                 maxMsgOrderSeq = msg.orderSeq;
             }
-            BageMsg timeMsg = addTimeMsg(msg.timestamp);
+            addTimeMsg(msg.timestamp);
             //判断当前会话是否存在正在输入
-            int index = chatAdapter.getData().size() - 1;
-            if (chatAdapter.lastMsgIsTyping()) index--;
-            if (index < 0) index = 0;
+            int previousIndex = chatAdapter.getData().size() - 1;
+            if (chatAdapter.lastMsgIsTyping()) previousIndex--;
+            int insertPosition = Math.max(0, previousIndex + 1);
             BageUIChatMsgItemEntity itemEntity = BageIMUtils.getInstance().msg2UiMsg(this, msg, count, showNickName, chatAdapter.isShowChooseItem());
-            if (timeMsg == null) {
-                if (BageReader.isNotEmpty(chatAdapter.getData())) {
-                    chatAdapter.getData().get(index).nextMsg = msg;
-                    itemEntity.previousMsg = chatAdapter.getData().get(index).bageMsg;
-                }
-            } else {
-                chatAdapter.getData().get(index).nextMsg = timeMsg;
-                itemEntity.previousMsg = timeMsg;
+            if (previousIndex >= 0) {
+                chatAdapter.getData().get(previousIndex).nextMsg = msg;
+                itemEntity.previousMsg = chatAdapter.getData().get(previousIndex).bageMsg;
             }
-            chatAdapter.addData(index + 1, itemEntity);
-            int type = chatAdapter.getData().get(index).bageMsg.type;
-            if (BageContentType.isLocalMsg(type) || BageContentType.isSystemMsg(type)) {
-                chatAdapter.notifyItemChanged(index);
-            } else {
-                chatAdapter.notifyBackground(index);
+            if (insertPosition < chatAdapter.getData().size()) {
+                itemEntity.nextMsg = chatAdapter.getData().get(insertPosition).bageMsg;
+                chatAdapter.getData().get(insertPosition).previousMsg = msg;
+            }
+            chatAdapter.addData(insertPosition, itemEntity);
+            if (previousIndex >= 0) {
+                int type = chatAdapter.getData().get(previousIndex).bageMsg.type;
+                if (BageContentType.isLocalMsg(type) || BageContentType.isSystemMsg(type)) {
+                    chatAdapter.notifyItemChanged(previousIndex);
+                } else {
+                    chatAdapter.notifyBackground(previousIndex);
+                }
             }
 
             if (isToEnd) {
