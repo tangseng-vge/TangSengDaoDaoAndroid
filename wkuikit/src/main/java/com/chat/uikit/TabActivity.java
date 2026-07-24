@@ -58,6 +58,8 @@ public class TabActivity extends WKBaseActivity<ActTabMainBinding> {
     /** ViewPager / 底部导航默认选中：聊天（第 3 个 Tab） */
     private static final int DEFAULT_TAB_INDEX = 2;
     private static final int CHAT_TAB_INDEX = 2;
+    /** PushNotificationHelper 当前统一使用该 ID 展示普通聊天消息通知。 */
+    private static final int MESSAGE_NOTIFICATION_ID = 1;
 
     private ChatFragment chatFragment;
 
@@ -88,7 +90,11 @@ public class TabActivity extends WKBaseActivity<ActTabMainBinding> {
             String desc = String.format(getString(R.string.notification_permissions_desc), getString(R.string.app_name));
             RxPermissions rxPermissions = new RxPermissions(this);
             rxPermissions.request(Manifest.permission.POST_NOTIFICATIONS).subscribe(aBoolean -> {
-                if (!aBoolean) {
+                if (aBoolean) {
+                    // 服务可能在授权弹窗出现前已经启动，当时通知不会显示。
+                    // 授权成功后再次启动，触发 onStartCommand() 立即补发常驻通知。
+                    WKIMKeepAliveService.start(this);
+                } else {
                     WKDialogUtils.getInstance().showDialog(this, getString(com.chat.base.R.string.authorization_request), desc, true, getString(R.string.cancel), getString(R.string.to_set), 0, Theme.colorAccount, index -> {
                         if (index == 1) {
                             EndpointManager.getInstance().invoke("show_open_notification_dialog", this);
@@ -100,6 +106,8 @@ public class TabActivity extends WKBaseActivity<ActTabMainBinding> {
             boolean isEnabled = NotificationManagerCompat.from(this).areNotificationsEnabled();
             if (!isEnabled) {
                 EndpointManager.getInstance().invoke("show_open_notification_dialog", this);
+            } else {
+                WKIMKeepAliveService.start(this);
             }
         }
 
@@ -120,7 +128,9 @@ public class TabActivity extends WKBaseActivity<ActTabMainBinding> {
             }
         });
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.cancelAll();
+        // 只清理普通聊天消息通知。cancelAll() 会波及 IM 前台保活通知，
+        // 在部分厂商系统上会导致状态栏的常驻通知直接消失。
+        notificationManager.cancel(MESSAGE_NOTIFICATION_ID);
         WKCommonModel.getInstance().getAppConfig(null);
 
         wkVBinding.bottomNavigation.setLabelVisibilityMode(isShowTabText

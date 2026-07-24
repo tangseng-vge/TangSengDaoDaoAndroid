@@ -59,6 +59,9 @@ public class WKIMKeepAliveService extends Service {
     public void onCreate() {
         super.onCreate();
         createNotificationChannel();
+    }
+
+    private void updateForegroundNotification() {
         Notification notification = createNotification();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             startForeground(
@@ -69,10 +72,16 @@ public class WKIMKeepAliveService extends Service {
         } else {
             startForeground(NOTIFICATION_ID, notification);
         }
+        Log.i(TAG, "IM keep-alive foreground notification posted");
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        // startForegroundService() 对已经存在的 Service 只会再次触发
+        // onStartCommand()，不会重新执行 onCreate()。每次都重新发布通知，
+        // 这样用户刚授予通知权限、系统恢复 Service 或厂商系统隐藏通知后，
+        // 下一次前台唤醒都能恢复常驻通知。
+        updateForegroundNotification();
         if (!TextUtils.isEmpty(WKConfig.getInstance().getToken())) {
             WKIM.getInstance().getConnectionManager().connection();
         }
@@ -96,7 +105,14 @@ public class WKIMKeepAliveService extends Service {
         channel.enableVibration(false);
         channel.setSound(null, null);
         NotificationManager manager = getSystemService(NotificationManager.class);
-        if (manager != null) manager.createNotificationChannel(channel);
+        if (manager != null) {
+            manager.createNotificationChannel(channel);
+            NotificationChannel currentChannel = manager.getNotificationChannel(CHANNEL_ID);
+            if (currentChannel != null
+                    && currentChannel.getImportance() == NotificationManager.IMPORTANCE_NONE) {
+                Log.w(TAG, "IM keep-alive notification channel is disabled");
+            }
+        }
     }
 
     private Notification createNotification() {
